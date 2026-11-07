@@ -1,0 +1,147 @@
+{
+ "nome": "horys-pixel-liso",
+ "versao": "0.2",
+ "autor": "Artur",
+ "licenca": "pessoal: não redistribuir (a KB tem conceitos de cursos, creditados; a régua é arte comprada)",
+ "descricao": "Pixel art gorda e lisa: massas grandes de cor chapada, contorno único anil-noite de 2 px, 2 a 3 tons por material com hue shift, nenhum ruído, e animação a 10 fps com a forma redesenhada a cada quadro.",
+ "kb": "C:/Users/artur/Dropbox/obsidian/Notes/Desenvolvimento de games/pixel-liso",
+ "paleta": "C:/Users/artur/Dropbox/obsidian/Notes/Desenvolvimento de games/pixel-liso/estilo/paleta-horys-liso.json",
+ "regua": {
+  "pasta": "D:/godot/referencias/tiny-swords",
+  "nome": "Tiny",
+  "por_categoria": {
+   "idle": [
+    "pawn_idle.png",
+    192
+   ],
+   "andar": [
+    "pawn_run.png",
+    192
+   ],
+   "correr": [
+    "pawn_run.png",
+    192
+   ],
+   "ataque": [
+    "warrior_attack.png",
+    192
+   ],
+   "tiro": [
+    "archer_shoot.png",
+    192
+   ],
+   "trabalhar": [
+    "pawn_interact_pickaxe.png",
+    192
+   ],
+   "magia": [
+    "monk_heal.png",
+    192
+   ],
+   "dano": [
+    "pawn_idle.png",
+    192
+   ],
+   "morte": [
+    "pawn_idle.png",
+    192
+   ],
+   "ambiente": [
+    "sheep_idle.png",
+    128
+   ],
+   "criatura": [
+    "sheep_idle.png",
+    128
+   ],
+   "tile": [
+    "terrain_grass.png",
+    0
+   ],
+   "predio": [
+    "house1.png",
+    0
+   ],
+   "arvore": [
+    "tree1.png",
+    192
+   ],
+   "prop": [
+    "rock1.png",
+    0
+   ],
+   "icone": [
+    "icon_01.png",
+    0
+   ],
+   "ui": [
+    "big_button.png",
+    0
+   ],
+   "retrato": [
+    "avatar_01.png",
+    0
+   ],
+   "efeito": [
+    "fx/Explosion_01.png",
+    192
+   ],
+   "recurso": [
+    "resource_wood.png",
+    0
+   ],
+   "agua": [
+    "water_foam.png",
+    192
+   ],
+   "poeira": [
+    "fx/Dust_01.png",
+    64
+   ],
+   "fogo": [
+    "fx/Fire_01.png",
+    64
+   ],
+   "explosao": [
+    "fx/Explosion_01.png",
+    192
+   ],
+   "respingo": [
+    "fx/Water_Splash.png",
+    192
+   ],
+   "cura_fx": [
+    "fx/Heal_Effect.png",
+    192
+   ]
+  }
+ },
+ "chao": {
+  "grama": "#68a057",
+  "masmorra": "#55556e"
+ },
+ "contorno_regua": "#161c2e",
+ "brilho_regua": [
+  "#ffffff"
+ ],
+ "metas": null,
+ "leitura": [
+  "README.md",
+  "estilo/estilo.md",
+  "estilo/paleta.md",
+  "pipeline/fluxo.md",
+  "pipeline/perguntas.md",
+  "tecnicas/checklist.md",
+  "revisao/rubrica.md",
+  "revisao/metricas.md"
+ ],
+ "motor_padrao": "claude",
+ "referencia_padrao": "pedir",
+ "trigger": "horysliso",
+ "motor": {
+  "trabalho": "C:/Users/artur/Documents/pixel-liso",
+  "fundo_prancha": "#8a9290",
+  "limite_imagem": 1500,
+  "aseprite": "C:/Users/artur/Documents/aseprite/aseprite.exe"
+ }
+}

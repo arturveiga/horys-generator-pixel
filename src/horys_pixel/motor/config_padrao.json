@@ -1,0 +1,15 @@
+{
+ "kb": null,
+ "regua": null,
+ "regua_nome": "régua",
+ "regua_por_categoria": {},
+ "trabalho": null,
+ "paleta_json": null,
+ "contorno_regua": "#1c1828",
+ "brilho_regua": ["#ffffff"],
+ "chao": {"claro": "#78a05e", "escuro": "#5a5870"},
+ "fundo_prancha": "#8a9290",
+ "limite_imagem": 1500,
+ "aseprite": null,
+ "pasta_calibracao": null
+}

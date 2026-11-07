@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.venv/
+# dados locais de cada estilo (memória de gosto, conjunto e modelos treinados)
+estilos/*/gosto/
+estilos/*/conjunto/
+estilos/*/lora/
+
+# testes locais
+tmp-*/

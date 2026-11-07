@@ -1,0 +1,18 @@
+{
+ "nome": "Paleta padrão do motor horys-pixel",
+ "versao": "1.0",
+ "licenca": "MIT",
+ "contorno": "#1c1828",
+ "brilho": "#fbf5e6",
+ "contorno_suave": "#2e3d6b",
+ "nota": "Paleta genérica e original, usada quando nenhum estilo é escolhido. Rampas na ordem sombra -> base -> luz.",
+ "rampas": {
+  "contorno": ["#1c1828"],
+  "brilho": ["#fbf5e6"],
+  "pele": ["#8e5a4a", "#c98f6b", "#eec39a"],
+  "folha": ["#2f5d4b", "#4f8f4f", "#9cc26a"],
+  "céu": ["#2e3d6b", "#4a6fa8", "#86b6d6"],
+  "tijolo": ["#6b2f3f", "#a8484a", "#dd7f5f"],
+  "madeira": ["#4f3a3f", "#7d5a48", "#ae8a62"]
+ }
+}

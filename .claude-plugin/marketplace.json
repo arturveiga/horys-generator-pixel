@@ -1,0 +1,11 @@
+{
+  "name": "horys-pixel",
+  "owner": { "name": "Artur Veiga" },
+  "plugins": [
+    {
+      "name": "horys-pixel",
+      "source": "./",
+      "description": "Pixel art ao vivo no Aseprite com estilos treináveis, portão de medidas e revisor."
+    }
+  ]
+}

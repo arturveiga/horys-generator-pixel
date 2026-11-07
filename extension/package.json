@@ -1,0 +1,16 @@
+{
+  "name": "horys-pixel",
+  "displayName": "Horys Pixel",
+  "description": "Liga o Aseprite ao servidor horysd: gera e revisa pixel art ao vivo, com Claude ou Codex, e conversa dentro do Aseprite.",
+  "version": "0.1.0",
+  "author": { "name": "Artur Horys" },
+  "contributors": [],
+  "publisher": "horys",
+  "license": "MIT",
+  "categories": [ "Scripts" ],
+  "contributes": {
+    "scripts": [
+      { "path": "./plugin.lua" }
+    ]
+  }
+}

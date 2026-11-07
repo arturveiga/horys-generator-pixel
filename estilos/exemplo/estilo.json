@@ -1,0 +1,25 @@
+{
+ "nome": "exemplo",
+ "versao": "1.0",
+ "autor": "horys-pixel",
+ "licenca": "MIT",
+ "descricao": "Pacote de estilo genérico e original, para testar o fluxo e servir de modelo: pixel art chapada, contorno escuro de 2 px, 3 tons por material.",
+ "kb": null,
+ "paleta": "paleta.json",
+ "regua": null,
+ "chao": {
+  "claro": "#78a05e",
+  "escuro": "#5a5870"
+ },
+ "contorno_regua": "#1c1828",
+ "brilho_regua": [
+  "#fbf5e6"
+ ],
+ "metas": null,
+ "leitura": [
+  "estilo.md"
+ ],
+ "motor_padrao": "claude",
+ "referencia_padrao": "pedir",
+ "trigger": "hpxexemplo"
+}

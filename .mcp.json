@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "horys": {
+      "command": "python",
+      "args": ["-m", "horys_pixel.mcp_ponte"],
+      "env": { "PYTHONPATH": "${CLAUDE_PLUGIN_ROOT:-.}/src" }
+    }
+  }
+}

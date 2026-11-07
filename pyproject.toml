@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "horys-pixel"
+version = "0.1.0"
+description = "Gerador de pixel art que desenha ao vivo no Aseprite, com Claude ou Codex como motor, estilos treináveis e revisão."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+  "mcp>=1.20",
+  "websockets>=12",
+  "numpy>=1.26",
+  "pillow>=10",
+  "scipy>=1.11",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[project.scripts]
+horys = "horys_pixel.cli:main"
+horysd = "horys_pixel.daemon.servidor:main"
+horys-mcp = "horys_pixel.mcp_ponte:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+horys_pixel = ["**/*.json", "**/*.md", "**/*.lua", "**/*.txt"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

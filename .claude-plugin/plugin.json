@@ -1,0 +1,8 @@
+{
+  "name": "horys-pixel",
+  "version": "0.1.0",
+  "description": "Pixel art desenhada ao vivo no Aseprite, no seu estilo: briefing no painel, conversão por moda, portão de medidas, revisor exigente e estilos treináveis. Claude ou Codex como motor.",
+  "author": { "name": "Artur Veiga" },
+  "license": "MIT",
+  "keywords": ["pixel-art", "aseprite", "mcp", "gamedev"]
+}
