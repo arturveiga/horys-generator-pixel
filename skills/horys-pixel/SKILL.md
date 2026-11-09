@@ -1,6 +1,6 @@
 ---
 name: horys-pixel
-description: Gera pixel art de qualidade desenhando AO VIVO no Aseprite do usuário, no estilo dele (pacote de estilo; no Hunvix, o Horys Pixel Liso com régua Tiny Swords). Faz personagens, NPCs, inimigos, bosses, criaturas, tiles, prédios, props, ícones, UI e efeitos, com animação. Pergunta no painel do Aseprite até o pedido ficar claro, pede uma imagem de referência (de qualquer origem) ou gera uma, converte por moda, limpa à mão na tela, passa no portão de medidas e no revisor exigente do outro motor, e entrega .aseprite fatiado, PNG, GIF e .grade. Funciona com Claude ou Codex, com terminal ou sem (botão Gerar do Aseprite). Use sempre que pedirem para criar, animar, refazer ou ajustar arte em pixel para os jogos do usuário, mesmo sem citar a skill.
+description: Gera pixel art de qualidade desenhando AO VIVO no Aseprite do usuário, no estilo dele (pacote de estilo; no Hunvix, o Horys Pixel Liso com régua Tiny Swords). Faz personagens, NPCs, inimigos, bosses, criaturas, tiles, prédios, props, ícones, UI e efeitos, com animação. Pergunta no painel do Aseprite até o pedido ficar claro, pede uma imagem de referência (de qualquer origem) ou gera uma, converte por moda, limpa à mão na tela, passa no portão de medidas e no revisor exigente, e entrega .aseprite fatiado, PNG, GIF e .grade. Funciona com Claude (Codex é opcional), com terminal ou sem (botão Gerar do Aseprite). Use sempre que pedirem para criar, animar, refazer ou ajustar arte em pixel para os jogos do usuário, mesmo sem citar a skill.
 ---
 
 # horys-pixel (gerar)
@@ -78,8 +78,10 @@ Depois `horys_asset_novo`: estilo, nome, tipo, quadro (192 para humanoide de 64�
 
 ### 5. Referência → pixel (o caminho que funciona)
 A lição da v4.2: **limpe por cima da conversão; nunca redesenhe do zero na grade.**
-1. Sem imagem e o usuário quis gerar: `horys_referencia_gerar` (`fonte: codex`, ou `lora` se o estilo tiver modelo
-   treinado). O prompt pede ilustração chapada (cel shading) em alta, NÃO "pixel art"; o design, a vista, a proporção
+1. Sem imagem (ou com uma fora do padrão de entrada: render 3D, foto, perspectiva, fundo em degradê): monte o
+   **prompt de tradução** e o usuário gera a imagem no gerador que quiser (ChatGPT, Gemini, Codex ou outro) e devolve
+   o arquivo. Opcional: `horys_referencia_gerar` (`fonte: codex`, se o Codex estiver instalado, ou `lora` se o estilo
+   tiver modelo treinado). O prompt pede ilustração chapada (cel shading) em alta, NÃO "pixel art"; o design, a vista, a proporção
    (massa de cima ~60%), os vãos, o rosto com o que sobrevive no tamanho do jogo, as cores com o papel de cada hex,
    luz em crescentes, o que não fazer, e **fundo liso de uma cor que não está no personagem** (com creme/branco, verde
    `#3DBE5B`). Nunca anexe arte de terceiros; a régua entra como princípios escritos. Gere 2–3 opções e deixe o
@@ -151,7 +153,9 @@ _checagem.txt, medidas/, .aseprite fatiado) e devolve APROVADO/REPROVADO.
 - 4 tentativas no mesmo estado sem passar: pare e mostre ao usuário o melhor resultado com os números.
 - Olhe o `_regua_anim`, o `_8x` e o GIF e anote 3 diferenças concretas contra a régua.
 
-### 8. Revisor exigente (outro motor)
+### 8. Revisor exigente
+Por padrão o Claude revisa. O revisor cruzado (outro motor, ex.: Codex) é opcional: só com a preferência
+`revisor: cruzado` e o Codex instalado.
 `horys_revisar(pasta vNN, estados, ficha, praticas, etapa, rodada, referencia?, quem_desenhou: <você>)` →
 `horys_aguardar(id)` (leva minutos). Rodada 1 = inventário completo na v01.
 - PASSA = nenhuma falha grave e aceitação ≥ 80. `redesenhar_forma: true` = volte ao passo 5/6 e redesenhe a forma.

@@ -462,6 +462,36 @@ async def afinar(ctx, a):
     return await _mecanico(ctx, a, "afinar", _areas(a))
 
 
+# ------------------------------------------------------------------ portão de entrada (antes da conversão)
+
+@ferramenta("horys_portao_entrada", """PORTÃO DE ENTRADA: mede a imagem gerada (ilustração chapada) ANTES do
+horys_converter. Confere fundo liso e ausente da figura, figura inteira com margem (margem_min, padrão 0.01), linha dos
+pés sem sombra nem chão, escala (figura >= 3× a 'altura' alvo), grade [linhas, colunas] (uma pose por célula, alturas
+±3% e chão comum) e se é chapado (grupos de cor OKLab, áreas lisas, degradê). Grava entrada_checagem.txt
+(APROVADO/REPROVADO) e a prévia no tamanho final ao lado da imagem. Cada falha vem como correção citando o item do
+prompt de tradução: peça a correção no mesmo chat do gerador.""",
+            {"imagem": STR, "altura": INT, "grade": {"type": "array", "items": {"type": "integer"}},
+             "margem_min": {"type": "number"}}, ["imagem", "altura"])
+async def portao_entrada(ctx, a):
+    from .. import entrada
+    arq = Path(a["imagem"])
+    if not arq.exists():
+        raise ErroFerramenta(f"imagem não encontrada: {arq}")
+    altura = int(a["altura"])
+    if altura <= 0:
+        raise ErroFerramenta("'altura' (altura alvo do sprite em px) tem que ser positiva")
+    grade = a.get("grade") or None
+    if grade is not None and (len(grade) != 2 or min(int(v) for v in grade) < 1):
+        raise ErroFerramenta("'grade' é [linhas, colunas], ex.: [2, 4]")
+    margem = a.get("margem_min")
+    r = await asyncio.to_thread(entrada.checar, arq, altura, grade, 0.01 if margem is None else float(margem))
+    conteudo = [texto(entrada.relatorio(r))]
+    previa = r["medidas"].get("previa")
+    if previa and Path(previa).exists():
+        conteudo.append(imagem(_miniatura(Path(previa))))
+    return conteudo
+
+
 # ------------------------------------------------------------------ portão, exportação e régua
 
 async def gerar_versao(ctx, a) -> dict:
@@ -723,8 +753,9 @@ def _portao_reprovado(pasta: Path) -> list[str]:
     return ruins
 
 
-@ferramenta("horys_revisar", """Chama o REVISOR exigente (outro motor, sem terminal; cruzado por padrão: se o Claude
-desenhou, o Codex revisa). Passe a pasta vNN do portão, os estados, a ficha.md e a praticas.md, a etapa, a rodada e,
+@ferramenta("horys_revisar", """Chama o REVISOR exigente (sem terminal; por padrão o Claude revisa). Com a
+preferência revisor 'cruzado' (opcional, exige o Codex instalado), o outro motor revisa: se o Claude desenhou, o
+Codex revisa. O Codex só é chamado se estiver no PATH e a preferência pedir ('cruzado' ou 'codex'). Passe a pasta vNN do portão, os estados, a ficha.md e a praticas.md, a etapa, a rodada e,
 em asset fiel, a referência. Devolve um id na hora; use horys_aguardar(id) — a revisão leva alguns minutos. A
 resposta traz o JSON do revisor (PASSA/NAO_PASSA, notas, aceitação, correções).""",
             {"pasta": STR, "estados": LISTA_STR, "ficha": STR, "praticas": STR, "etapa": STR, "rodada": INT,
@@ -737,9 +768,12 @@ async def revisar(ctx, a):
                                  "as falhas e rode horys_portao de novo; o revisor só olha o que já passou nas medidas "
                                  "(exceto etapa: conceito).")
     prompt_base = (Path(__file__).resolve().parents[1] / "motor" / "revisor_prompt.md").read_text(encoding="utf-8")
-    pref = config.preferencias().get("revisor", "cruzado")
+    pref = config.preferencias().get("revisor", "claude")
     quem = a.get("quem_desenhou") or config.preferencias().get("motor_padrao", "claude")
+    codex_ok = pref in ("cruzado", "codex") and motores.executavel("codex") is not None
     motor = a.get("motor") or (motores.outro(quem) if pref == "cruzado" else pref)
+    if not a.get("motor") and motor == "codex" and not codex_ok:
+        motor = "claude"        # Codex é opcional: sem ele no PATH, o Claude revisa
     rodada = int(a.get("rodada") or 1)
     tarefa = (f"\n\n---\nTAREFA DE REVISÃO\n- pasta: {a['pasta']}\n- estados: {', '.join(a.get('estados') or []) or 'todos'}\n"
               f"- ficha: {a.get('ficha') or '—'}\n- praticas: {a.get('praticas') or '—'}\n- etapa: {a.get('etapa') or 'quadro base'}\n"
@@ -750,7 +784,8 @@ async def revisar(ctx, a):
     i = ctx.pend.criar("revisao", {"pasta": a["pasta"], "motor": motor})
 
     async def rodar():
-        tentativas = [motor] + ([motores.outro(motor)] if not a.get("motor") else [])
+        reserva = motores.outro(motor)
+        tentativas = [motor] + ([reserva] if not a.get("motor") and (reserva != "codex" or codex_ok) else [])
         ultimo = None
         for k, m in enumerate(tentativas):
             try:

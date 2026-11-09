@@ -57,10 +57,12 @@ out/<nome>/<nome>.json, com o atlas ao lado) para o sprite ativo: um quadro por 
 estados; 'direcao': a vista (padrão a primeira do atlas); 'limpar_min': funde manchas menores que N px em todos os
 quadros sem criar boil (sugerido 3). Asset MODULAR: passe 'spec' (o .yaml) e 'grupos' {parte_do_horys: [partes do
 spec]} (ou deixe 'grupos' na ficha, chave kiln_grupos) para distribuir cada pixel visível na camada da sua parte;
-'resto' recebe o que não cair em grupo nenhum (padrão: a parte de baixo). O sprite tem que ter o mesmo tamanho de
+'anatomia_oculta' (padrão true) renderiza cada grupo isolado e completa somente pixels cobertos por partes de cima;
+'max_oculto_px' limita a profundidade (padrão 4). 'resto' recebe o que não cair em grupo nenhum. O sprite tem o mesmo tamanho de
 quadro do render (crie com horys_asset_novo quadro=<w>).""",
             {"json": STR, "tags": LISTA_STR, "direcao": STR, "camada": STR, "limpar_min": INT, "spec": STR,
-             "grupos": {"type": "object"}, "resto": STR, "substituir": BOOL}, ["json"])
+             "grupos": {"type": "object"}, "resto": STR, "substituir": BOOL, "anatomia_oculta": BOOL,
+             "max_oculto_px": {"type": ["integer", "object"]}}, ["json"])
 async def importar_kiln(ctx, a):
     chave, f, st = await _ficha(ctx)
     try:
@@ -95,6 +97,8 @@ async def importar_kiln(ctx, a):
             raise ErroFerramenta(f"grupos com partes que a ficha não tem: {', '.join(faltam)} (tem: {', '.join(ordem)})")
         direcao = (a.get("direcao") or (kiln.direcoes(kiln.ler_atlas(a["json"])) or ["e"])[0])
         partes_dist = {}
+        anatomia = a.get("anatomia_oculta", True)
+        limite_oculto = a.get("max_oculto_px", f.get("max_oculto_px", 4))
         for estado, de, ate in at.tags:
             try:
                 ms, nomes_spec = kiln.mascaras_por_parte(a["spec"], estado, list(range(ate - de + 1)), direcao,
@@ -104,8 +108,22 @@ async def importar_kiln(ctx, a):
             sem = sorted({n for v in grupos.values() for n in v} - set(nomes_spec))
             if sem:
                 raise ErroFerramenta(f"partes do spec que não existem: {', '.join(sem)} (tem: {', '.join(nomes_spec)})")
+            isoladas = None
+            if anatomia:
+                grupos_render = {p: list(v) for p, v in grupos.items()}
+                parte_resto = a.get("resto") if a.get("resto") in ordem else ordem[0]
+                atribuidas = {n for nomes in grupos_render.values() for n in nomes}
+                grupos_render.setdefault(parte_resto, []).extend(sorted(set(nomes_spec) - atribuidas))
+                try:
+                    isoladas = kiln.partes_por_render_isolado(a["spec"], estado, list(range(ate - de + 1)),
+                                                               direcao, grupos_render)
+                except RuntimeError as e:
+                    raise ErroFerramenta(str(e))
             for j in range(ate - de + 1):
-                partes_dist[de + j] = kiln.distribuir(quadros[de + j], ms.get(j, {}), ordem, a.get("resto"))
+                dist = kiln.distribuir(quadros[de + j], ms.get(j, {}), ordem, a.get("resto"))
+                if isoladas is not None:
+                    dist = kiln.preencher_ocultos(dist, isoladas.get(j, {}), ordem, limite_oculto)
+                partes_dist[de + j] = dist
 
     await ctx.aseprite("quadro", {"acao": "garantir", "total": len(quadros)})
     escritos = 0
@@ -125,7 +143,9 @@ async def importar_kiln(ctx, a):
     f["kiln"] = {"json": str(Path(a["json"]).resolve()), "sha256": at.sha256, "direcao": a.get("direcao"),
                  "tags": [t[0] for t in at.tags], "eventos": {str(k): v for k, v in at.eventos.items()},
                  "pivo": list(at.pivo) if at.pivo else None, "limpar_min": lim, "spec": a.get("spec"),
-                 "por_parte": partes_dist is not None}
+                 "por_parte": partes_dist is not None,
+                 "anatomia_oculta": bool(partes_dist is not None and a.get("anatomia_oculta", True)),
+                 "max_oculto_px": a.get("max_oculto_px", f.get("max_oculto_px", 4)), "resto": a.get("resto")}
     if grupos:
         f["kiln_grupos"] = grupos
     if partes_dist is not None:

@@ -163,7 +163,7 @@ Parâmetros: `nome` (`*` = obrigatório)
 
 Lê ou ajusta a ficha do sprite ativo (estilo, tipo, partes de baixo para cima, contorno auto|suave|nenhum, cor_contorno, sombra, sem_contorno [hex], sem_borda [hex], limite_cores, ritmo, pasta de saída; asset modular: modular, preset_partes, juncoes [{nome, inferior, superior, movel}], partes_oculto). Sem campos, só mostra.
 
-Parâmetros: `estilo`, `nome`, `tipo`, `partes`, `contorno`, `cor_contorno`, `sombra`, `sem_contorno`, `sem_borda`, `limite_cores`, `ritmo`, `pasta`, `estado`, `pedido`, `descricao`, `modular`, `preset_partes`, `juncoes`, `partes_oculto` (`*` = obrigatório)
+Parâmetros: `estilo`, `nome`, `tipo`, `partes`, `contorno`, `cor_contorno`, `sombra`, `sem_contorno`, `sem_borda`, `limite_cores`, `ritmo`, `pasta`, `estado`, `pedido`, `descricao`, `modular`, `preset_partes`, `juncoes`, `partes_oculto`, `componentes_max`, `espessura_fina`, `motivo` (`*` = obrigatório)
 
 ### `horys_asset_novo`
 
@@ -175,7 +175,7 @@ horys_contorno, como o portão espera. Com 'preset_partes' (ex.: 'humanoide-ferr
 do preset, a camada 'referencia' (oculta, para o desenho completo) e a ficha com modular, preset_partes, juncoes
 (contratos de junção) e partes_oculto; o portão passa a exigir as partes sem erro (horys_partes_checar).
 
-Parâmetros: `estilo`, `nome`, `tipo`, `partes`, `contorno`, `cor_contorno`, `sombra`, `sem_contorno`, `sem_borda`, `limite_cores`, `ritmo`, `pasta`, `estado`, `pedido`, `descricao`, `modular`, `preset_partes`, `juncoes`, `partes_oculto`, `quadro`, `estados` (`*` = obrigatório)
+Parâmetros: `estilo`, `nome`, `tipo`, `partes`, `contorno`, `cor_contorno`, `sombra`, `sem_contorno`, `sem_borda`, `limite_cores`, `ritmo`, `pasta`, `estado`, `pedido`, `descricao`, `modular`, `preset_partes`, `juncoes`, `partes_oculto`, `componentes_max`, `espessura_fina`, `motivo`, `quadro`, `estados` (`*` = obrigatório)
 
 ### `horys_paleta_estilo`
 
@@ -212,6 +212,17 @@ Parâmetros: `camada`, `quadro`, `min`, `proteger`, `proteger_area` (`*` = obrig
 Limpeza MECÂNICA: afina linhas internas para 1 px e tira cor de contorno encostada no vazio (o contorno externo vem do horys_contorno).
 
 Parâmetros: `camada`, `quadro`, `proteger_area` (`*` = obrigatório)
+
+### `horys_portao_entrada`
+
+PORTÃO DE ENTRADA: mede a imagem gerada (ilustração chapada) ANTES do
+horys_converter. Confere fundo liso e ausente da figura, figura inteira com margem (margem_min, padrão 0.01), linha dos
+pés sem sombra nem chão, escala (figura >= 3× a 'altura' alvo), grade [linhas, colunas] (uma pose por célula, alturas
+±3% e chão comum) e se é chapado (grupos de cor OKLab, áreas lisas, degradê). Grava entrada_checagem.txt
+(APROVADO/REPROVADO) e a prévia no tamanho final ao lado da imagem. Cada falha vem como correção citando o item do
+prompt de tradução: peça a correção no mesmo chat do gerador.
+
+Parâmetros: `imagem`*, `altura`*, `grade`, `margem_min` (`*` = obrigatório)
 
 ### `horys_portao`
 
@@ -262,8 +273,9 @@ Parâmetros: `fonte`*, `prompt`*, `pasta`, `n`, `estilo`, `imagens` (`*` = obrig
 
 ### `horys_revisar`
 
-Chama o REVISOR exigente (outro motor, sem terminal; cruzado por padrão: se o Claude
-desenhou, o Codex revisa). Passe a pasta vNN do portão, os estados, a ficha.md e a praticas.md, a etapa, a rodada e,
+Chama o REVISOR exigente (sem terminal; por padrão o Claude revisa). Com a
+preferência revisor 'cruzado' (opcional, exige o Codex instalado), o outro motor revisa: se o Claude desenhou, o
+Codex revisa. O Codex só é chamado se estiver no PATH e a preferência pedir ('cruzado' ou 'codex'). Passe a pasta vNN do portão, os estados, a ficha.md e a praticas.md, a etapa, a rodada e,
 em asset fiel, a referência. Devolve um id na hora; use horys_aguardar(id) — a revisão leva alguns minutos. A
 resposta traz o JSON do revisor (PASSA/NAO_PASSA, notas, aceitação, correções).
 
@@ -402,7 +414,8 @@ out/<nome>/<nome>.json, com o atlas ao lado) para o sprite ativo: um quadro por 
 estados; 'direcao': a vista (padrão a primeira do atlas); 'limpar_min': funde manchas menores que N px em todos os
 quadros sem criar boil (sugerido 3). Asset MODULAR: passe 'spec' (o .yaml) e 'grupos' {parte_do_horys: [partes do
 spec]} (ou deixe 'grupos' na ficha, chave kiln_grupos) para distribuir cada pixel visível na camada da sua parte;
-'resto' recebe o que não cair em grupo nenhum (padrão: a parte de baixo). O sprite tem que ter o mesmo tamanho de
+'anatomia_oculta' (padrão true) renderiza cada grupo isolado e completa somente pixels cobertos por partes de cima;
+'max_oculto_px' limita a profundidade (padrão 4). 'resto' recebe o que não cair em grupo nenhum. O sprite tem o mesmo tamanho de
 quadro do render (crie com horys_asset_novo quadro=<w>).
 
-Parâmetros: `json`*, `tags`, `direcao`, `camada`, `limpar_min`, `spec`, `grupos`, `resto`, `substituir` (`*` = obrigatório)
+Parâmetros: `json`*, `tags`, `direcao`, `camada`, `limpar_min`, `spec`, `grupos`, `resto`, `substituir`, `anatomia_oculta`, `max_oculto_px` (`*` = obrigatório)

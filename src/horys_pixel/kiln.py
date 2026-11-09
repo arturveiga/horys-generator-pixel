@@ -240,6 +240,29 @@ np.savez_compressed(pedido["saida"], **saida)
 print(json.dumps(sorted(nomes)))
 """
 
+# Renderiza cada grupo sozinho, com a mesma pose/câmera do composto. `force=True` é indispensável: o cache do
+# SpriteKiln usa o caminho do spec e não distingue a cópia filtrada em memória.
+_SCRIPT_PARTES_ISOLADAS = r"""
+import json, sys
+import numpy as np
+from spritekiln import spec as specmod
+from spritekiln.api import pose_env, _checked
+from spritekiln.pipeline import render_frame
+pedido = json.loads(sys.argv[1])
+sp = _checked(specmod.load(pedido["spec"]))
+yaw = dict(sp["directions"]).get(pedido["direcao"])
+if yaw is None:
+    yaw = {"s": 0, "se": 45, "e": 90, "ne": 135, "n": 180, "nw": -135, "w": -90, "sw": -45}[pedido["direcao"]]
+saida = {}
+for q in pedido["quadros"]:
+    env = pose_env(sp, pedido["anim"], q, yaw)
+    for parte, alvo in pedido["grupos"].items():
+        isolado = dict(sp)
+        isolado["parts"] = {n: p for n, p in sp["parts"].items() if n.split(":")[0] in set(alvo)}
+        saida[f"{q}|{parte}"] = render_frame(isolado, env, yaw, force=True, maps=False).img
+np.savez_compressed(pedido["saida"], **saida)
+"""
+
 
 def python_do_kiln() -> str:
     """O Python que enxerga o pacote spritekiln: HORYS_KILN_PYTHON, o venv do uv/pipx ou o Python atual."""
@@ -283,6 +306,29 @@ def mascaras_por_parte(spec_path: str | Path, anim: str | None, quadros: list[in
     return out, nomes
 
 
+def partes_por_render_isolado(spec_path: str | Path, anim: str | None, quadros: list[int], direcao: str,
+                               grupos: dict[str, list[str]], python: str | None = None
+                               ) -> dict[int, dict[str, np.ndarray]]:
+    """RGBA de cada grupo renderizado sem as outras partes, na mesma pose e câmera do composto."""
+    import subprocess
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmp:
+        saida = Path(tmp) / "isoladas.npz"
+        pedido = {"spec": str(spec_path), "anim": anim, "quadros": list(quadros), "direcao": direcao,
+                  "grupos": grupos, "saida": str(saida)}
+        r = subprocess.run([python or python_do_kiln(), "-c", _SCRIPT_PARTES_ISOLADAS, json.dumps(pedido)],
+                           capture_output=True, text=True, timeout=600)
+        if r.returncode != 0:
+            raise RuntimeError("spritekiln não conseguiu renderizar as partes isoladas: "
+                               + (r.stderr or r.stdout)[-1500:])
+        out: dict[int, dict[str, np.ndarray]] = {}
+        with np.load(saida) as dados:
+            for k in dados.files:
+                q, parte = k.split("|", 1)
+                out.setdefault(int(q), {})[parte] = dados[k].astype(np.uint8)
+    return out
+
+
 def distribuir(composto: np.ndarray, mascaras: dict[str, np.ndarray], ordem: list[str],
                resto: str | None = None) -> dict[str, np.ndarray]:
     """Divide um quadro composto entre as partes: cada pixel visível vai para exatamente uma parte. Máscaras que se
@@ -302,4 +348,41 @@ def distribuir(composto: np.ndarray, mascaras: dict[str, np.ndarray], ordem: lis
         sel = visivel & (dono == i)
         img[sel] = composto[sel]
         out[p] = img
+    return out
+
+
+def preencher_ocultos(partes: dict[str, np.ndarray], isoladas: dict[str, np.ndarray], ordem: list[str],
+                       max_oculto_px: int | dict[str, int] = 4) -> dict[str, np.ndarray]:
+    """Acrescenta anatomia oculta sem mudar a composição.
+
+    Um pixel isolado só entra se uma parte superior já o cobre e se estiver a no máximo `max_oculto_px` da porção
+    visível da própria parte. O limite pode ser global ou por parte; zero desliga o preenchimento daquela parte.
+    """
+    out = {p: img.copy() for p, img in partes.items()}
+    for i, p in enumerate(ordem[:-1]):
+        atual, isolada = out.get(p), isoladas.get(p)
+        if atual is None or isolada is None or atual.shape != isolada.shape:
+            continue
+        limite = int(max_oculto_px.get(p, 4) if isinstance(max_oculto_px, dict) else max_oculto_px)
+        if limite <= 0:
+            continue
+        visivel = atual[..., 3] > 0
+        if not visivel.any():
+            continue
+        cobertura = np.zeros(visivel.shape, bool)
+        for superior in ordem[i + 1:]:
+            if out.get(superior) is not None:
+                cobertura |= out[superior][..., 3] > 0
+        perto = ndimage.binary_dilation(visivel, structure=np.ones((3, 3), bool), iterations=limite)
+        candidato = ~visivel & cobertura & perto
+        renderizado = candidato & (isolada[..., 3] > 0)
+        atual[renderizado] = isolada[renderizado]
+        # Alguns kits terminam exatamente na junta (por exemplo, torso e esfera do ombro), então nem o render
+        # isolado possui os 1–2 px necessários sob a peça móvel. Completa somente essa faixa coberta e limitada,
+        # propagando a cor mais próxima do próprio render da parte — nunca a forma/cor da superior.
+        ponte = candidato & ~renderizado
+        fonte = isolada[..., 3] > 0
+        if ponte.any() and fonte.any():
+            _, indices = ndimage.distance_transform_edt(~fonte, return_indices=True)
+            atual[ponte] = isolada[indices[0][ponte], indices[1][ponte]]
     return out

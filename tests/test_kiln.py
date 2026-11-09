@@ -105,6 +105,44 @@ def test_distribuir_posse_unica():
     assert not ((d["base"][..., 3] > 0) & (d["topo"][..., 3] > 0)).any()
 
 
+def test_preencher_ocultos_mantem_composto_e_respeita_limite():
+    base = np.zeros((9, 9, 4), np.uint8)
+    topo = np.zeros_like(base)
+    base[4, 1:4] = VERM
+    topo[3:6, 4:8] = AZUL
+    isolada = np.zeros_like(base)
+    isolada[4, 1:9] = VERM
+    antes = kiln.distribuir(base + topo, {"topo": topo[..., 3] > 0}, ["base", "topo"])
+    cheio = kiln.preencher_ocultos(antes, {"base": isolada}, ["base", "topo"], 2)
+    # Só dois pixels entram sob o topo; o terceiro está além do limite.
+    assert cheio["base"][4, 4:6, 3].tolist() == [255, 255]
+    assert cheio["base"][4, 6, 3] == 0
+    from horys_pixel import partes as P
+    assert np.array_equal(P.compor(antes, ["base", "topo"]), P.compor(cheio, ["base", "topo"]))
+
+
+def test_preencher_ocultos_limite_por_parte():
+    baixo = np.zeros((5, 7, 4), np.uint8)
+    cima = np.zeros_like(baixo)
+    baixo[2, 1] = VERM
+    cima[1:4, 2:6] = AZUL
+    iso = np.zeros_like(baixo)
+    iso[2, 1:6] = VERM
+    out = kiln.preencher_ocultos({"baixo": baixo, "cima": cima}, {"baixo": iso}, ["baixo", "cima"], {"baixo": 1})
+    assert out["baixo"][2, 2, 3] == 255 and out["baixo"][2, 3, 3] == 0
+
+
+def test_preencher_ocultos_completa_junta_que_o_render_termina_rente():
+    baixo = np.zeros((5, 7, 4), np.uint8)
+    cima = np.zeros_like(baixo)
+    baixo[2, 1:3] = VERM
+    cima[1:4, 3:6] = AZUL
+    # O render isolado também termina rente, mas a junta precisa continuar sob a camada móvel.
+    out = kiln.preencher_ocultos({"baixo": baixo, "cima": cima}, {"baixo": baixo.copy()},
+                                 ["baixo", "cima"], 2)
+    assert np.all(out["baixo"][2, 3:5] == VERM)
+
+
 def test_importar_kiln_no_falso(ambiente, tmp_path):
     p, at = _atlas(tmp_path)
 

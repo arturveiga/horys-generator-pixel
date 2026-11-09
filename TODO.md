@@ -80,8 +80,13 @@ Cada tarefa abaixo tem dono, entrada e "pronto quando". Marque `[x]` ao concluir
   Cada parte renderizada vai para a camada da parte no Aseprite; `compor(partes) == referencia` em todo quadro;
   posse 100% por construção. Pronto quando: `horys_partes_checar` passa num humanoide importado, sem `recortar`.
   ◐ 2026-11-07: código feito (`kiln.mascaras_por_parte` roda no venv do Kiln por subprocesso; `kiln.distribuir`; `spec`+`grupos` na importação) e testado contra o Kiln real (máscaras disjuntas). E2E no Aseprite real (2026-11-07, `tmp-kiln/e2e/aldeao-mod`): 22 quadros distribuídos em 4 partes em 15 s, composição = referência. `horys_partes_checar` **reprova (226 erros)**, como previsto: só com pixels visíveis, o braço da frente cobre quase todo o torso de perfil, o `corpo` fica em 2–3 pedaços e não há anatomia oculta (sem-sobreposicao, buraco-1px, cobertura 0%). **Falta 2.2b:** renderizar cada parte isolada para preencher o que fica escondido.
-- [ ] **2.2b · Anatomia oculta pelo render isolado** — *Claude Code*
+- [~] **2.2b · Anatomia oculta pelo render isolado** — *Claude Code*
   Para cada parte inferior de junção, renderizar só ela (spec filtrado, mesma câmera) e preencher os pixels sob a superior; respeitar `max_oculto_px`. Pronto quando: `horys_partes_checar` do aldeao-mod sem `sem-sobreposicao`/`buraco-1px`/`parte-desconexa` no corpo.
+  ◐ 2026-11-08: importador agora renderiza cada grupo isolado, preenche apenas a faixa coberta por camadas superiores
+  e limitada por `max_oculto_px` (global ou por parte), preservando a composição pixel a pixel. Testes puros verdes e
+  prova no aldeão real adicionou 89 px ocultos ao corpo sem alterar a referência. O fixture antigo ainda tem
+  `buraco-1px` no pescoço/ombro e braço traseiro vazio no primeiro quadro; falta calibrar os contratos/grupos e os
+  limites por junção antes de marcar concluído.
 - [x] **2.3 · Mapeamento de paleta Kiln → estilo Horys** — *Codex*
   Reaproveitar `horys_converter` (moda) por quadro, com a mesma tabela de cores em todos os quadros (sem
   cintilação). Pronto quando: A01–A10 não pioram em relação ao render cru.
