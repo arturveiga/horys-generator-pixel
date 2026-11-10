@@ -3,6 +3,8 @@ feita para ser convertida. Modelo de 11 itens do cofre (pixel-liso/pipeline/padr
 padroes/<tipo>.json. Módulo puro: sem Aseprite, sem rede."""
 from __future__ import annotations
 
+import json
+import math
 from pathlib import Path
 
 from PIL import Image, ImageDraw
@@ -115,7 +117,7 @@ def gerar(tipo: str, descricao: str, paleta: dict, nome: str = "asset", altura: 
         L.append(f"1. Formato: {_proporcao(p['canvas_geracao'])}.")
     else:
         a = p["animacao"]
-        lin, col = a["layout"]
+        lin, col = layout_poses(len(poses), a["layout"])
         w, h = a.get("canvas", p["canvas_geracao"])
         L.append(f"1. Formato: grade {lin}×{col} ({_proporcao([w, h])}), uma pose por célula, numeradas da esquerda "
                  f"para a direita e de cima para baixo. Mesma escala, mesmo enquadramento e mesma linha do chão em "
@@ -163,11 +165,34 @@ def gerar(tipo: str, descricao: str, paleta: dict, nome: str = "asset", altura: 
     return "\n".join(L) + "\n"
 
 
+def subpaleta(paleta: dict, rampas: list[str] | None) -> dict:
+    """Só as rampas pedidas (mais contorno e brilho). Nome desconhecido = ValueError."""
+    if isinstance(rampas, str):          # cliente com schema antigo manda a lista como texto JSON ou "a, b"
+        t = rampas.strip()
+        rampas = json.loads(t) if t.startswith("[") else [r.strip() for r in t.split(",") if r.strip()]
+    if not rampas:
+        return paleta
+    faltam = [r for r in rampas if r not in paleta["rampas"]]
+    if faltam:
+        raise ValueError(f"rampas fora do estilo: {faltam}; existem: {list(paleta['rampas'])}")
+    return {**paleta, "rampas": {r: paleta["rampas"][r] for r in rampas}}
+
+
+def layout_poses(n: int, layout: list[int]) -> tuple[int, int]:
+    """Grade da ficha se couber as n poses; senão, até 4 colunas e as linhas que faltarem."""
+    lin, col = layout
+    if n <= lin * col:
+        return lin, col
+    col = min(4, n) if n != 6 else 3
+    return math.ceil(n / col), col
+
+
 def escrever(pasta: Path, **kw) -> dict:
     """Grava traducao/prompt.md e traducao/paleta-<estilo>.png em 'pasta'; devolve os caminhos."""
     pasta = Path(pasta) / "traducao"
     pasta.mkdir(parents=True, exist_ok=True)
     estilo = kw.pop("nome_estilo", "estilo")
+    kw["paleta"] = subpaleta(kw["paleta"], kw.pop("rampas", None))
     paleta = kw["paleta"]
     png = amostra_paleta(paleta, pasta / f"paleta-{estilo}.png")
     texto = gerar(arquivo_paleta=png.name, **kw)

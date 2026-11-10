@@ -24,6 +24,14 @@ def pivo_dos_pes(q: np.ndarray, frac: float = 0.04, limiar: int = 128) -> tuple[
     return (float(xs.min() + xs.max()) / 2.0, y1)
 
 
+def ancora(q: np.ndarray, limiar: int = 128) -> tuple[float, int]:
+    """(x do centro de massa da figura, y da linha dos pés). Para registrar SEQUÊNCIAS: no andar só o pé da frente
+    cai na faixa de baixo, e o pivo_dos_pes pularia de um pé para o outro; o centro de massa fica no corpo."""
+    op = q[..., 3] >= limiar
+    ys, xs = np.nonzero(op)
+    return (float(xs.mean()), int(ys.max()))
+
+
 def _escalar(q: np.ndarray, s: float) -> np.ndarray:
     if abs(s - 1.0) < 1e-3:
         return q
@@ -59,7 +67,7 @@ def registrar(quadros: list[np.ndarray], altura_ref: float, tamanho: tuple[int, 
             continue
         s = altura_ref / (alt if escala == "por_quadro" else mediana)
         qs = _escalar(q, s)
-        px, py = pivo_dos_pes(qs)
+        px, py = ancora(qs)
         dx, dy = round(pivo[0] - px), round(pivo[1] - py)
         y0, x0 = max(0, dy), max(0, dx)
         y1, x1 = min(H, dy + qs.shape[0]), min(W, dx + qs.shape[1])
@@ -70,13 +78,13 @@ def registrar(quadros: list[np.ndarray], altura_ref: float, tamanho: tuple[int, 
 
 
 def deriva(quadros: list[np.ndarray]) -> dict:
-    """Quanto os quadros divergem em linha dos pés, centro dos pés e altura (px)."""
+    """Quanto os quadros divergem em linha dos pés, centro do corpo (centro de massa) e altura (px)."""
     pes, xs, alts = [], [], []
     for q in quadros:
         b = caixa(q)
         if not b:
             continue
-        x, y = pivo_dos_pes(q)
+        x, y = ancora(q)
         pes.append(y)
         xs.append(x)
         alts.append(b[3] - b[1] + 1)

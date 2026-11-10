@@ -9,7 +9,7 @@ from PIL import Image
 
 from .. import sequencia
 from .desenho import escrever_rgba
-from .estilo import _estilo, _ficha, _hexes_paleta, _miniatura, _partes
+from .estilo import _estilo, _ficha, _hexes_paleta, _miniatura, _partes, entrada_reprovada
 from .registro import BOOL, INT, LISTA_STR, STR, ErroFerramenta, ferramenta, imagem, texto
 
 
@@ -28,20 +28,41 @@ def _tira(quadros: list[np.ndarray], pasta: Path, lado: int = 900) -> str:
     return _miniatura(caminho, lado)
 
 
+IMAGENS = {".png", ".jpg", ".jpeg", ".webp"}
+
+
+def portao_da_fonte(fonte: str, forcar: bool = False, motivo: str = "") -> str | None:
+    """Erro se a fonte é uma imagem (grade gerada) sem portão de entrada APROVADO, salvo forcar + motivo.
+    Pasta de PNGs, vídeo e atlas do Kiln não passam por aqui (o portão de entrada mede uma imagem)."""
+    p = Path(fonte)
+    if p.suffix.lower() not in IMAGENS or not p.is_file():
+        return None
+    erro = entrada_reprovada(p)
+    if erro and not (forcar and (motivo or "").strip()):
+        return (erro + " Rode horys_portao_entrada (com 'grade' [linhas, colunas]) e peça a correção ao gerador; "
+                "só se o usuário pediu, passe forcar: true e motivo: '<o que o usuário disse>'.")
+    return None
+
+
 @ferramenta("horys_sequencia", """MOTOR DE SEQUÊNCIA: trata os quadros de uma animação como um todo. 'fonte' = pasta
 de PNGs, uma grade (PNG + 'linhas' e 'colunas'), um vídeo (precisa do ffmpeg) ou o JSON do atlas do Kiln. Etapas:
 fundo por célula → registro (altura alvo, pés e pivô da ficha; 'escala' por_quadro | comum) → escolha de quadros
 ('plano' andar | golpe com 'n') → quantização conjunta na paleta do estilo → redução por moda → anti-cintilação →
 trava de identidade ('base' = PNG da base aprovada no tamanho final e 'decalques' [{nome, rect [x,y,w,h], busca}]) →
-limpeza (órfãos e borda). Escreve na camada (padrão: a de cima da ficha) a partir do quadro 'quadro_inicial', cria a
+limpeza (órfãos e borda). Uma grade (imagem) só entra com o portão de entrada APROVADO, salvo 'forcar' + 'motivo'.
+Escreve na camada (padrão: a de cima da ficha) a partir do quadro 'quadro_inicial', cria a
 tag 'estado' e devolve o relatório (deriva, % de pixels que piscam antes e depois). Depois: horys_contorno →
 horys_portao.""",
             {"fonte": STR, "altura": INT, "linhas": INT, "colunas": INT, "fps": {"type": "number"},
              "estado": STR, "camada": STR, "quadro_inicial": INT, "ms": INT, "plano": STR, "n": INT, "escala": STR,
              "fator": INT, "base": STR, "decalques": {"type": "array", "items": {"type": "object"}},
-             "limpar_min": INT, "regularizar": BOOL, "cor_fundo": STR, "proteger": LISTA_STR},
+             "limpar_min": INT, "regularizar": BOOL, "cor_fundo": STR, "proteger": LISTA_STR,
+             "forcar": BOOL, "motivo": STR},
             ["fonte", "altura"])
 async def sequencia_ferramenta(ctx, a):
+    erro_portao = portao_da_fonte(a["fonte"], bool(a.get("forcar")), a.get("motivo") or "")
+    if erro_portao:
+        raise ErroFerramenta(erro_portao)
     chave, f, st = await _ficha(ctx)
     est = _estilo(f.get("estilo"))
     sp = st["sprite"]

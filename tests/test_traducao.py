@@ -49,3 +49,24 @@ def test_padroes_carregam_e_validam():
         # detalhe_min_frac = px mínimo ÷ altura alvo: no alvo mínimo dá pelo menos ~1 px
         assert padroes.detalhe_min_px(p, lo) >= 0.9, t
     assert padroes.tipo_de("npc") == "personagem" and padroes.tipo_de("xyz") is None
+
+
+def test_prompt_poses_grade_cabe_todas_e_subpaleta():
+    from horys_pixel import traducao
+    assert traducao.layout_poses(6, [1, 2]) == (2, 3)
+    assert traducao.layout_poses(2, [1, 2]) == (1, 2)
+    assert traducao.layout_poses(8, [1, 2]) == (2, 4)
+    pal = {"rampas": {"pedra": ["#111111", "#222222", "#333333"], "fogo": ["#aa0000", "#ff0000"],
+                      "agua": ["#0000aa", "#0000ff", "#00ffff"]}, "contorno": "#000000"}
+    sub = traducao.subpaleta(pal, ["pedra", "fogo"])
+    assert list(sub["rampas"]) == ["pedra", "fogo"] and "#0000ff" not in traducao.todos_hex(sub)
+    import pytest
+    with pytest.raises(ValueError):
+        traducao.subpaleta(pal, ["lava"])
+
+
+def test_subpaleta_aceita_texto():
+    from horys_pixel import traducao
+    pal = {"rampas": {"pedra lilás": ["#111111"], "fogo": ["#aa0000"], "agua": ["#0000aa"]}, "contorno": "#000000"}
+    assert list(traducao.subpaleta(pal, '["pedra lilás", "fogo"]')["rampas"]) == ["pedra lilás", "fogo"]
+    assert list(traducao.subpaleta(pal, "pedra lilás, fogo")["rampas"]) == ["pedra lilás", "fogo"]

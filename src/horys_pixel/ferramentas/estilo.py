@@ -379,13 +379,6 @@ async def contorno(ctx, a):
 
 # ------------------------------------------------------------------ conversão e limpeza mecânica
 
-@ferramenta("horys_converter", """Converte uma imagem de referência/conceito em pixel art do estilo, direto numa
-camada: reduz pela MODA (cor mais frequente por bloco, sem borrar contornos internos) para a 'altura' pedida (com
-contorno), trava a paleta do estilo e põe o pé no pivô. 'tirar_contorno': anéis do contorno do conceito a descascar
-(1 para conceito com contorno grosso). É só o PONTO DE PARTIDA: depois limpe (horys_limpar, horys_afinar) e redesenhe
-à mão rosto e detalhes.""",
-            {"imagem": STR, "altura": INT, "camada": STR, "quadro": INT, "modo": STR, "tirar_contorno": INT,
-             "fundo": STR, "nativo": BOOL, "forcar": BOOL, "motivo": STR}, ["imagem", "altura"])
 def entrada_reprovada(img: Path) -> str | None:
     """None se a entrada_checagem.txt ao lado da imagem aprovou ESTA imagem; senão, o motivo."""
     txt = img.parent / "entrada_checagem.txt"
@@ -400,6 +393,13 @@ def entrada_reprovada(img: Path) -> str | None:
     return None
 
 
+@ferramenta("horys_converter", """Converte uma imagem de referência/conceito em pixel art do estilo, direto numa
+camada: reduz pela MODA (cor mais frequente por bloco, sem borrar contornos internos) para a 'altura' pedida (com
+contorno), trava a paleta do estilo e põe o pé no pivô. 'tirar_contorno': anéis do contorno do conceito a descascar
+(1 para conceito com contorno grosso). É só o PONTO DE PARTIDA: depois limpe (horys_limpar, horys_afinar) e redesenhe
+à mão rosto e detalhes.""",
+            {"imagem": STR, "altura": INT, "camada": STR, "quadro": INT, "modo": STR, "tirar_contorno": INT,
+             "fundo": STR, "nativo": BOOL, "forcar": BOOL, "motivo": STR}, ["imagem", "altura"])
 async def converter(ctx, a):
     img = Path(a["imagem"])
     if not img.exists():
@@ -744,11 +744,13 @@ async def medir_arquivo(ctx, a):
 gerador de imagem (Codex, ChatGPT, Gemini, vídeo...): 'tipo' (personagem, criatura-pequena, criatura-grande, boss,
 prop, arvore, predio, tile, icone, retrato, efeito), 'descricao' do design, 'estilo' (a paleta vira os hex e os
 papéis), 'altura' alvo em px, 'modo' parado | poses (com 'poses', a lista), 'referencia' (caminho; só vai anexada se
-'referencia_propria'), e opcionais foco, pecas, cortes, nao_fazer, vista, base_aprovada, guia_pose. Grava
+'referencia_propria'), e opcionais foco, pecas, cortes, nao_fazer, vista, base_aprovada, guia_pose e 'rampas' (subpaleta:
+nomes das rampas do estilo que o design usa; sem ela vai a paleta inteira). Grava
 <pasta>/traducao/prompt.md e traducao/paleta-<estilo>.png (amostra com os hex) e devolve o prompt.""",
             {"tipo": STR, "descricao": STR, "estilo": STR, "nome": STR, "altura": INT, "modo": STR, "poses": LISTA_STR,
              "referencia": STR, "referencia_propria": BOOL, "foco": STR, "pecas": LISTA_STR, "cortes": LISTA_STR,
-             "nao_fazer": LISTA_STR, "vista": STR, "base_aprovada": STR, "guia_pose": STR, "pasta": STR},
+             "nao_fazer": LISTA_STR, "vista": STR, "base_aprovada": STR, "guia_pose": STR, "pasta": STR,
+             "rampas": LISTA_STR},
             ["tipo", "descricao"])
 async def prompt_traducao(ctx, a):
     from .. import traducao
@@ -757,7 +759,7 @@ async def prompt_traducao(ctx, a):
     if not config.caminho_permitido(pasta):
         raise ErroFerramenta(f"pasta não permitida: {pasta}")
     campos = {k: a[k] for k in ("nome", "altura", "modo", "poses", "referencia", "referencia_propria", "foco", "pecas",
-                                "cortes", "nao_fazer", "vista", "base_aprovada", "guia_pose") if a.get(k) is not None}
+                                "cortes", "nao_fazer", "vista", "base_aprovada", "guia_pose", "rampas") if a.get(k) is not None}
     try:
         r = traducao.escrever(pasta, tipo=a["tipo"], descricao=a["descricao"], paleta=_paleta(est),
                               nome_estilo=est.nome, **campos)

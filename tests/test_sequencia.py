@@ -90,3 +90,20 @@ def test_processar_ponta_a_ponta():
     r = S.processar(qs, ["#c8503c", "#202020"], 50, (80, 80), (40, 70), fator=2, limpar_min=1, regularizar=False)
     assert len(r["quadros"]) == 4 and all(q.shape == (80, 80, 4) for q in r["quadros"])
     assert r["relatorio"]["pisca_depois"] == 0.0
+
+
+def test_registro_andar_nao_pula_de_pe_em_pe():
+    """No andar um pé fica mais baixo: o registro centraliza pelo corpo, não pelo pé da frente."""
+    import numpy as np
+    from horys_pixel.sequencia import registro
+    def fig(pe_baixo_esq):
+        q = np.zeros((120, 120, 4), np.uint8)
+        q[20:90, 40:80] = 255                              # corpo
+        e, d = (100, 94) if pe_baixo_esq else (94, 100)
+        q[90:e, 42:52] = 255                               # pé esquerdo
+        q[90:d, 68:78] = 255                               # pé direito
+        return q
+    out = registro.registrar([fig(True), fig(False)], 60, (100, 100), (50, 90), "comum")
+    cx = [registro.caixa(q) for q in out]
+    centros = [(b[0] + b[2]) / 2 for b in cx]
+    assert abs(centros[0] - centros[1]) <= 1

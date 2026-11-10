@@ -205,3 +205,17 @@ def test_medir_pe_no_vao_entre_os_pes():
     f[60:70, 47:55] = (120, 80, 60, 255)      # pé direito; vão no centro
     r, _ = medir_quadro(f, {"contorno": (0, 0, 0), "brilho": [], "chao_L": {}})
     assert r["pe"] == 69
+
+
+def test_sequencia_recusa_grade_sem_portao(tmp_path):
+    from horys_pixel.ferramentas.sequencia import portao_da_fonte
+    img = _imagem(tmp_path)
+    assert "falta" in portao_da_fonte(str(img))
+    assert portao_da_fonte(str(img), forcar=True) is not None          # forcar sem motivo não vale
+    assert portao_da_fonte(str(img), forcar=True, motivo="o Artur pediu") is None
+    assert portao_da_fonte(str(tmp_path)) is None                       # pasta de PNGs não passa pelo portão
+    entrada.checar(img, 100)
+    assert portao_da_fonte(str(img)) is None
+    ruim = _imagem(tmp_path / "r" if (tmp_path / "r").mkdir() is None else tmp_path, figs=((385, 70, 450),))
+    entrada.checar(ruim, 100, margem_min=0.05)
+    assert "reprovou" in portao_da_fonte(str(ruim))
