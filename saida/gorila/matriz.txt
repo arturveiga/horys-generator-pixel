@@ -1,0 +1,47 @@
+    000000000011111111112222
+    012345678901234567890123
+  0 ...........abc..........
+  1 .........debffc.........
+  2 ........bbbbggf.........
+  3 ........cbbcggfc........
+  4 .....c.cccbbfddaf..b....
+  5 ....bf.cbbbdahhhbfbf....
+  6 ....iffbahbadhhifiifcc..
+  7 ..cgihbadhddhbbfgiifcf..
+  8 ..cegfabbddbbffbggbiif..
+  9 ..ighhagbbibffbbibibig..
+ 10 ..ihddiiibibiigefbaaah..
+ 11 ..eddihaiibhchfaddhdd...
+ 12 ...hhhaghfaeifdahhhhhc..
+ 13 .chhhhaaahhhafdahhhhhhi.
+ 14 .bghddacdhhhddh.cddgjgg.
+ 15 cfbiid..dhhhkd...dkjiikc
+ 16 cbidifafbbbbffc..ihiiiig
+ 17 ieieek.edfgfcigfcdeiiiig
+ 18 chiik.iiikeiaiii.ekdihig
+ 19 cfgdf.dhiiiidhdg.iieiffc
+ 20 cihee.hhhiiihhhh.eehiff.
+ 21 ikeahcbhhdiahhbbceahigg.
+ 22 cdeeccbiidicdibbicaedgg.
+ 23 .ckc.ggeed..cieefceeeec.
+ 24 .....ggddd..hdefdk.cce..
+ 25 ....gidddd..ahddkgc.....
+ 26 ....giggfc...dhiief.....
+ 27 ...iiigdff...fidiic.....
+ 28 ...eekefka...cgbddic....
+ 29 ..fiiihhkk...hheieii....
+ 30 ..ffhfhc.....ceefefff...
+ 31 ...............cfcfc....
+
+paleta:
+  a = #16131b
+  b = #c5ba90
+  c = #15111a
+  d = #1b1720
+  e = #524845
+  f = #75665b
+  g = #95866f
+  h = #3c313c
+  i = #aa9582
+  j = #aaa275
+  k = #2e2630
