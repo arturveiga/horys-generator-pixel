@@ -1,3 +1,5 @@
+> Arquivado em 2026-11-09. O plano vigente é [new-task.md](../../new-task.md); as fases 0–3 daqui continuam valendo no código.
+
 # TODO — SpriteKiln como base, Horys como acabamento
 
 Data: 2026-11-07 · Origem: `analise-perfect.md` + comparação com SpriteKiln e NoctAssetForge.

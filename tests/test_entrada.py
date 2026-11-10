@@ -179,3 +179,29 @@ def test_ferramenta_portao_entrada(ambiente, tmp_path):
         finally:
             await fim()
     rodar(corpo())
+
+
+def test_converter_recusa_entrada_reprovada(tmp_path):
+    from horys_pixel.ferramentas.estilo import entrada_reprovada
+    (tmp_path / "a").mkdir()
+    (tmp_path / "b").mkdir()
+    boa = _imagem(tmp_path / "a")
+    ruim = _imagem(tmp_path / "b", figs=((385, 70, 450),))
+    assert entrada_reprovada(boa) and "falta" in entrada_reprovada(boa)
+    assert entrada.checar(boa, 100)["aprovado"]
+    assert entrada_reprovada(boa) is None
+    outra = tmp_path / "a" / "outra.png"
+    outra.write_bytes(boa.read_bytes())
+    assert "não é da imagem" in entrada_reprovada(outra)
+    assert not entrada.checar(ruim, 100, margem_min=0.05)["aprovado"]
+    assert "reprovou" in entrada_reprovada(ruim)
+
+
+def test_medir_pe_no_vao_entre_os_pes():
+    from horys_pixel.motor.medir import medir_quadro
+    f = np.zeros((80, 80, 4), np.uint8)
+    f[10:60, 25:55] = (120, 80, 60, 255)      # tronco e tanga (acaba em y=59 no centro)
+    f[60:70, 25:33] = (120, 80, 60, 255)      # pé esquerdo
+    f[60:70, 47:55] = (120, 80, 60, 255)      # pé direito; vão no centro
+    r, _ = medir_quadro(f, {"contorno": (0, 0, 0), "brilho": [], "chao_L": {}})
+    assert r["pe"] == 69

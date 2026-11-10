@@ -340,6 +340,11 @@ def montar(meta, cores, q):
     if meta["sombra"] == "sim" and mask.any():
         fundo = np.where(mask[max(0, py - 8):py + 3].any(axis=0))[0]
         larg = (fundo.max() - fundo.min() + 1) * 0.85 if fundo.size else 20
+        # a régua mede a sombra contra a largura da figura inteira (0,75–1,0); boss com punhos mais largos que os pés
+        # ficava abaixo de 0,75 com só 0,85 dos pés. Só no boss: humanoides seguem a calibração do Tiny.
+        if meta.get("tipo") == "boss":
+            cols = np.where(mask.any(axis=0))[0]
+            larg = max(larg, (cols.max() - cols.min() + 1) * 0.78)
         a, b = larg / 2, larg * 0.4 / 2
         yy, xx = np.mgrid[0:Q, 0:Q]
         elip = (((xx + 0.5 - px) / a) ** 2 + ((yy + 0.5 - py) / b) ** 2 <= 1) & ~mask & ~efeito

@@ -137,9 +137,21 @@ horys_aguardar(id). Passe 'estilo', 'etapa', 'tipo' e 'descricao' para a respost
 
 Parâmetros: `titulo`*, `texto`, `imagem`, `sprite`, `quadro`, `estilo`, `etapa`, `tipo`, `descricao`, `pedido` (`*` = obrigatório)
 
+### `horys_esperar_imagem`
+
+Entrega do prompt e espera da imagem gerada FORA (ChatGPT, Gemini, Codex, vídeo...).
+Mostra no painel do Aseprite o prompt (texto em 'prompt' ou o arquivo 'arquivo_prompt', ex.: traducao/prompt.md do
+horys_prompt_traducao) com o botão Copiar e cria a pasta <pasta>/entrada/. A espera destrava quando o usuário salva
+uma imagem nessa pasta (o horysd vigia) ou escolhe o arquivo no painel. Devolve um id na hora; chame
+horys_aguardar(id): a resposta traz 'imagem' (caminho), que vai direto para o horys_portao_entrada. 'pasta' padrão:
+a do 'pedido', senão a pasta acima de traducao/. Sem painel, a vigia da pasta continua: mostre o prompt no chat.
+
+Parâmetros: `prompt`, `arquivo_prompt`, `pasta`, `titulo`, `pedido` (`*` = obrigatório)
+
 ### `horys_aguardar`
 
-Espera a resposta de uma pergunta, aprovação, revisão ou tarefa (id). Espera no
+Espera a resposta de uma pergunta, aprovação, imagem (horys_esperar_imagem),
+acabamento (horys_entrega), revisão ou tarefa (id). Espera no
 máximo 'segundos' (padrão 45, máx. 55) e devolve o estado: 'respondido' com a resposta, ou 'pendente' — então chame
 de novo. O usuário pode demorar: continue chamando enquanto estiver pendente.
 
@@ -199,7 +211,7 @@ contorno), trava a paleta do estilo e põe o pé no pivô. 'tirar_contorno': an�
 (1 para conceito com contorno grosso). É só o PONTO DE PARTIDA: depois limpe (horys_limpar, horys_afinar) e redesenhe
 à mão rosto e detalhes.
 
-Parâmetros: `imagem`*, `altura`*, `camada`, `quadro`, `modo`, `tirar_contorno`, `fundo`, `nativo` (`*` = obrigatório)
+Parâmetros: `imagem`*, `altura`*, `camada`, `quadro`, `modo`, `tirar_contorno`, `fundo`, `nativo`, `forcar`, `motivo` (`*` = obrigatório)
 
 ### `horys_limpar`
 
@@ -262,14 +274,26 @@ Devolve erros/avisos, marcas com coordenadas (para horys_marcar) e a primeira fo
 
 Parâmetros: `caminhos`, `estilo`, `paleta`, `fundo`, `quadros`, `vista`, `mockup` (`*` = obrigatório)
 
+### `horys_prompt_traducao`
+
+Monta o PROMPT DE TRADUÇÃO (11 itens do cofre) para o usuário levar a qualquer
+gerador de imagem (Codex, ChatGPT, Gemini, vídeo...): 'tipo' (personagem, criatura-pequena, criatura-grande, boss,
+prop, arvore, predio, tile, icone, retrato, efeito), 'descricao' do design, 'estilo' (a paleta vira os hex e os
+papéis), 'altura' alvo em px, 'modo' parado | poses (com 'poses', a lista), 'referencia' (caminho; só vai anexada se
+'referencia_propria'), e opcionais foco, pecas, cortes, nao_fazer, vista, base_aprovada, guia_pose. Grava
+<pasta>/traducao/prompt.md e traducao/paleta-<estilo>.png (amostra com os hex) e devolve o prompt.
+
+Parâmetros: `tipo`*, `descricao`*, `estilo`, `nome`, `altura`, `modo`, `poses`, `referencia`, `referencia_propria`, `foco`, `pecas`, `cortes`, `nao_fazer`, `vista`, `base_aprovada`, `guia_pose`, `pasta` (`*` = obrigatório)
+
 ### `horys_referencia_gerar`
 
-Gera imagem de referência quando o usuário não tem uma: 'fonte' codex
-(geração de imagem embutida do Codex; o Claude não gera imagem) ou lora (o modelo treinado do estilo, se houver).
+Gera imagem de referência quando o usuário não tem uma: 'fonte' manual (PADRÃO: monta o prompt
+de tradução via horys_prompt_traducao para o usuário gerar onde quiser; passe 'tipo'), codex (opcional, só se o Codex
+estiver instalado) ou lora (o modelo treinado do estilo, se houver).
 'prompt' descreve o asset com a paleta e os princípios do estilo (nunca anexe arte de terceiros). Pode levar minutos;
 devolve os caminhos das imagens.
 
-Parâmetros: `fonte`*, `prompt`*, `pasta`, `n`, `estilo`, `imagens` (`*` = obrigatório)
+Parâmetros: `fonte`, `prompt`*, `pasta`, `n`, `estilo`, `imagens`, `tipo`, `altura`, `modo`, `poses` (`*` = obrigatório)
 
 ### `horys_revisar`
 
@@ -419,3 +443,49 @@ spec]} (ou deixe 'grupos' na ficha, chave kiln_grupos) para distribuir cada pixe
 quadro do render (crie com horys_asset_novo quadro=<w>).
 
 Parâmetros: `json`*, `tags`, `direcao`, `camada`, `limpar_min`, `spec`, `grupos`, `resto`, `substituir`, `anatomia_oculta`, `max_oculto_px` (`*` = obrigatório)
+
+## Sequência (animação de qualquer fonte)
+
+### `horys_sequencia`
+
+MOTOR DE SEQUÊNCIA: trata os quadros de uma animação como um todo. 'fonte' = pasta
+de PNGs, uma grade (PNG + 'linhas' e 'colunas'), um vídeo (precisa do ffmpeg) ou o JSON do atlas do Kiln. Etapas:
+fundo por célula → registro (altura alvo, pés e pivô da ficha; 'escala' por_quadro | comum) → escolha de quadros
+('plano' andar | golpe com 'n') → quantização conjunta na paleta do estilo → redução por moda → anti-cintilação →
+trava de identidade ('base' = PNG da base aprovada no tamanho final e 'decalques' [{nome, rect [x,y,w,h], busca}]) →
+limpeza (órfãos e borda). Escreve na camada (padrão: a de cima da ficha) a partir do quadro 'quadro_inicial', cria a
+tag 'estado' e devolve o relatório (deriva, % de pixels que piscam antes e depois). Depois: horys_contorno →
+horys_portao.
+
+Parâmetros: `fonte`*, `altura`*, `linhas`, `colunas`, `fps`, `estado`, `camada`, `quadro_inicial`, `ms`, `plano`, `n`, `escala`, `fator`, `base`, `decalques`, `limpar_min`, `regularizar`, `cor_fundo`, `proteger` (`*` = obrigatório)
+
+### `horys_guia_poses`
+
+GUIA DE POSE: as poses do plano em silhueta, em grade, com a mesma escala e o mesmo
+chão, para anexar ao prompt de poses (horys_prompt_traducao modo poses, 'guia_pose'). 'fonte' = o JSON do atlas do
+Kiln (ou do Noct 3D) ou uma pasta de PNGs já renderizados; 'linhas' × 'colunas' = poses (ex.: 2×4 = 8; o andar do
+golem pede 4–8 silhuetas); 'plano' andar | golpe escolhe os quadros-chave. Grava o PNG em 'saida'.
+
+Parâmetros: `fonte`*, `linhas`, `colunas`, `plano`, `saida`*, `celula_w`, `celula_h` (`*` = obrigatório)
+
+## Entrega e retoque
+
+### `horys_entrega`
+
+Estado de ENTREGA a partir do JSON do revisor ('resultado'): pronto = zero defeito
+estrutural E aceitação >= 'limite' (padrão 80). Os defeitos de ACABAMENTO viram marcas na camada 'revisao' (as
+coordenadas que o revisor deu em 'onde') e uma lista guardada na ficha (acabamento_pendente) para o usuário
+finalizar no Aseprite. Se estiver pronto, a lista também abre no painel (botão 'Terminei o retoque') e a resposta traz
+um id: horys_aguardar(id) devolve o que o usuário marcou como feito; depois rode horys_gosto_do_retoque.
+'marcar': false só avalia.
+
+Parâmetros: `resultado`*, `limite`, `quadro`, `marcar` (`*` = obrigatório)
+
+### `horys_gosto_do_retoque`
+
+Depois do retoque do usuário: compara a camada 'camada' do quadro 'quadro' com
+o PNG 'antes' (a versão entregue) e resume o que ele mudou por categoria (rosto, brilho, contorno, cor, forma).
+Grava o resumo na memória de gosto do estilo (horys_gosto_registrar) com as categorias mais mexidas como defeitos;
+as que se repetem viram candidatas a regra da praticas.md do projeto (proponha ao usuário).
+
+Parâmetros: `antes`*, `camada`, `quadro`, `estilo`, `etapa`, `tipo`, `registrar` (`*` = obrigatório)

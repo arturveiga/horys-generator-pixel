@@ -497,6 +497,33 @@ teste("ui_*: validam e chamam o painel", function()
   cmdFalha("ui_progresso", { texto = "x" }, "painel")
 end)
 
+teste("ui_imagem e ui_acabamento: validam, chamam o painel e montam a resposta", function()
+  local chamadas = {}
+  H.ui = {
+    imagem = function(a) chamadas[#chamadas + 1] = { "imagem", a } end,
+    acabamento = function(a) chamadas[#chamadas + 1] = { "acabamento", a } end,
+  }
+  local ok, err = pcall(function()
+    local r = cmd("ui_imagem", { id = "imagem-1", prompt = "1. gorila", pasta = "C:/x/entrada" })
+    igual(r.mostrado, true)
+    igual(chamadas[1][2].prompt, "1. gorila"); igual(chamadas[1][2].arquivo_prompt, "")
+    cmdFalha("ui_imagem", { id = "imagem-2", prompt = "x" }, "pasta")
+    cmdFalha("ui_imagem", { prompt = "x", pasta = "y" }, "id")
+    r = cmd("ui_acabamento", { id = "acab-1", itens = {
+      { id = "L5", onde = "3,4", correcao = "pelo em degraus" }, { correcao = "brilho do olho" } } })
+    igual(r.mostrado, true)
+    local a = chamadas[2][2]
+    igual(#a.itens, 2); igual(a.itens[2].id, ""); igual(a.itens[1].onde, "3,4")
+    cmdFalha("ui_acabamento", { id = "acab-2", itens = {} }, "ao menos um")
+    cmdFalha("ui_acabamento", { id = "acab-3", itens = { { id = "L1" } } }, "correcao")
+    local ev = L.montarAcabamento("acab-1", a.itens, { [1] = false, [2] = true }, "  ok  ")
+    igual(ev.id, "acab-1"); igual(#ev.feitos, 1); igual(ev.feitos[1], "2"); igual(ev.total, 2); igual(ev.comentario, "ok")
+  end)
+  H.ui = nil
+  if not ok then error(err, 0) end
+  cmdFalha("ui_progresso", { texto = "x" }, "painel")
+end)
+
 -- ---------------------------------------------------------------------------
 -- Lógica das janelas
 -- ---------------------------------------------------------------------------
@@ -661,6 +688,7 @@ end)
 teste("plugin.lua e ui.lua carregam no modo batch e registram o menu Horys", function()
   local UIm = M.carregar("ui")
   verdade(type(UIm.perguntar) == "function" and type(UIm.novoAsset) == "function", "ui.lua")
+  verdade(type(UIm.imagem) == "function" and type(UIm.acabamento) == "function", "ui.lua: imagem e acabamento")
   local comandos, grupos = {}, {}
   local prefsFalsas = {}
   local pluginFalso = {

@@ -28,11 +28,12 @@ Aseprite + extensão Horys ──WebSocket (token HMAC)──► horysd (Python,
   `~/.horys-pixel/estilos/`.
 
 ## Instalar
-Requisitos: Python 3.10+, Aseprite 1.3+, Claude Code e/ou Codex CLI.
+Requisitos: Python 3.10+, Aseprite 1.3+, Claude Code. O Codex CLI é opcional; o `ffmpeg` só é preciso para animar a partir de vídeo.
 ```bash
 pip install -e .                       # dependências + comandos horys, horysd, horys-mcp
 horys instalar --tudo --simular        # mostra o que vai fazer
-horys instalar --tudo                  # extensão no Aseprite, plugin do Claude Code, MCP e skills do Codex
+horys instalar --tudo                  # extensão no Aseprite, plugin do Claude Code e MCP (sem o Codex)
+horys instalar --tudo --codex          # também o MCP e as skills do Codex (opcional)
 ```
 Opções: `--confiar` pré-autoriza a extensão no `aseprite.ini` (com o Aseprite fechado; senão o Aseprite pergunta uma
 vez); `--inicializacao` sobe o `horysd` com o Windows (para o botão Gerar funcionar sem terminal aberto).
@@ -44,6 +45,13 @@ Pelo Claude Code, o plugin também instala direto do repositório:
 
 Depois: reabra o Aseprite. A extensão lê o token de `~/.horys-pixel/token` e conecta sozinha (status em
 **Arquivo › Horys › Conexão e painel…**).
+
+## Fluxo (referência primeiro)
+Ficha do tipo (`src/horys_pixel/padroes/`) → `horys_prompt_traducao` (você gera a imagem no gerador que quiser: ChatGPT,
+Gemini, Codex, vídeo) → `horys_portao_entrada` → `horys_converter` → limpeza → portão de medidas → revisor. Animação:
+`horys_sequencia` (motor de sequência) no lugar da conversão. A entrega vem com o acabamento marcado para você
+finalizar no Aseprite, e o seu retoque volta como gosto. Detalhes em [arquitetura](docs/arquitetura.md) e
+[new-task.md](new-task.md).
 
 ## Usar
 - **No Aseprite:** Arquivo › Horys › Novo asset… / Revisar este sprite / Novo estilo….

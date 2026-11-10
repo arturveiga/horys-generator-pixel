@@ -78,3 +78,11 @@ Spec `aldeao_horys.yaml` (cópia do aldeão): rampas da `paleta_padrao.json` com
 Conclusão: cor e valor se resolvem **só com o spec**. O picotado (M04/M05) melhora, mas não some: fica para o
 `horys_limpar` na importação (tarefa 2.3) ou para `thresholds`/`min_run` no spec. A luz se acerta no estilo do
 SpriteKiln (`light`) para bater com o M15.
+
+## 2026-11-09: referência primeiro, gerador trocável, animação por sequência
+- **Fichas por tipo:** os números ficam no repo (`src/horys_pixel/padroes/*.json`); o texto e a justificativa, no cofre.
+- **Codex opcional:** revisor padrão = Claude; `horys instalar --tudo` não instala o Codex (`--codex` instala).
+- **Conversão exige portão de entrada** (`horys_converter` recusa sem `entrada_checagem.txt` aprovado; `forcar` + `motivo`).
+- **Animação:** o desenho do movimento vem do gerador (grade/vídeo) ou do Kiln como guia; o tratamento é do motor de
+  sequência, nunca imagem por imagem. Rig de partes só para personagem pequeno, não para boss.
+- **Entrega:** "pronto" = zero estrutural e aceitação ≥ 80 (limite a recalibrar na tarefa 4.4).

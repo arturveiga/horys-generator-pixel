@@ -1,0 +1,50 @@
+{
+ "tipo": "criatura-grande",
+ "linha_chao_frac": 0.9,
+ "fundo": "#3DBE5B",
+ "fundo_alternativo": "#FF00FF",
+ "quadro": 256,
+ "pivo": [
+  128,
+  191
+ ],
+ "altura_alvo": [
+  90,
+  130
+ ],
+ "detalhe_min_frac": 0.03,
+ "vista": "3/4 olhando para a direita",
+ "camera": "altura do peito, quase sem perspectiva",
+ "proporcao": "3-4 massas, uma dominante",
+ "canvas_geracao": [
+  1024,
+  1024
+ ],
+ "ocupacao": 0.75,
+ "cores_max": 12,
+ "contorno": "anil 2 px",
+ "luz": "de cima, frente leve",
+ "remover": [
+  "pelagem fio a fio",
+  "escamas uma a uma",
+  "garras finas",
+  "bigodes",
+  "textura de couro ou de casco"
+ ],
+ "animacao": {
+  "layout": [
+   2,
+   2
+  ],
+  "canvas": [
+   1536,
+   1024
+  ],
+  "celulas": 4,
+  "escala_min": 3.0,
+  "alternativa_layout": [
+   2,
+   4
+  ]
+ }
+}

@@ -1,0 +1,43 @@
+{
+ "tipo": "efeito",
+ "linha_chao_frac": 0.9,
+ "fundo": "#3DBE5B",
+ "fundo_alternativo": "#FF00FF",
+ "quadro": 128,
+ "pivo": [
+  64,
+  64
+ ],
+ "altura_alvo": [
+  64,
+  120
+ ],
+ "detalhe_min_frac": 0.06,
+ "vista": "conforme o golpe",
+ "camera": "a do jogo",
+ "proporcao": "formas grandes que terminam em fiapos",
+ "canvas_geracao": [
+  1536,
+  1024
+ ],
+ "ocupacao": 0.6,
+ "cores_max": 6,
+ "contorno": "sem contorno (exceção do estilo)",
+ "luz": "núcleo creme nos primeiros quadros; esfria com o tempo",
+ "remover": [
+  "elipses chapadas isoladas"
+ ],
+ "observacao": "O gerador só dá a forma: 3-4 estágios lado a lado; o efeito final é desenhado em grade.",
+ "animacao": {
+  "layout": [
+   1,
+   4
+  ],
+  "canvas": [
+   1536,
+   1024
+  ],
+  "celulas": 4,
+  "escala_min": 3.0
+ }
+}

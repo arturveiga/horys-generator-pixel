@@ -78,14 +78,20 @@ Depois `horys_asset_novo`: estilo, nome, tipo, quadro (192 para humanoide de 64�
 
 ### 5. Referência → pixel (o caminho que funciona)
 A lição da v4.2: **limpe por cima da conversão; nunca redesenhe do zero na grade.**
-1. Sem imagem (ou com uma fora do padrão de entrada: render 3D, foto, perspectiva, fundo em degradê): monte o
-   **prompt de tradução** e o usuário gera a imagem no gerador que quiser (ChatGPT, Gemini, Codex ou outro) e devolve
-   o arquivo. Opcional: `horys_referencia_gerar` (`fonte: codex`, se o Codex estiver instalado, ou `lora` se o estilo
-   tiver modelo treinado). O prompt pede ilustração chapada (cel shading) em alta, NÃO "pixel art"; o design, a vista, a proporção
-   (massa de cima ~60%), os vãos, o rosto com o que sobrevive no tamanho do jogo, as cores com o papel de cada hex,
-   luz em crescentes, o que não fazer, e **fundo liso de uma cor que não está no personagem** (com creme/branco, verde
-   `#3DBE5B`). Nunca anexe arte de terceiros; a régua entra como princípios escritos. Gere 2–3 opções e deixe o
-   usuário escolher (`horys_aprovar` com `imagem`).
+1. Sem imagem (ou com uma fora do padrão de entrada: render 3D, foto, perspectiva, fundo em degradê): leia a **ficha
+   do tipo** (`horys_ficha` mostra o padrão do tipo: quadro, altura, detalhe mínimo, cores, vista) e chame
+   `horys_prompt_traducao(tipo, descricao, estilo, altura, modo: parado | poses)`. Ele grava `traducao/prompt.md` (os
+   11 itens, com o % de detalhe calculado) e `traducao/paleta-<estilo>.png` (anexo). Entregue com
+   `horys_esperar_imagem(arquivo_prompt: traducao/prompt.md, pedido?)` → `horys_aguardar(id)`: o painel mostra o
+   prompt com Copiar, e a espera destrava quando a imagem chega em `<pasta>/entrada/` (ou é escolhida no painel); a
+   resposta traz o caminho. O usuário gera a imagem no
+   gerador que quiser (ChatGPT, Gemini, Codex, vídeo...); o Codex é só uma opção
+   (`horys_referencia_gerar` com `fonte: codex`, se estiver instalado, ou `lora`). `fonte: manual` é o padrão.
+   Nunca anexe arte de terceiros (a régua entra como princípios escritos). Gere 2–3 opções e deixe o usuário
+   escolher (`horys_aprovar` com `imagem`).
+1b. **`horys_portao_entrada(imagem, altura, grade?)`** antes de converter: fundo liso, figura inteira, pés sem sombra,
+   escala ≥ 3×, grade com alturas iguais e se é chapado. Reprovou: peça a correção no mesmo chat do gerador, citando o
+   item do prompt. O `horys_converter` recusa imagem sem esse portão aprovado (salvo `forcar` + `motivo`).
 2. `horys_converter(imagem, altura com contorno, camada, quadro, tirar_contorno: 1)`: moda + paleta travada + pé no
    pivô. Personagem com camadas: converta na parte de cima e depois separe as partes (passo 6).
 3. `horys_limpar(min 4, proteger: [hex do olho/brilho])` → `horys_afinar` → `horys_limpar(min 3, proteger_area: rosto)`.
@@ -97,7 +103,9 @@ Asset fiel ("1:1") a uma referência do usuário: o mesmo caminho, comparando em
 quando sair longe: se a quantização bruta já parece mais que a sua versão, a perda veio do desenho; se a reduzida com
 cores reais parece e a quantização não, veio da paleta.
 
-### 5k. Base 3D pelo SpriteKiln (personagem animado, se instalado)
+### 5k. Guia de pose pelo SpriteKiln (personagem animado, se instalado)
+O Kiln/Noct 3D serve de **guia de pose** (silhuetas em grade, mesma escala e chão) para anexar ao prompt de poses, e como
+linha de base de animação; o desenho do movimento vem do gerador e o tratamento da sequência, do motor de sequência.
 Use quando o asset é personagem, inimigo ou criatura **com animação**; para ícone, prop, tile e UI, siga o passo 5.
 O SpriteKiln dá a pose, os quadros e o timing consistentes; o Horys dá cor, limpeza, mão por cima e o portão.
 1. Paleta: `horys_paleta_kiln(estilo, destino)` e aponte `palette:` do spec para o YAML gerado.
@@ -166,6 +174,9 @@ Por padrão o Claude revisa. O revisor cruzado (outro motor, ex.: Codex) é opci
 ### 9. Portões do usuário e entrega
 - Personagem: briefing (1), silhueta e cor do quadro base, e animação → `horys_aprovar(sprite: true, estilo,
   etapa: 'silhueta'|'cor'|'animacao', tipo, descricao, pedido)`.
+- Entrega a 90%: `horys_entrega(resultado: JSON do revisor)`. Pronto (zero estrutural, aceitação ≥ 80): o acabamento
+  vai marcado na camada `revisao` e aparece como lista no painel; `horys_aguardar(id)` espera o "Terminei o retoque"
+  e depois `horys_gosto_do_retoque(antes: PNG entregue)` registra o que o usuário mudou.
 - Entrega: `horys_exportar(destino)` (no Hunvix: `assets/generated/<asset>-vN/`). Integração no jogo só se pedirem.
 - No fim, `horys_pedido_atualizar(etapa: 'concluido', texto: resumo + pendências)`.
 

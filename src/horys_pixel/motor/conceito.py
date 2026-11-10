@@ -332,10 +332,12 @@ def converter(a):
         ys, xs = np.nonzero(grade != ".")
         grade = grade[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
         H, W = grade.shape
-    # pivô: base da figura, no meio dos pixels da última linha com figura (ou o x pedido)
+    # pivô: base da figura, no centro do vão entre os pés (meio da faixa de baixo, ~4% da altura) ou o x pedido.
+    # A mediana dos pixels caía dentro do pé mais largo e jogava figura frontal para o lado (macaco-golem-p2 v01).
     ult = np.nonzero((grade != ".").any(1))[0].max()
-    xs_base = np.nonzero(grade[max(0, ult - 3):ult + 1] != ".")[1]
-    px = int(np.median(xs_base)) if a.pivo_x == "auto" else int(a.pivo_x)
+    faixa = max(4, round(H * 0.04))
+    xs_base = np.nonzero(grade[max(0, ult - faixa + 1):ult + 1] != ".")[1]
+    px = int(round((xs_base.min() + xs_base.max()) / 2)) if a.pivo_x == "auto" else int(a.pivo_x)
     novo_cab = []
     for l in cab:
         s = l.split()

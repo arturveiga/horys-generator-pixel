@@ -7,6 +7,7 @@ import numpy as np
 from PIL import Image
 
 from .. import kiln, pixels
+from ..sequencia import limpeza as _limpeza_seq
 from .desenho import escrever_rgba
 from .estilo import _estilo, _ficha, _paleta
 from .registro import BOOL, INT, LISTA_STR, STR, ErroFerramenta, ferramenta, imagem, texto
@@ -84,7 +85,7 @@ async def importar_kiln(ctx, a):
     if lim > 1:
         brilho = (_paleta(_estilo(f.get("estilo"))).get("brilho") or "").lstrip("#")
         prot = {tuple(int(brilho[i:i + 2], 16) for i in (0, 2, 4))} if len(brilho) == 6 else None
-        quadros = kiln.limpar_sequencia(quadros, lim, prot)
+        quadros = _limpeza_seq.limpar(quadros, lim, prot, regularizar=False)   # o motor de sequência é o dono da limpeza
 
     grupos = a.get("grupos") or f.get("kiln_grupos")
     partes_dist = None

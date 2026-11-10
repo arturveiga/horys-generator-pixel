@@ -91,7 +91,8 @@ async def gosto_consultar(ctx, a):
     tipo = a.get("tipo")
     recus = [r for r in regs if not r["aprovado"]]
     aprov = [r for r in regs if r["aprovado"]]
-    defeitos = Counter(d for r in recus for d in r.get("defeitos") or [])
+    defeitos = Counter(d for r in regs if not r["aprovado"] or r.get("etapa") == "retoque"
+                       for d in r.get("defeitos") or [])   # recusas e o que o usuário refez no retoque
     linhas = [f"{len(aprov)} aprovações, {len(recus)} recusas."]
     if defeitos:
         linhas.append("Defeitos que mais voltam (candidatos a regra; proponha ao usuário antes de mudar o estilo):")

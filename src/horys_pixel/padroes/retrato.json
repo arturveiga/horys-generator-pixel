@@ -1,0 +1,35 @@
+{
+ "tipo": "retrato",
+ "linha_chao_frac": 0.9,
+ "fundo": "#3DBE5B",
+ "fundo_alternativo": "#FF00FF",
+ "quadro": 256,
+ "pivo": [
+  128,
+  128
+ ],
+ "altura_alvo": [
+  200,
+  230
+ ],
+ "detalhe_min_frac": 0.015,
+ "vista": "de frente ou 3/4 olhando para a direita; busto",
+ "camera": "altura do rosto",
+ "proporcao": "cabeça e ombros",
+ "canvas_geracao": [
+  1024,
+  1024
+ ],
+ "ocupacao": 0.85,
+ "cores_max": 14,
+ "contorno": "anil 2 px",
+ "luz": "de cima, frente leve",
+ "remover": [
+  "poros",
+  "fios de cabelo",
+  "rugas finas"
+ ],
+ "animacao": {
+  "estatico": true
+ }
+}

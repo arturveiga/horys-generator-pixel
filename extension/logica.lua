@@ -245,6 +245,45 @@ function L.listaDeTextos(v)
   return saida
 end
 
+-- Valida os args de ui_imagem (o painel mostra o prompt e espera a imagem gerada fora).
+function L.normalizarImagem(args)
+  if type(args) ~= "table" then error("args ausentes", 0) end
+  if args.id == nil or texto(args.id) == "" then error("falta o 'id' da espera", 0) end
+  local pasta = aparar(texto(args.pasta))
+  if pasta == "" then error("falta a 'pasta' de entrada", 0) end
+  return {
+    id = args.id,
+    titulo = aparar(texto(args.titulo)),
+    prompt = texto(args.prompt),
+    arquivo_prompt = aparar(texto(args.arquivo_prompt)),
+    pasta = pasta,
+  }
+end
+
+-- Valida os args de ui_acabamento (lista do que o usuário finaliza no Aseprite).
+function L.normalizarAcabamento(args)
+  if type(args) ~= "table" then error("args ausentes", 0) end
+  if args.id == nil or texto(args.id) == "" then error("falta o 'id' do acabamento", 0) end
+  if type(args.itens) ~= "table" or #args.itens == 0 then error("'itens' precisa ter ao menos um item", 0) end
+  local itens = {}
+  for i, it in ipairs(args.itens) do
+    if type(it) ~= "table" then error("item " .. i .. " inválido", 0) end
+    local correcao = aparar(texto(it.correcao))
+    if correcao == "" then error("item " .. i .. " sem 'correcao'", 0) end
+    itens[i] = { id = aparar(texto(it.id)), onde = aparar(texto(it.onde)), correcao = correcao }
+  end
+  return { id = args.id, titulo = aparar(texto(args.titulo)), itens = itens }
+end
+
+-- feitos = {[índice] = true}; devolve o evento de fim do retoque.
+function L.montarAcabamento(id, itens, feitos, comentario)
+  local lista = {}
+  for i, it in ipairs(itens) do
+    if feitos[i] then lista[#lista + 1] = (it.id ~= "" and it.id) or tostring(i) end
+  end
+  return { id = id, feitos = lista, total = #itens, comentario = aparar(comentario) }
+end
+
 -- Texto de uma linha para o andamento: "pedido · etapa — texto (nota)"
 function L.linhaProgresso(p)
   local partes = {}

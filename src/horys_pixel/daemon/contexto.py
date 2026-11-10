@@ -14,6 +14,23 @@ from .ponte import Ponte
 
 log = logging.getLogger("horys.ctx")
 
+def abrir_pasta(pasta: Path):
+    """Abre a pasta no gerenciador de arquivos do sistema (botão 'Abrir pasta' do painel)."""
+    import os
+    import subprocess
+    import sys
+    try:
+        pasta.mkdir(parents=True, exist_ok=True)
+        if sys.platform == "win32":
+            os.startfile(str(pasta))  # noqa: S606
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", str(pasta)])
+        else:
+            subprocess.Popen(["xdg-open", str(pasta)])
+    except Exception:
+        log.exception("não abriu a pasta %s", pasta)
+
+
 TIPOS = ["personagem", "npc", "inimigo", "boss", "criatura", "animal", "efeito", "tile", "agua", "arvore", "prop",
          "recurso", "predio", "icone", "retrato"]
 
@@ -98,8 +115,40 @@ class Contexto:
             self.pedidos.iniciar(p["id"])
         elif tipo == "cancelar":
             self.pedidos.cancelar(msg.get("pedido"))
+        elif tipo == "imagem":
+            self._imagem_do_painel(msg.get("id"), msg.get("caminho"))
+        elif tipo == "abrir_pasta":
+            it = self.pend.obter(msg.get("id")) or {}
+            pasta = (it.get("dados") or {}).get("entrada")
+            if pasta:
+                abrir_pasta(Path(pasta))
+        elif tipo == "acabamento":
+            self.pend.resolver(msg.get("id"), {"feitos": msg.get("feitos") or [], "total": msg.get("total"),
+                                               "comentario": msg.get("comentario") or ""})
         else:
             log.info("evento desconhecido: %s", tipo)
+
+    def _imagem_do_painel(self, i: str | None, caminho: str | None):
+        """Arquivo escolhido no painel: copia para a pasta entrada/ da espera (fica junto do pedido) e resolve."""
+        import shutil
+        from .conversa import EXT_IMAGEM
+        it = self.pend.obter(i) if i else None
+        if not it or it["estado"] != "pendente" or not caminho:
+            return
+        orig = Path(caminho)
+        if not orig.is_file() or orig.suffix.lower() not in EXT_IMAGEM:
+            log.info("imagem do painel ignorada: %s", caminho)
+            return
+        entrada = Path((it.get("dados") or {}).get("entrada") or orig.parent)
+        destino = entrada / orig.name
+        try:
+            if orig.resolve() != destino.resolve():
+                entrada.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(orig, destino)
+        except OSError:
+            log.exception("não copiou a imagem do painel")
+            destino = orig
+        self.pend.resolver(i, {"imagem": str(destino), "origem": "painel", "original": str(orig)})
 
     def _ao_resolver(self, item: dict):
         """Aprovação respondida no painel vira memória de gosto automaticamente."""

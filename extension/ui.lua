@@ -14,6 +14,7 @@ local painel                 -- Dialog do painel da conversa
 local painelReconstruindo = false
 local painelFechadoPeloUsuario = false
 local andamento = { pedido = nil, linhas = {} }
+local acabamentoPendente      -- último ui_acabamento sem resposta (o painel reabre a lista)
 
 local LARGURA_TEXTO = 64
 local LINHAS_ANDAMENTO = 6
@@ -128,7 +129,13 @@ local function atualizarPainel()
     end
     painel:modify{ id = "pendentes", text = contarPendentes() }
     painel:modify{ id = "cancelar", enabled = andamento.atual ~= nil and andamento.atual.pedido ~= nil }
+    painel:modify{ id = "acabamento", text = UI.textoBotaoAcabamento(), enabled = acabamentoPendente ~= nil }
   end)
+end
+
+function UI.textoBotaoAcabamento()
+  if not acabamentoPendente then return "Acabamento" end
+  return "Acabamento (" .. #acabamentoPendente.itens .. ")…"
 end
 
 local function construirPainel()
@@ -170,6 +177,8 @@ local function construirPainel()
   dlg:button{ text = "Novo asset…", onclick = function() UI.novoAsset() end }
   dlg:button{ text = "Revisar este sprite", onclick = function() UI.revisar() end }
   dlg:newrow()
+  dlg:button{ id = "acabamento", text = UI.textoBotaoAcabamento(), enabled = acabamentoPendente ~= nil,
+    onclick = function() if acabamentoPendente then UI.acabamento(acabamentoPendente) end end }
   dlg:button{ id = "cancelar", text = "Cancelar pedido",
     enabled = andamento.atual ~= nil and andamento.atual.pedido ~= nil,
     onclick = function()
@@ -371,9 +380,124 @@ function UI.aprovar(a)
 end
 
 -- ---------------------------------------------------------------------------
+-- ui_imagem: mostra o prompt de tradução e espera a imagem gerada fora
+-- (o horysd também vigia a pasta entrada/: salvar lá já basta)
+-- ---------------------------------------------------------------------------
+local LINHAS_PROMPT = 24
+
+local function copiar(textoCopiar)
+  local ok = pcall(function() app.clipboard.text = textoCopiar end)
+  return ok
+end
+
+function UI.imagem(a)
+  local k = chave(a.id)
+  fecharJanela(k)
+  local dlg
+  dlg = Dialog{
+    title = (a.titulo ~= "" and a.titulo) or "Horys: gere a imagem",
+    onclose = function()
+      if janelas[k] == dlg then janelas[k] = nil end
+      atualizarPainel()
+    end,
+  }
+  dlg:newrow{ always = true }
+  dlg:separator{ text = "Prompt" }
+  local linhas = L.quebrarLinhas(a.prompt, LARGURA_TEXTO)
+  for i = 1, math.min(#linhas, LINHAS_PROMPT) do
+    dlg:label{ text = linhas[i] ~= "" and linhas[i] or " " }
+  end
+  if #linhas > LINHAS_PROMPT then
+    dlg:label{ text = "(… " .. (#linhas - LINHAS_PROMPT) .. " linhas a mais: use Copiar prompt)" }
+  end
+  dlg:newrow()
+  dlg:button{ text = "Copiar prompt", onclick = function()
+    if copiar(a.prompt) then
+      avisar("Prompt copiado. Cole no gerador de imagem que quiser.")
+    else
+      avisar({ "Este Aseprite não deixa copiar pelo script.", "Abra o arquivo: " .. (a.arquivo_prompt ~= "" and a.arquivo_prompt or "(sem arquivo)") })
+    end
+  end }
+  dlg:button{ text = "Abrir pasta", onclick = function()
+    if not ctx.enviarEvento("abrir_pasta", { id = a.id }) then semConexao() end
+  end }
+  dlg:separator{ text = "Imagem gerada" }
+  textoLongo(dlg, "Salve a imagem nesta pasta (o Horys percebe sozinho) ou escolha o arquivo abaixo:")
+  textoLongo(dlg, a.pasta)
+  dlg:file{ id = "arquivo", label = "Arquivo:", title = "Imagem gerada", open = true, entry = true,
+    filetypes = EXTENSOES, filename = "" }
+  dlg:separator{}
+  dlg:newrow()
+  dlg:button{ text = "Enviar imagem", focus = true, onclick = function()
+    local c = L.aparar(dlg.data.arquivo)
+    if c == "" or not app.fs.isFile(c) then avisar("Escolha o arquivo da imagem.") return end
+    if not L.ehImagem(c) then avisar("Esse arquivo não parece uma imagem.") return end
+    if ctx.enviarEvento("imagem", { id = a.id, caminho = c }) then
+      janelas[k] = nil
+      dlg:close()
+      atualizarPainel()
+    else
+      semConexao()
+    end
+  end }
+  dlg:button{ text = "Depois", onclick = function() dlg:close() end }
+  janelas[k] = dlg
+  dlg:show{ wait = false }
+  atualizarPainel()
+end
+
+-- ---------------------------------------------------------------------------
+-- ui_acabamento: o que o usuário finaliza no Aseprite (as marcas da camada 'revisao')
+-- ---------------------------------------------------------------------------
+function UI.acabamento(a)
+  acabamentoPendente = a
+  local k = chave(a.id)
+  fecharJanela(k)
+  local dlg
+  dlg = Dialog{
+    title = (a.titulo ~= "" and a.titulo) or "Horys: acabamento",
+    onclose = function()
+      if janelas[k] == dlg then janelas[k] = nil end
+      atualizarPainel()
+    end,
+  }
+  dlg:newrow{ always = true }
+  textoLongo(dlg, "Falta só acabamento. Os pontos estão marcados na camada 'revisao'. Marque o que já fez:")
+  dlg:separator{}
+  for i, it in ipairs(a.itens) do
+    local cab = it.id ~= "" and ("[" .. it.id .. "] ") or ""
+    local linhas = L.quebrarLinhas(cab .. it.correcao, LARGURA_TEXTO - 4)
+    dlg:check{ id = "item" .. i, text = linhas[1] or "", selected = false }
+    for j = 2, #linhas do dlg:label{ text = "      " .. linhas[j] } end
+    if it.onde ~= "" then dlg:label{ text = "      onde: " .. it.onde } end
+  end
+  dlg:separator{}
+  dlg:entry{ id = "comentario", label = "Comentário:", text = "" }
+  dlg:newrow()
+  dlg:button{ text = "Terminei o retoque", focus = true, onclick = function()
+    local d = dlg.data
+    local feitos = {}
+    for i in ipairs(a.itens) do feitos[i] = d["item" .. i] == true end
+    if ctx.enviarEvento("acabamento", L.montarAcabamento(a.id, a.itens, feitos, d.comentario)) then
+      acabamentoPendente = nil
+      janelas[k] = nil
+      dlg:close()
+      atualizarPainel()
+    else
+      semConexao()
+    end
+  end }
+  dlg:button{ text = "Depois", onclick = function() dlg:close() end }
+  janelas[k] = dlg
+  dlg:show{ wait = false }
+  atualizarPainel()
+end
+
+-- ---------------------------------------------------------------------------
 -- ui_fechar
 -- ---------------------------------------------------------------------------
 function UI.fechar(id)
+  if acabamentoPendente and chave(acabamentoPendente.id) == chave(id) then acabamentoPendente = nil end
   fecharJanela(chave(id))
   atualizarPainel()
 end

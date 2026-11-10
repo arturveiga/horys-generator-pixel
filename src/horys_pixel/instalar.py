@@ -199,15 +199,17 @@ def inicio_windows(simular: bool = False) -> list[str]:
     return log
 
 
-def tudo(simular: bool = False, confiar: bool = False, inicializacao: bool = False) -> list[str]:
+def tudo(simular: bool = False, confiar: bool = False, inicializacao: bool = False, codex: bool = False) -> list[str]:
+    """Instala tudo, SEM o Codex por padrão (ele é opcional: codex=True / `horys instalar --tudo --codex`)."""
     log = []
     config.token()
     log += instalar_extensao(simular=simular)
     if confiar:
         log += confiar_scripts(simular=simular)
     log += registrar_claude(simular=simular)
-    log += registrar_codex(simular=simular)
-    log += instalar_skills_codex(simular=simular)
+    if codex:
+        log += registrar_codex(simular=simular)
+        log += instalar_skills_codex(simular=simular)
     if inicializacao:
         log += inicio_windows(simular=simular)
     return log

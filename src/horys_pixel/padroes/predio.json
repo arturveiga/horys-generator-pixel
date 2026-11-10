@@ -1,0 +1,38 @@
+{
+ "tipo": "predio",
+ "linha_chao_frac": 0.9,
+ "fundo": "#3DBE5B",
+ "fundo_alternativo": "#FF00FF",
+ "quadro": [
+  192,
+  256
+ ],
+ "pivo": [
+  96,
+  240
+ ],
+ "altura_alvo": [
+  192,
+  256
+ ],
+ "detalhe_min_frac": 0.05,
+ "vista": "frente visível e um pouco do telhado",
+ "camera": "a do jogo",
+ "proporcao": "múltiplos de 64; porta ~0,6 da altura do personagem",
+ "canvas_geracao": [
+  1024,
+  1024
+ ],
+ "ocupacao": 0.8,
+ "cores_max": 18,
+ "contorno": "anil 2 px (tom escuro do material onde toca o mesmo material)",
+ "luz": "de cima",
+ "remover": [
+  "tijolo por tijolo",
+  "telha por telha",
+  "janela com caixilho fino"
+ ],
+ "animacao": {
+  "estatico": true
+ }
+}

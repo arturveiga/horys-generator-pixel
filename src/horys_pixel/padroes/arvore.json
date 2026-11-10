@@ -1,0 +1,50 @@
+{
+ "tipo": "arvore",
+ "linha_chao_frac": 0.9,
+ "fundo": "#3DBE5B",
+ "fundo_alternativo": "#FF00FF",
+ "quadro": [
+  192,
+  256
+ ],
+ "pivo": [
+  96,
+  240
+ ],
+ "altura_alvo": [
+  200,
+  256
+ ],
+ "detalhe_min_frac": 0.04,
+ "vista": "top-down 3/4 do jogo",
+ "camera": "a do jogo",
+ "proporcao": "copa em 4-6 tufos grandes",
+ "canvas_geracao": [
+  768,
+  1024
+ ],
+ "ocupacao": 0.8,
+ "cores_max": 8,
+ "contorno": "anil 2 px",
+ "luz": "de cima",
+ "remover": [
+  "folha por folha",
+  "galhos finos"
+ ],
+ "animacao": {
+  "layout": [
+   1,
+   4
+  ],
+  "canvas": [
+   1536,
+   1024
+  ],
+  "celulas": 6,
+  "escala_min": 3.0,
+  "quadros": {
+   "balanco": "6-8"
+  },
+  "tronco_parado": true
+ }
+}

@@ -1,0 +1,55 @@
+{
+ "tipo": "personagem",
+ "linha_chao_frac": 0.9,
+ "fundo": "#3DBE5B",
+ "fundo_alternativo": "#FF00FF",
+ "quadro": 192,
+ "pivo": [
+  96,
+  127
+ ],
+ "altura_alvo": [
+  64,
+  72
+ ],
+ "detalhe_min_frac": 0.04,
+ "vista": "3/4 olhando para a direita; em pé, neutra; braços afastados do tronco",
+ "camera": "altura do peito, quase sem perspectiva",
+ "proporcao": "cabeça 55-75% da altura; corpo 20-30%; pés 5-8%; sem pescoço",
+ "canvas_geracao": [
+  1024,
+  1024
+ ],
+ "ocupacao": 0.75,
+ "cores_max": 10,
+ "contorno": "anil 2 px",
+ "luz": "de cima, frente leve",
+ "remover": [
+  "dedos",
+  "cadarço",
+  "costura",
+  "estampa de tecido",
+  "fios de cabelo",
+  "rugas",
+  "joias pequenas"
+ ],
+ "animacao": {
+  "layout": [
+   2,
+   4
+  ],
+  "canvas": [
+   1536,
+   1024
+  ],
+  "celulas": 8,
+  "escala_min": 4.0,
+  "quadros": {
+   "idle": "6-8",
+   "andar": "6-8",
+   "ataque": "4-6",
+   "dano": "2-3",
+   "morte": "6-10"
+  }
+ }
+}

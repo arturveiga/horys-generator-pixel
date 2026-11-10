@@ -113,7 +113,7 @@ class AsepriteFalso:
         if cmd == "selecionar_sprite":
             self.atual = self.sprites[int(a["indice"])]
             return self.status()
-        if cmd in ("ui_perguntar", "ui_aprovar", "ui_progresso", "ui_fechar"):
+        if cmd in ("ui_perguntar", "ui_aprovar", "ui_progresso", "ui_fechar", "ui_imagem", "ui_acabamento"):
             self.ui.append((cmd, a))
             return {"mostrado": True}
         if s is None:

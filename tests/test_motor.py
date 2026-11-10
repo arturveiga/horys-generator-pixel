@@ -280,3 +280,44 @@ def test_arquivos_do_motor_presentes():
                  "exportar_aseprite.lua", "revisor_prompt.md", "config_padrao.json", "paleta_padrao.json"):
         assert (MOTOR / nome).exists(), nome
     assert not (MOTOR / "config.json").exists()   # nada de config pessoal dentro do pacote
+
+
+def test_conceito_pivo_no_centro_dos_pes(amb):
+    """1.8: figura frontal com um pé mais baixo que o outro; o pivô fica no centro dos pés, não dentro do pé baixo."""
+    img = Image.new("RGB", (120, 200), "#ff00ff")
+    px = img.load()
+    for y in range(40, 170):
+        for x in range(40, 80):                      # corpo centrado em x=59,5
+            px[x, y] = (0xc9, 0x8f, 0x6b)
+    for y in range(160, 191):
+        for x in range(30, 52):                      # pé esquerdo, chega em y=190
+            px[x, y] = (0x4f, 0x3a, 0x3f)
+    for y in range(160, 188):
+        for x in range(68, 90):                      # pé direito, 3 px mais alto
+            px[x, y] = (0x4f, 0x3a, 0x3f)
+    arq = amb["tmp"] / "frontal.png"
+    img.save(arq)
+    leg = amb["tmp"] / "leg.grade"
+    leg.write_text(GRADE, encoding="utf-8")
+    out = amb["tmp"] / "conv.grade"
+    r = rodar(["-m", "horys_pixel.motor.conceito", "converter", str(arq), "--legenda", str(leg), "--altura", "100",
+               "--saida", str(out), "--modo", "moda", "--fundo", "#ff00ff"], amb["env"])
+    assert r.returncode == 0, r.stderr
+    texto = out.read_text(encoding="utf-8").splitlines()
+    pivo_x = next(int(l.split()[1]) for l in texto if l.startswith("pivo"))
+    linhas = texto[[i for i, l in enumerate(texto) if l.startswith("---")][0] + 1:]
+    cols = [j for l in linhas for j, c in enumerate(l) if c != "."]
+    centro = (min(cols) + max(cols)) / 2
+    assert abs(pivo_x - centro) <= 1, (pivo_x, centro)
+
+
+def test_sombra_cobre_figura_mais_larga_que_os_pes():
+    """1.9: boss com punhos mais largos que os pés: a sombra tem >= 0,75 da largura da figura (régua do medir)."""
+    from horys_pixel.motor import grade as G
+    linhas = ["." * 4 + "p" * 32 + "." * 4] * 20 + ["." * 12 + "p" * 16 + "." * 12] * 10
+    meta = {"quadro": 64, "pivo": (20, len(linhas) - 1), "contorno": "suave", "sombra": "sim", "tipo": "boss"}
+    img, mask = G.montar(meta, {"p": "#c98f6b"}, {"nome": "q0", "linhas": linhas})
+    semi = (img[..., 3] > 0) & (img[..., 3] < 255)
+    sx = np.nonzero(semi.any(axis=0))[0]
+    fx = np.nonzero((img[..., 3] == 255).any(axis=0))[0]
+    assert (sx.max() - sx.min() + 1) / (fx.max() - fx.min() + 1) >= 0.75

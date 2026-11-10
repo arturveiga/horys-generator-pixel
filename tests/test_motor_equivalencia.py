@@ -54,6 +54,8 @@ def copia_da_skill(destino: Path) -> Path:
 def _sem_caminho(med):
     for f in med["folhas"].values():
         f.pop("arquivo", None)
+        f.get("animacao", {}).pop("A13_pisca_cor", None)   # métrica nova (new-task 2.7): a skill original não tem
+    med["avisos"] = [a for a in med["avisos"] if a["id"] != "A13"]
     return med
 
 
@@ -69,6 +71,7 @@ def comparar_saidas(so: Path, sn: Path, base: str, ignorar_rotulo_regua: bool):
                               np.array(Image.open(sn / f"{base}_regua_anim.png")))
     A = (so / f"{base}_checagem.txt").read_text(encoding="utf-8").splitlines()
     B = (sn / f"{base}_checagem.txt").read_text(encoding="utf-8").splitlines()
+    B = [y for y in B if "aviso A13" not in y]   # métrica nova (new-task 2.7): a skill original não tem
     assert len(A) == len(B)
     for x, y in zip(A, B):
         if x == y or "medidas.json" in x:      # a linha do caminho da pasta de saída muda

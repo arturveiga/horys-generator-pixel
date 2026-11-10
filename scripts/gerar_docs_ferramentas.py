@@ -9,7 +9,8 @@ from horys_pixel.ferramentas import registro  # noqa: E402
 registro.carregar_todas()
 GRUPOS = {"desenho": "Desenho (ponte com o Aseprite)", "conversa": "Conversa (painel do Aseprite)",
           "estilo": "Estilo", "partes": "Partes (fatiamento modular)", "pedidos": "Pedidos", "gosto": "Memória de gosto", "treino": "Treino",
-          "kiln": "SpriteKiln (base 3D animada)"}
+          "kiln": "SpriteKiln (base 3D animada)",
+          "sequencia": "Sequência (animação de qualquer fonte)", "entrega": "Entrega e retoque"}
 por_grupo = {}
 for f in registro.REGISTRO.values():
     por_grupo.setdefault(f.funcao.__module__.rsplit(".", 1)[-1], []).append(f)

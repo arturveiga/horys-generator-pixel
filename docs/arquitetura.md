@@ -66,14 +66,24 @@
 O estilo é um **pacote** (paleta, bíblia, regras, régua, metas, gosto, treino) que cada pessoa cria. Ver
 [estilos](estilos.md). Todo pedido roda dentro de um estilo; o Horys Pixel Liso é o primeiro.
 
-### 5. Imagem de referência (de qualquer origem)
+### 5. Referência primeiro, gerador trocável, animação por sequência
 A imagem só existe para **facilitar a geração**: decide forma, proporção e apelo, e **nunca vira asset**.
-- **Padrão: a ferramenta pede.** No briefing, o painel pede uma imagem de referência, venha de onde vier (ChatGPT,
-  PixelLab, Pinterest, um rabisco seu, um print). O motor converte por moda e limpa por cima.
-- **Se você não tiver uma,** ela pode gerar: pelo **Codex** (geração de imagem embutida; o Claude não gera imagem) ou,
-  quando existir, pelo **modelo local treinado** ([treino](treino.md)). Gerar é opção, não etapa obrigatória.
-- O motor pode também **montar o prompt** para você gerar a imagem fora, como a skill faz hoje no fluxo "fiel".
-- Referência de terceiros serve de guia, mas **não entra no conjunto de treino**, a não ser que a licença permita.
+```
+PARADO    pedido → ficha do tipo (padroes/*.json) → horys_prompt_traducao (+ paleta) → o usuário gera onde quiser
+          → horys_portao_entrada → horys_converter (moda) → limpar → portão → revisor → entrega + acabamento marcado
+ANIMADO   base aprovada (+ guia de pose do Kiln/Noct: horys_guia_poses) → prompt de poses (grade) ou vídeo
+          → horys_portao_entrada → horys_sequencia (motor de sequência) → portão → revisor → entrega
+```
+- **Padrões de entrada** (`src/horys_pixel/padroes/<tipo>.json`): os números das fichas do cofre (quadro, pivô, altura,
+  detalhe mínimo, vista, cores, grade de poses). O texto e a justificativa ficam no cofre.
+- **Gerador trocável:** Codex, ChatGPT, Gemini ou vídeo entram pelo mesmo padrão (prompt de 11 itens + portão de
+  entrada). O Codex é **opcional** (`fonte: codex`, `horys instalar --tudo --codex`); o revisor padrão é o Claude.
+- **Motor de sequência** (`src/horys_pixel/sequencia/`): trata N quadros como um todo (entradas, fundo, registro,
+  escolha de quadros, quantização conjunta, anti-cintilação, trava de identidade, limpeza). A conversão de uma imagem
+  só não serve para animação: cria cintilação.
+- **Entrega a 90%:** zero defeito *estrutural* no revisor e aceitação ≥ 80; o *acabamento* vai marcado na camada
+  `revisao` e o retoque do usuário volta como gosto (`horys_entrega`, `horys_gosto_do_retoque`).
+- Referência de terceiros serve de guia (descrita no prompt, nunca anexada) e **não entra no treino** sem licença.
 
 ## Fluxo de um pedido (pelo Aseprite)
 

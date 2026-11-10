@@ -98,7 +98,7 @@ def main(argv=None):
         from . import instalar as I
         base = Path(a.pasta_aseprite) if a.pasta_aseprite else None
         if a.tudo:
-            log = I.tudo(a.simular, a.confiar, a.inicializacao)
+            log = I.tudo(a.simular, a.confiar, a.inicializacao, a.codex)
         else:
             log = []
             if a.extensao:

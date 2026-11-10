@@ -217,7 +217,15 @@ async def ficha(ctx, a):
             f.setdefault("excecoes", []).append({"campos": sorted(alterados), "motivo": motivo.strip()})
             f.pop("partes_checagem", None)
         ctx.salvar_ficha(chave, f)
-    return [texto(json.dumps(f, ensure_ascii=False, indent=1) if f else "sem ficha")]
+    if not f:
+        return [texto("sem ficha")]
+    saida = json.dumps(f, ensure_ascii=False, indent=1)
+    from .. import padroes
+    if padroes.tipo_de(f.get("tipo")):
+        tipo = padroes.tipo_de(f.get("tipo"))
+        saida += "\n\npadrão de entrada do tipo '" + tipo + "':\n" + json.dumps(
+            padroes.carregar(tipo), ensure_ascii=False, indent=1)
+    return [texto(saida)]
 
 
 @ferramenta("horys_asset_novo", """Cria o sprite de um asset pela ficha, de uma vez: quadro QxQ (padrão 192; pé no
@@ -377,13 +385,31 @@ contorno), trava a paleta do estilo e põe o pé no pivô. 'tirar_contorno': an�
 (1 para conceito com contorno grosso). É só o PONTO DE PARTIDA: depois limpe (horys_limpar, horys_afinar) e redesenhe
 à mão rosto e detalhes.""",
             {"imagem": STR, "altura": INT, "camada": STR, "quadro": INT, "modo": STR, "tirar_contorno": INT,
-             "fundo": STR, "nativo": BOOL}, ["imagem", "altura"])
+             "fundo": STR, "nativo": BOOL, "forcar": BOOL, "motivo": STR}, ["imagem", "altura"])
+def entrada_reprovada(img: Path) -> str | None:
+    """None se a entrada_checagem.txt ao lado da imagem aprovou ESTA imagem; senão, o motivo."""
+    txt = img.parent / "entrada_checagem.txt"
+    if not txt.exists():
+        return f"a imagem {img.name} não passou pelo portão de entrada (falta entrada_checagem.txt)."
+    conteudo = txt.read_text(encoding="utf-8")
+    linhas = conteudo.splitlines()
+    if len(linhas) < 2 or Path(linhas[1].split("imagem:", 1)[-1].split("  (")[0].strip()).name != img.name:
+        return f"a entrada_checagem.txt ao lado não é da imagem {img.name}."
+    if "APROVADO" not in linhas[0] or "REPROVADO" in linhas[0]:
+        return f"o portão de entrada reprovou {img.name} (veja entrada_checagem.txt)."
+    return None
+
+
 async def converter(ctx, a):
-    chave, f, st = await _ficha(ctx)
-    est = _estilo(f.get("estilo"))
     img = Path(a["imagem"])
     if not img.exists():
         raise ErroFerramenta(f"imagem não existe: {img}")
+    erro_entrada = entrada_reprovada(img)
+    if erro_entrada and not (a.get("forcar") and (a.get("motivo") or "").strip()):
+        raise ErroFerramenta(erro_entrada + " Rode horys_portao_entrada antes (ou, se o usuário pediu, passe "
+                             "forcar: true e motivo: '<o que o usuário disse>').")
+    chave, f, st = await _ficha(ctx)
+    est = _estilo(f.get("estilo"))
     Q = int(st["sprite"]["largura"])
     camada = a.get("camada") or _partes(f, st)[-1]
     q = int(a.get("quadro", st["sprite"].get("quadro_ativo") or 0))
@@ -714,13 +740,44 @@ async def medir_arquivo(ctx, a):
 
 # ------------------------------------------------------------------ referência e revisor
 
-@ferramenta("horys_referencia_gerar", """Gera imagem de referência quando o usuário não tem uma: 'fonte' codex
-(geração de imagem embutida do Codex; o Claude não gera imagem) ou lora (o modelo treinado do estilo, se houver).
+@ferramenta("horys_prompt_traducao", """Monta o PROMPT DE TRADUÇÃO (11 itens do cofre) para o usuário levar a qualquer
+gerador de imagem (Codex, ChatGPT, Gemini, vídeo...): 'tipo' (personagem, criatura-pequena, criatura-grande, boss,
+prop, arvore, predio, tile, icone, retrato, efeito), 'descricao' do design, 'estilo' (a paleta vira os hex e os
+papéis), 'altura' alvo em px, 'modo' parado | poses (com 'poses', a lista), 'referencia' (caminho; só vai anexada se
+'referencia_propria'), e opcionais foco, pecas, cortes, nao_fazer, vista, base_aprovada, guia_pose. Grava
+<pasta>/traducao/prompt.md e traducao/paleta-<estilo>.png (amostra com os hex) e devolve o prompt.""",
+            {"tipo": STR, "descricao": STR, "estilo": STR, "nome": STR, "altura": INT, "modo": STR, "poses": LISTA_STR,
+             "referencia": STR, "referencia_propria": BOOL, "foco": STR, "pecas": LISTA_STR, "cortes": LISTA_STR,
+             "nao_fazer": LISTA_STR, "vista": STR, "base_aprovada": STR, "guia_pose": STR, "pasta": STR},
+            ["tipo", "descricao"])
+async def prompt_traducao(ctx, a):
+    from .. import traducao
+    est = _estilo(a.get("estilo"))
+    pasta = Path(a.get("pasta") or (config.pasta("referencias") / est.nome))
+    if not config.caminho_permitido(pasta):
+        raise ErroFerramenta(f"pasta não permitida: {pasta}")
+    campos = {k: a[k] for k in ("nome", "altura", "modo", "poses", "referencia", "referencia_propria", "foco", "pecas",
+                                "cortes", "nao_fazer", "vista", "base_aprovada", "guia_pose") if a.get(k) is not None}
+    try:
+        r = traducao.escrever(pasta, tipo=a["tipo"], descricao=a["descricao"], paleta=_paleta(est),
+                              nome_estilo=est.nome, **campos)
+    except ValueError as e:
+        raise ErroFerramenta(str(e))
+    return [texto("prompt: " + r["prompt"] + "\npaleta (anexo): " + r["paleta"] + "\n\n" + r["texto"]),
+            imagem(_miniatura(Path(r["paleta"]), 512))]
+
+
+@ferramenta("horys_referencia_gerar", """Gera imagem de referência quando o usuário não tem uma: 'fonte' manual (PADRÃO: monta o prompt
+de tradução via horys_prompt_traducao para o usuário gerar onde quiser; passe 'tipo'), codex (opcional, só se o Codex
+estiver instalado) ou lora (o modelo treinado do estilo, se houver).
 'prompt' descreve o asset com a paleta e os princípios do estilo (nunca anexe arte de terceiros). Pode levar minutos;
 devolve os caminhos das imagens.""",
-            {"fonte": STR, "prompt": STR, "pasta": STR, "n": INT, "estilo": STR, "imagens": LISTA_STR},
-            ["fonte", "prompt"])
+            {"fonte": STR, "prompt": STR, "pasta": STR, "n": INT, "estilo": STR, "imagens": LISTA_STR, "tipo": STR,
+             "altura": INT, "modo": STR, "poses": LISTA_STR},
+            ["prompt"])
 async def referencia_gerar(ctx, a):
+    if (a.get("fonte") or "manual") == "manual":
+        return await prompt_traducao(ctx, {**a, "tipo": a.get("tipo") or "personagem", "descricao": a["prompt"]})
     est = _estilo(a.get("estilo"))
     pasta = Path(a.get("pasta") or (config.pasta("referencias") / est.nome))
     pasta.mkdir(parents=True, exist_ok=True)
@@ -800,6 +857,8 @@ async def revisar(ctx, a):
                 continue        # ex.: o outro motor sem cota → revisa com o de reserva (não fica cruzado)
             res = {"motor": m, "codigo": r["codigo"], "json": js, "texto": None if js else r["texto"][-3000:],
                    "log": r["log"]}
+            from .. import entrega
+            res["entrega"] = entrega.avaliar(js)
             if k:
                 res["aviso"] = (f"o revisor {tentativas[0]} falhou ({(ultimo or {}).get('erro', '')[:200]}); "
                                 f"revisado pelo {m}, então NÃO foi cruzado")

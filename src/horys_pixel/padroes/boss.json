@@ -1,0 +1,49 @@
+{
+ "tipo": "boss",
+ "linha_chao_frac": 0.9,
+ "fundo": "#3DBE5B",
+ "fundo_alternativo": "#FF00FF",
+ "quadro": 256,
+ "pivo": [
+  128,
+  191
+ ],
+ "altura_alvo": [
+  150,
+  200
+ ],
+ "detalhe_min_frac": 0.02,
+ "vista": "3/4 olhando para a direita; de frente e simétrico se encara o jogador; pernas abertas em A",
+ "camera": "altura do peito ou levemente de cima; nunca de baixo",
+ "proporcao": "3 a 5 massas, uma dominante; 2-3 placas grandes",
+ "canvas_geracao": [
+  1024,
+  1536
+ ],
+ "ocupacao": 0.75,
+ "cores_max": 16,
+ "contorno": "anil 2 px (1 px suave se o design é denso)",
+ "luz": "de cima e um pouco da frente; metade de baixo mais escura",
+ "remover": [
+  "partículas pequenas",
+  "rachaduras finas",
+  "musgo",
+  "fios de pelo",
+  "músculos desenhados",
+  "runas pequenas espalhadas",
+  "sombra projetada"
+ ],
+ "animacao": {
+  "layout": [
+   1,
+   2
+  ],
+  "canvas": [
+   1536,
+   1024
+  ],
+  "celulas": 2,
+  "escala_min": 4.0,
+  "repetir_enquadramento_em_numeros": true
+ }
+}

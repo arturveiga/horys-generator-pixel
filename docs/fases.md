@@ -46,3 +46,8 @@ Cada fase termina testável sozinha. A `horys-pixel-liso` e a `pixelart-review` 
   promoção com o sim de quem usa.
 - **Pronto:** no PC do Artur (6 GB, SD 1.5) a vN+1 ganha da vN no mesmo lote de teste e vira o gerador de referência
   padrão do Horys Pixel Liso.
+
+## Fase 7: referência primeiro, gerador trocável e sequência (2026-11-09)
+Plano em [new-task.md](../new-task.md): padrões de entrada em dados, prompt de tradução, portão de entrada, motor de
+sequência, fontes de movimento (grade, vídeo, Kiln), revisor estrutural × acabamento e gosto pelo retoque. O `TODO.md`
+antigo ficou em [historico/TODO.md](historico/TODO.md).

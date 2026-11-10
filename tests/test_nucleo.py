@@ -176,3 +176,87 @@ def test_pedido_sem_motor_usa_o_padrao(casa_temp):
     p = ctx.pedidos.novo({"descricao": "revisar", "motor": None, "estilo": ""}, "revisao")
     assert p["motor"] == config.preferencias()["motor_padrao"]
     assert p["estilo"] == config.preferencias()["estilo_padrao"]
+
+
+def _png(caminho, cor=(200, 40, 40, 255)):
+    from PIL import Image
+    caminho.parent.mkdir(parents=True, exist_ok=True)
+    Image.new("RGBA", (8, 8), cor).save(caminho)
+
+
+def test_esperar_imagem_pela_pasta_e_pelo_painel(ambiente):
+    async def corpo():
+        ctx, ase, chamar, fim = await _ambiente(ambiente)
+        try:
+            pasta = config.casa() / "pedidos" / "macaco"
+            trad = pasta / "traducao" / "prompt.md"
+            trad.parent.mkdir(parents=True, exist_ok=True)
+            trad.write_text("1. gorila de pedra\n2. fundo verde liso", encoding="utf-8")
+            _png(pasta / "entrada" / "velha.png")          # já estava lá: não conta
+            r = await chamar("horys_esperar_imagem", arquivo_prompt=str(trad))
+            assert not r["erro"], r
+            i = _txt(r).split("id: ")[1].split()[0]
+            cmd, a = ase.ui[-1]
+            assert cmd == "ui_imagem" and a["id"] == i and "gorila de pedra" in a["prompt"]
+            assert a["pasta"] == str(pasta / "entrada")
+            r = await chamar("horys_aguardar", id=i, segundos=1)
+            assert "pendente" in _txt(r)
+            _png(pasta / "entrada" / "gerada.png")
+            r = await chamar("horys_aguardar", id=i, segundos=10)
+            resp = json.loads(_txt(r))["resposta"]
+            assert resp["imagem"] == str(pasta / "entrada" / "gerada.png") and resp["origem"] == "pasta"
+            await asyncio.sleep(0.2)
+            assert ("ui_fechar", {"id": i}) in ase.ui
+            # pelo painel: o arquivo escolhido fora é copiado para entrada/
+            r = await chamar("horys_esperar_imagem", prompt="outro", pasta=str(pasta))
+            i = _txt(r).split("id: ")[1].split()[0]
+            fora = config.casa() / "downloads" / "chatgpt.png"
+            _png(fora)
+            await ase.evento(tipo="imagem", id=i, caminho=str(fora))
+            resp = json.loads(_txt(await chamar("horys_aguardar", id=i, segundos=5)))["resposta"]
+            assert resp["origem"] == "painel" and resp["imagem"] == str(pasta / "entrada" / "chatgpt.png")
+            assert (pasta / "entrada" / "chatgpt.png").exists()
+            r = await chamar("horys_esperar_imagem", pasta=str(pasta))
+            assert r["erro"] and "prompt" in _txt(r)
+        finally:
+            await fim()
+    rodar(corpo())
+
+
+def test_novas_imagens_ignora_as_antigas(tmp_path):
+    from horys_pixel.daemon.conversa import novas_imagens, retrato_pasta
+    _png(tmp_path / "a.png")
+    (tmp_path / "nota.txt").write_text("x")
+    antes = retrato_pasta(tmp_path)
+    assert novas_imagens(tmp_path, antes) == []
+    _png(tmp_path / "b.webp")
+    assert [p.name for p in novas_imagens(tmp_path, antes)] == ["b.webp"]
+
+
+def test_entrega_mostra_acabamento_no_painel(ambiente):
+    async def corpo():
+        ctx, ase, chamar, fim = await _ambiente(ambiente)
+        try:
+            await chamar("horys_sprite_novo", largura=16, altura=16)
+            res = {"aceitacao": 85, "criterios": [
+                {"id": "L5", "resultado": "falha", "severidade": "leve", "classe": "acabamento", "onde": "3,4",
+                 "correcao": "pelo do ombro em degraus"},
+                {"id": "L2", "resultado": "passa", "severidade": "grave"}]}
+            r = await chamar("horys_entrega", resultado=res)
+            assert not r["erro"], r
+            t = _txt(r)
+            assert "PRONTO PARA ENTREGA" in t
+            i = t.split("id: ")[1].split()[0]
+            cmd, a = next(x for x in reversed(ase.ui) if x[0] == "ui_acabamento")
+            assert a["id"] == i and a["itens"] == [{"id": "L5", "onde": "3,4", "correcao": "pelo do ombro em degraus"}]
+            await ase.evento(tipo="acabamento", id=i, feitos=["L5"], total=1, comentario="feito")
+            resp = json.loads(_txt(await chamar("horys_aguardar", id=i, segundos=5)))["resposta"]
+            assert resp == {"feitos": ["L5"], "total": 1, "comentario": "feito"}
+            # não pronto: sem lista no painel
+            n = sum(1 for c, _ in ase.ui if c == "ui_acabamento")
+            res["aceitacao"] = 60
+            await chamar("horys_entrega", resultado=res)
+            assert sum(1 for c, _ in ase.ui if c == "ui_acabamento") == n
+        finally:
+            await fim()
+    rodar(corpo())

@@ -56,6 +56,11 @@ SEVERIDADE
 - leve = só aparece ampliado e não muda a leitura ao lado da régua.
 - Na dúvida entre leve e grave, é grave.
 
+CLASSE (cada defeito em "criterios" leva "classe")
+- estrutural = forma, silhueta, leitura, proporção, técnica quebrada, parte faltando ou forma que precisa ser REDESENHADA. Isso o usuário não deveria ter que consertar.
+- acabamento = o que o usuário finaliza no Aseprite: pelo, dedos, facetas, brilho pontual, rosto fino, ajuste de cacho. Não muda a leitura ao lado da régua.
+"Pronto para entrega" = zero estrutural E aceitação >= 80. `redesenhar_forma` conta como estrutural.
+
 DECISÃO
 PASSA = nenhuma falha grave em nenhum estado E aceitacao >= 80. Se não, NAO_PASSA. As falhas leves viram a lista de ajustes.
 Responda SOMENTE com este JSON, sem texto antes ou depois:
@@ -64,7 +69,7 @@ Responda SOMENTE com este JSON, sem texto antes ou depois:
  "notas": {"L1": 0, "L2": 0, "L3": 0, "L4": 0, "L5": 0, "L6": null, "L7": 0},
  "regua": "uma frase: aguenta ou não ao lado da régua, e por quê",
  "diferencas_vs_regua": ["...", "...", "..."],
- "criterios": [{"id": "L1", "estado": "...", "resultado": "passa|falha", "severidade": "grave|leve", "onde": "...", "correcao": "..."}],
+ "criterios": [{"id": "L1", "estado": "...", "resultado": "passa|falha", "severidade": "grave|leve", "classe": "estrutural|acabamento", "onde": "...", "correcao": "..."}],
  "praticas": [{"regra": "...", "cumpre": true}],
  "redesenhar_forma": false,
  "melhor_coisa": "...", "proxima_acao": "..."}

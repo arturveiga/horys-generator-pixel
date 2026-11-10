@@ -738,6 +738,18 @@ function H.ui_progresso(a)
   return J.objeto({})
 end
 
+function H.ui_imagem(a)
+  local ui = precisaUI()
+  ui.imagem(L.normalizarImagem(a))
+  return { mostrado = true }
+end
+
+function H.ui_acabamento(a)
+  local ui = precisaUI()
+  ui.acabamento(L.normalizarAcabamento(a))
+  return { mostrado = true }
+end
+
 function H.ui_fechar(a)
   local ui = precisaUI()
   if a.id == nil or a.id == J.null then falha("falta 'id'") end
@@ -756,6 +768,7 @@ local COMANDOS = {
   selecao = H.selecao, desfazer = H.desfazer, refazer = H.refazer,
   ui_perguntar = H.ui_perguntar, ui_aprovar = H.ui_aprovar,
   ui_progresso = H.ui_progresso, ui_fechar = H.ui_fechar,
+  ui_imagem = H.ui_imagem, ui_acabamento = H.ui_acabamento,
 }
 H.COMANDOS = COMANDOS
 

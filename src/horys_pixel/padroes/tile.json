@@ -1,0 +1,35 @@
+{
+ "tipo": "tile",
+ "linha_chao_frac": 0.9,
+ "fundo": "#3DBE5B",
+ "fundo_alternativo": "#FF00FF",
+ "quadro": 64,
+ "pivo": [
+  0,
+  0
+ ],
+ "altura_alvo": [
+  64,
+  64
+ ],
+ "detalhe_min_frac": 0.19,
+ "vista": "amostra de material, chapada",
+ "camera": "top-down",
+ "proporcao": "4-6 peças grandes",
+ "canvas_geracao": [
+  1024,
+  1024
+ ],
+ "ocupacao": 1.0,
+ "cores_max": 12,
+ "contorno": "anil 1 px entre pedras",
+ "luz": "de cima",
+ "remover": [
+  "emenda",
+  "grade de 64"
+ ],
+ "observacao": "O gerador NÃO faz o tile final: só amostra de material; o tile é feito em grade e passa no teste de emenda.",
+ "animacao": {
+  "estatico": true
+ }
+}

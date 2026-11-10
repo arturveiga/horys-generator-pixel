@@ -186,7 +186,13 @@ def medir_quadro(f, ctx):
     cx = f.shape[1] // 2
     banda = op[:, max(0, cx - 12):cx + 13]
     linhas = np.nonzero(banda.any(1))[0]
-    res["pe"] = int(linhas.max()) if len(linhas) else int(ys.max())
+    pe = int(linhas.max()) if len(linhas) else int(ys.max())
+    # banda central no vão entre os pés (boss frontal): ela para acima da linha mais baixa → usa a figura toda
+    if pe < int(ys.max()) - 2:
+        baixo = xs[ys >= ys.max() - 2]
+        if (baixo < cx - 12).any() and (baixo > cx + 12).any():   # dois pés, um de cada lado da banda
+            pe = int(ys.max())
+    res["pe"] = pe
     # borda do quadro
     borda = np.zeros_like(op)
     borda[0, :] = borda[-1, :] = borda[:, 0] = borda[:, -1] = True
@@ -471,6 +477,13 @@ def main():
                 for (y, x) in pts:
                     marcas[i].append((int(x), int(y), (40, 220, 255)))
             anim["A08_boil_max"] = b_tot
+            try:
+                from horys_pixel.sequencia.anticintilacao import pisca_rgba
+                anim["A13_pisca_cor"] = round(pisca_rgba(quadros, bool(loop)), 4)
+                if anim["A13_pisca_cor"] > 0.03:   # meta provisória: calibrar no Tiny (new-task 2.7)
+                    aviso("A13", estado, f"{anim['A13_pisca_cor']:.1%} dos pixels piscam (mudam e voltam em 2 quadros)")
+            except ImportError:
+                pass
             anim["A10_quadros_com_sombra"] = int(sum(1 for r in validos if r.get("semi", 0) > 0))
             anim["loop"] = loop
             info["animacao"] = anim

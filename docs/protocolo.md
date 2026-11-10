@@ -52,6 +52,8 @@ Cores: `"#rrggbb"` ou `"#rrggbbaa"`. Pixels: RGBA 8 bits, linha a linha, em **ba
 | `ui_aprovar` | `{"id","titulo","texto","imagem"?(base64 PNG)}` | `{"mostrado":true}` |
 | `ui_progresso` | `{"pedido","etapa","texto","nota"?}` | `{}` |
 | `ui_fechar` | `{"id"}` | `{}` |
+| `ui_imagem` | `{"id","titulo","prompt","arquivo_prompt"?,"pasta"}` (mostra o prompt com Copiar e espera a imagem em `pasta`) | `{"mostrado":true}` |
+| `ui_acabamento` | `{"id","titulo","itens":[{"id","onde","correcao"}]}` (lista do acabamento, com checkbox por item) | `{"mostrado":true}` |
 
 ## Eventos Aseprite → servidor (sem resposta)
 ```json
@@ -61,6 +63,9 @@ Cores: `"#rrggbb"` ou `"#rrggbbaa"`. Pixels: RGBA 8 bits, linha a linha, em **ba
 {"t":"evt","tipo":"revisar_sprite","arquivo"?}
 {"t":"evt","tipo":"estilo_novo","estilo":{"nome","imagens":[caminhos],"motor"}}
 {"t":"evt","tipo":"cancelar","pedido"}
+{"t":"evt","tipo":"imagem","id":"<id da espera>","caminho":"<arquivo escolhido>"}   // o horysd copia para entrada/
+{"t":"evt","tipo":"abrir_pasta","id":"<id da espera>"}                              // abre entrada/ no sistema
+{"t":"evt","tipo":"acabamento","id":"<id>","feitos":["L5",...],"total":3,"comentario":"..."}
 ```
 
 ## Pontes MCP (papel `mcp`)

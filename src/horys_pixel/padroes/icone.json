@@ -1,0 +1,35 @@
+{
+ "tipo": "icone",
+ "linha_chao_frac": 0.9,
+ "fundo": "#3DBE5B",
+ "fundo_alternativo": "#FF00FF",
+ "quadro": 64,
+ "pivo": [
+  32,
+  32
+ ],
+ "altura_alvo": [
+  45,
+  54
+ ],
+ "detalhe_min_frac": 0.06,
+ "vista": "3/4; diagonal se comprido",
+ "camera": "sem perspectiva",
+ "proporcao": "objeto com 70-85% do quadro; 1 acento de cor",
+ "canvas_geracao": [
+  1024,
+  1024
+ ],
+ "ocupacao": 0.8,
+ "cores_max": 8,
+ "contorno": "anil 2 px",
+ "luz": "de cima e da esquerda",
+ "remover": [
+  "gravuras",
+  "texto",
+  "brilhos múltiplos"
+ ],
+ "animacao": {
+  "estatico": true
+ }
+}

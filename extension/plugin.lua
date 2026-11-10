@@ -239,6 +239,8 @@ function init(plugin)
     aprovar = UI.aprovar,
     progresso = UI.progresso,
     fechar = UI.fechar,
+    imagem = UI.imagem,
+    acabamento = UI.acabamento,
   }
 
   criarMenu(plugin)

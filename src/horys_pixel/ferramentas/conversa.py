@@ -102,7 +102,57 @@ async def aprovar(ctx, a):
     return [texto(f"id: {i}\naprovação no painel. Chame horys_aguardar com id='{i}'.")]
 
 
-@ferramenta("horys_aguardar", """Espera a resposta de uma pergunta, aprovação, revisão ou tarefa (id). Espera no
+@ferramenta("horys_esperar_imagem", """Entrega do prompt e espera da imagem gerada FORA (ChatGPT, Gemini, Codex, vídeo...).
+Mostra no painel do Aseprite o prompt (texto em 'prompt' ou o arquivo 'arquivo_prompt', ex.: traducao/prompt.md do
+horys_prompt_traducao) com o botão Copiar e cria a pasta <pasta>/entrada/. A espera destrava quando o usuário salva
+uma imagem nessa pasta (o horysd vigia) ou escolhe o arquivo no painel. Devolve um id na hora; chame
+horys_aguardar(id): a resposta traz 'imagem' (caminho), que vai direto para o horys_portao_entrada. 'pasta' padrão:
+a do 'pedido', senão a pasta acima de traducao/. Sem painel, a vigia da pasta continua: mostre o prompt no chat.""",
+            {"prompt": STR, "arquivo_prompt": STR, "pasta": STR, "titulo": STR, "pedido": STR})
+async def esperar_imagem(ctx, a):
+    import asyncio
+    from .. import config
+    arq = Path(a["arquivo_prompt"]) if a.get("arquivo_prompt") else None
+    prompt = a.get("prompt") or ""
+    if not prompt and arq:
+        if not arq.is_file():
+            raise ErroFerramenta(f"arquivo_prompt não existe: {arq}")
+        prompt = arq.read_text(encoding="utf-8")
+    if not prompt.strip():
+        raise ErroFerramenta("passe 'prompt' ou 'arquivo_prompt' (rode horys_prompt_traducao antes)")
+    pasta = a.get("pasta")
+    if not pasta and a.get("pedido"):
+        pasta = ((ctx.pedidos.ler(a["pedido"]) or {}).get("pasta"))
+    if not pasta and arq:
+        pasta = str(arq.parent.parent if arq.parent.name == "traducao" else arq.parent)
+    if not pasta:
+        raise ErroFerramenta("passe 'pasta' (ou 'pedido' ou 'arquivo_prompt')")
+    entrada = Path(pasta) / "entrada"
+    if not config.caminho_permitido(entrada):
+        raise ErroFerramenta(f"pasta não permitida: {entrada}")
+    entrada.mkdir(parents=True, exist_ok=True)
+    i = ctx.pend.criar("imagem", {"entrada": str(entrada), "arquivo_prompt": str(arq) if arq else None,
+                                  "pedido": a.get("pedido")})
+
+    async def fechar_janela(ii):
+        await ctx.ui("ui_fechar", {"id": ii})
+    asyncio.ensure_future(ctx.pend.vigiar_entrada(i, entrada, fechar_janela))
+    ok = await ctx.ui("ui_imagem", {"id": i, "titulo": a.get("titulo") or "Horys: gere a imagem", "prompt": prompt,
+                                    "arquivo_prompt": str(arq) if arq else "", "pasta": str(entrada)})
+    if a.get("pedido"):
+        try:
+            ctx.pedidos.atualizar(a["pedido"], etapa="referencia", texto="esperando a imagem gerada em " + str(entrada))
+        except KeyError:
+            pass
+    if not ok:
+        return [texto(f"id: {i}\nsem_painel: mostre o prompt no chat e peça para salvar a imagem em {entrada}. "
+                      f"A pasta está sendo vigiada; chame horys_aguardar com id='{i}'.")]
+    return [texto(f"id: {i}\nprompt no painel; esperando a imagem em {entrada}. Chame horys_aguardar com id='{i}' "
+                  "(o usuário pode demorar: continue chamando enquanto estiver pendente).")]
+
+
+@ferramenta("horys_aguardar", """Espera a resposta de uma pergunta, aprovação, imagem (horys_esperar_imagem),
+acabamento (horys_entrega), revisão ou tarefa (id). Espera no
 máximo 'segundos' (padrão 45, máx. 55) e devolve o estado: 'respondido' com a resposta, ou 'pendente' — então chame
 de novo. O usuário pode demorar: continue chamando enquanto estiver pendente.""",
             {"id": STR, "segundos": INT}, ["id"])

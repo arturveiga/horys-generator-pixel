@@ -1,0 +1,44 @@
+{
+ "tipo": "prop",
+ "linha_chao_frac": 0.9,
+ "fundo": "#3DBE5B",
+ "fundo_alternativo": "#FF00FF",
+ "quadro": 64,
+ "pivo": [
+  32,
+  56
+ ],
+ "altura_alvo": [
+  18,
+  64
+ ],
+ "detalhe_min_frac": 0.1,
+ "vista": "top-down 3/4 do jogo",
+ "camera": "a do jogo",
+ "proporcao": "menor que o personagem de 64-72 px",
+ "canvas_geracao": [
+  1024,
+  1024
+ ],
+ "ocupacao": 0.75,
+ "cores_max": 8,
+ "contorno": "anil 2 px",
+ "luz": "de cima",
+ "remover": [
+  "veios de madeira",
+  "arranhões",
+  "reflexos"
+ ],
+ "animacao": {
+  "layout": [
+   1,
+   4
+  ],
+  "canvas": [
+   1536,
+   1024
+  ],
+  "celulas": 4,
+  "escala_min": 3.0
+ }
+}

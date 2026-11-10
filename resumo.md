@@ -1,6 +1,6 @@
 # Resumo da sessão: gargalo de animação do Horys Pixel (boss macaco-golem)
 
-Data: 2026-11-09. Repo: `C:\Users\artur\workspace\repos\horys\horys-generator-pixel`. Nada foi commitado nesta sessão; o trabalho novo está em `tmp-kiln/` (não versionado) e em `resumo.md`.
+Data: 2026-11-09. Repo: `C:\Users\artur\workspace\repos\horys\horys-generator-pixel`. Nada foi commitado nesta sessão; o trabalho novo está em `~/.horys-pixel/experimentos/golem-kiln/` (não versionado) e em `resumo.md`.
 
 ## Objetivo
 
@@ -19,7 +19,7 @@ Resolver o gargalo de **animação** de pixel art dos jogos do Artur e **reduzir
 | 3 | Kiln 3D puro, junta de ombro, pelo, pernas em A | 46% (L3=40, critério de parada atingido) |
 | 4 | Kiln + pele ComfyUI, sem decalque | 40% (olhos sumiram, runa cintilava) |
 | 5 | Kiln + pele ComfyUI + **decalque do crânio e da placa da v19** + pé plantado (`golem-final` v02) | **50%** (melhor; `redesenhar_forma: false`) |
-| 6 | pose nova (pernas em A bem abertas), pelo do Kiln restaurado | montado em `tmp-kiln/out-final4/`, **ainda não importado, medido nem revisado** |
+| 6 | pose nova (pernas em A bem abertas), pelo do Kiln restaurado | montado em `~/.horys-pixel/experimentos/golem-kiln/out-final4/`, **ainda não importado, medido nem revisado** |
 
 Notas da r5: L1 60, L2 55, L3 35, L4 68, L5 40, L6 45, L7 50. Faltava: linhas internas, pelo, punhos de pedra, sombra fixa, M10 (51 degraus vs ~11), quique 10,6 px.
 
@@ -40,10 +40,10 @@ Notas da r5: L1 60, L2 55, L3 35, L4 68, L5 40, L6 45, L7 50. Faltava: linhas in
 - Fundo da v19 é `#68a057` (104,160,87), não `#649958`; o decalque saiu como retângulo verde.
 - Índice de banda fora da rampa quebrou o render (`rock` com 3 cores precisa `bands: [0, 2]`).
 
-## Arquivos e ferramentas (tudo em `tmp-kiln/`)
+## Arquivos e ferramentas (tudo em `~/.horys-pixel/experimentos/golem-kiln/`)
 
 - **Spec do golem:** `art/specs/characters/golem/golem.yaml` (backups `golem_v1..v6_*.bak`), paleta `art/specs/palettes/golem.yaml`. Render: `spritekiln render art/specs/characters/golem/golem.yaml --anims walk --dirs s -o out-golem --force` (escala 0,0115, centro y 0,45; sockets `skull_c`, `chest_c`, `rock_*_c`).
-- **Scripts (copiados para `tmp-kiln/scripts_mix/`):**
+- **Scripts (copiados para `~/.horys-pixel/experimentos/golem-kiln/scripts_mix/`):**
   - `mix_cn_full.py <quadros> <denoise> <semente> <saida> <peso_ip> <peso_canny>`: grade única 4×2 de 8 quadros no ComfyUI (SDXL + IPAdapter com a v19 + ControlNet canny), reduz 4× e trava na paleta de 16 cores.
   - `montar.py <pasta_snaps> <saida>`: monta o atlas final com decalque do crânio e da placa (recortados da v19 em `decal/v19_nat.png`), restaura o pelo violeta do Kiln e planta o pé (fundo do sprite fixo, `PE=217`). Gera `golem_final.png/.json` no formato do Kiln para `horys_importar_kiln`.
   - `mix_comfy*.py`, `mix_grade*.py`, `mix_cn.py`: versões anteriores.
@@ -65,7 +65,7 @@ Eu ia **derivar do mapa de normais do Kiln** (`out-golem/golem_normal.png`, RGBA
 
 ## Pendências sugeridas (ordem de impacto, segundo o revisor)
 
-1. Importar `tmp-kiln/out-final4/golem_final.json` em um asset novo, limpar órfãos, rodar o portão e o revisor (rodada 6).
+1. Importar `~/.horys-pixel/experimentos/golem-kiln/out-final4/golem_final.json` em um asset novo, limpar órfãos, rodar o portão e o revisor (rodada 6).
 2. Linhas internas e luz por normal (acima).
 3. Decalque da v19 para pelo do ventre, punhos de pedra e pés (mesmo método do crânio, sem rotação livre).
 4. Quique até 6 px (hoje 10,6 por causa do plantio do pé), M10 abaixo de 15 (busca gulosa de borda), fumaça violeta com atraso de 2 quadros.
@@ -75,5 +75,5 @@ Eu ia **derivar do mapa de normais do Kiln** (`out-golem/golem_normal.png`, RGBA
 ## Decisões e limites a manter
 
 - Downloads de terceiros só com autorização explícita do Artur (só os 2 controlnets foram autorizados).
-- Não commitar nada sem pedido. `tmp-kiln/` e `resumo.md` estão fora do que foi commitado.
+- Não commitar nada sem pedido. `~/.horys-pixel/experimentos/golem-kiln/` e `resumo.md` estão fora do que foi commitado.
 - O revisor é a régua de aceitação (meta ≥ 80% sem falha grave); o portão só mede técnica.

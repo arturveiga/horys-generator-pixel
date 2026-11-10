@@ -1,0 +1,45 @@
+{
+ "tipo": "criatura-pequena",
+ "linha_chao_frac": 0.9,
+ "fundo": "#3DBE5B",
+ "fundo_alternativo": "#FF00FF",
+ "quadro": 128,
+ "pivo": [
+  64,
+  80
+ ],
+ "altura_alvo": [
+  40,
+  50
+ ],
+ "detalhe_min_frac": 0.05,
+ "vista": "3/4 olhando para a direita",
+ "camera": "altura do peito, quase sem perspectiva",
+ "proporcao": "chunky: formas redondas, acento numa parte (crista, cauda, asa)",
+ "canvas_geracao": [
+  1024,
+  1024
+ ],
+ "ocupacao": 0.7,
+ "cores_max": 8,
+ "contorno": "anil 2 px",
+ "luz": "de cima, frente leve",
+ "remover": [
+  "pelagem fio a fio",
+  "escamas uma a uma",
+  "garras finas",
+  "bigodes"
+ ],
+ "animacao": {
+  "layout": [
+   2,
+   4
+  ],
+  "canvas": [
+   1536,
+   1024
+  ],
+  "celulas": 8,
+  "escala_min": 4.0
+ }
+}
