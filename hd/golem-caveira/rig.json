@@ -1,0 +1,175 @@
+{
+ "ossos": {
+  "quadril": {
+   "pai": null,
+   "pivo": [
+    0.5,
+    0.2
+   ]
+  },
+  "tronco": {
+   "pai": "quadril",
+   "pivo": [
+    0.5,
+    0.95
+   ]
+  },
+  "cabeca": {
+   "pai": "tronco",
+   "pivo": [
+    0.5,
+    0.8
+   ]
+  },
+  "braco_cima_E": {
+   "pai": "tronco",
+   "pivo": [
+    0.76,
+    0.3
+   ]
+  },
+  "antebraco_E": {
+   "pai": "braco_cima_E",
+   "pivo": [
+    0.62,
+    0.1
+   ]
+  },
+  "braco_cima_D": {
+   "pai": "tronco",
+   "pivo": [
+    0.24,
+    0.3
+   ]
+  },
+  "antebraco_D": {
+   "pai": "braco_cima_D",
+   "pivo": [
+    0.38,
+    0.1
+   ]
+  },
+  "coxa_E": {
+   "pai": "quadril",
+   "pivo": [
+    0.5,
+    0.12
+   ]
+  },
+  "canela_E": {
+   "pai": "coxa_E",
+   "pivo": [
+    0.5,
+    0.1
+   ]
+  },
+  "coxa_D": {
+   "pai": "quadril",
+   "pivo": [
+    0.5,
+    0.12
+   ]
+  },
+  "canela_D": {
+   "pai": "coxa_D",
+   "pivo": [
+    0.5,
+    0.1
+   ]
+  }
+ },
+ "ordem": [
+  "canela_E",
+  "canela_D",
+  "coxa_E",
+  "coxa_D",
+  "quadril",
+  "braco_cima_E",
+  "braco_cima_D",
+  "tronco",
+  "ombreira_E",
+  "ombreira_D",
+  "antebraco_E",
+  "antebraco_D",
+  "cabeca"
+ ],
+ "descanso": {
+  "quadril": {
+   "px": 512.0,
+   "py": 794.16,
+   "ang": 0,
+   "esc": 1.15
+  },
+  "tronco": {
+   "px": 512.0,
+   "py": 816.12,
+   "ang": 0,
+   "esc": 1.1
+  },
+  "cabeca": {
+   "px": 512.0,
+   "py": 440.8,
+   "ang": 0,
+   "esc": 1.0
+  },
+  "braco_cima_E": {
+   "px": 343.976,
+   "py": 493.584,
+   "ang": 0,
+   "esc": 1.12
+  },
+  "antebraco_E": {
+   "px": 233.208,
+   "py": 710.7072000000001,
+   "ang": 5,
+   "esc": 1.15
+  },
+  "braco_cima_D": {
+   "px": 678.568,
+   "py": 494.032,
+   "ang": 0,
+   "esc": 1.12
+  },
+  "antebraco_D": {
+   "px": 791.744,
+   "py": 709.9456,
+   "ang": -5,
+   "esc": 1.15
+  },
+  "coxa_E": {
+   "px": 400.7071181800584,
+   "py": 881.9066607679948,
+   "ang": 10,
+   "esc": 0.9
+  },
+  "canela_E": {
+   "px": 363.2928818199416,
+   "py": 1094.0933392320053,
+   "ang": 0,
+   "esc": 1.05
+  },
+  "coxa_D": {
+   "px": 623.2928818199416,
+   "py": 881.9066607679948,
+   "ang": -10,
+   "esc": 0.9
+  },
+  "canela_D": {
+   "px": 660.7071181800584,
+   "py": 1094.0933392320053,
+   "ang": 0,
+   "esc": 1.05
+  }
+ },
+ "passo": {
+  "lift": 46,
+  "bob": 9,
+  "sway": 14,
+  "roll": 3.5,
+  "tronco": 4.5,
+  "braco": 4.0,
+  "antebraco": 4.0,
+  "cabeca": 3.0,
+  "fundo": 8
+ }
+}

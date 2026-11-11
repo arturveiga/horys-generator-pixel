@@ -1,0 +1,7 @@
+# Golem caveira: pelo roxo-escuro, pedra cinza, osso do crânio, runas laranja.
+ramps:
+  fur:   ["#0c0b0f", "#221d2e", "#322c41", "#463a58", "#59496c"]
+  rock:  ["#0c0c0d", "#3a3940", "#5c5964", "#827d8a", "#a9a4b0", "#d4d0d8"]
+  skull: ["#100b09", "#4a372c", "#8a6e56", "#c4ad8c", "#e6dcc2", "#f6f1e4"]
+  rune:  ["#150604", "#912b08", "#fe7509", "#fbc774", "#fcf4da"]
+  socket: ["#08060a", "#140f18", "#221a26"]

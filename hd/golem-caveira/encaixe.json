@@ -1,0 +1,79 @@
+{
+ "cabeca": {
+  "erro": 0.202,
+  "escala": 1.0,
+  "angulo": 0,
+  "cx": 512,
+  "cy": 355
+ },
+ "tronco": {
+  "erro": 0.1481,
+  "escala": 1.1,
+  "angulo": 0,
+  "cx": 512,
+  "cy": 630
+ },
+ "quadril": {
+  "erro": 0.0983,
+  "escala": 1.15,
+  "angulo": 0,
+  "cx": 512,
+  "cy": 888
+ },
+ "braco_cima_E": {
+  "erro": 0.0788,
+  "escala": 1.12,
+  "angulo": 0,
+  "cx": 277,
+  "cy": 574
+ },
+ "braco_cima_D": {
+  "erro": 0.0784,
+  "escala": 1.12,
+  "angulo": 0,
+  "cx": 747,
+  "cy": 574
+ },
+ "antebraco_E": {
+  "erro": 0.1138,
+  "escala": 1.15,
+  "angulo": -5,
+  "cx": 126,
+  "cy": 812
+ },
+ "antebraco_D": {
+  "erro": 0.1256,
+  "escala": 1.15,
+  "angulo": 5,
+  "cx": 898,
+  "cy": 812
+ },
+ "coxa_E": {
+  "erro": 0.092,
+  "escala": 0.9,
+  "angulo": -10,
+  "cx": 382,
+  "cy": 988
+ },
+ "coxa_D": {
+  "erro": 0.0896,
+  "escala": 0.9,
+  "angulo": 10,
+  "cx": 642,
+  "cy": 988
+ },
+ "canela_E": {
+  "erro": 0.0935,
+  "escala": 1.05,
+  "angulo": 0,
+  "cx": 332,
+  "cy": 1186
+ },
+ "canela_D": {
+  "erro": 0.0958,
+  "escala": 1.05,
+  "angulo": 0,
+  "cx": 692,
+  "cy": 1186
+ }
+}

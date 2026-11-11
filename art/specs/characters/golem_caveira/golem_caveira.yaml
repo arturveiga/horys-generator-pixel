@@ -1,0 +1,287 @@
+pxforge: 1
+name: golem_caveira
+kind: character
+size: 96                       # boss: frame maior, mesma densidade do jogo (scale 0.03667)
+directions: 8
+palette: [gothic, ../../palettes/golem.yaml]
+camera: {pitch: 38, scale: 0.03667, center: [0, 1.3, 0]}
+shadow: {rx: 22, ry: 7, alpha: 120}
+snap: [root, torso_rot]          # move o corpo em pixels inteiros (QA: boil)
+
+brief:
+  summary: Golem-gorila de pedra e pelo roxo, boss. Crânio de osso no lugar da cabeça, ombreiras de pedra
+    com espinhos, punhos de pedra enormes, runas laranja brilhando. Anda pesado, curvado para a frente.
+  reference: splash.png (visto de s, frente)
+  proportions: "cabeça (crânio) ~1/6 da altura; ombros 2.3x a cintura; braços longos, punhos na altura dos
+    joelhos; pernas curtas e grossas"
+  head: "crânio de osso com placas de pedra nas têmporas, olhos laranja em órbitas escuras, duas presas;
+    gola de pelo em volta (face: minimal: só os olhos)"
+  must_keep: [crânio claro com olhos laranja, ombreiras largas com espinhos, punhos de pedra enormes,
+    runa laranja no peito, corpo de pelo roxo-escuro]
+  simplify: [placas da gola viram um anel, runas dos joelhos e da tanga viram pontos de cor,
+    fumaça e pedras flutuantes ficam de fora por enquanto, dedos viram blocos]
+  palette_notes: [pelo roxo-escuro domina, pedra cinza fria nas placas, osso quente no crânio, laranja só em
+    olhos e runas]
+
+materials:
+  fur:    {ramp: fur, finish: soft}
+  rock:   {ramp: rock, finish: matte, crease: true, edge_highlight: true}
+  skull:  {ramp: skull, finish: matte}
+  socket: {ramp: socket, bands: [0, 1], line: false}
+  rune:   {ramp: rune, emissive: true, band: 2, glow: {color: "#fe7509", mix: 0.5}}
+
+# ---------------------------------------------------------------- channels
+# *_R usam a mesma convenção dos *_L (x positivo = para fora do corpo)
+channels:
+  root: [0, 0, 0]
+  bob: 0
+  lean: 0.20
+  twist: 0
+  roll: 0
+  squash: 1
+  head_pitch: 0
+  head_yaw: 0
+  head_roll: 0
+  hand_L: [0.90, 0.56, 0.20]          # espaço root: x lado, y altura do chão (joelho ~0.5), z avanço
+  foot_L: [0.42, 0.0, 0.04]
+  pitch_foot_L: 0
+
+# ---------------------------------------------------------------- skeleton
+bones:
+  torso_rot: {parent: root, pos: "[0, 1.02 + bob, 0]", rot: "[lean, twist, roll]"}
+  pelvis:    {parent: torso_rot, scale: "[1/sqrt(squash), squash, 1/sqrt(squash)]"}
+  headbase:  {parent: pelvis, pos: [0, 1.02, 0.24], inherit_rot: false, inherit_scale: false,
+              rot: "[lean*0.8, twist*0.6, roll]"}
+  head:      {parent: headbase, rot: "[head_pitch, head_yaw, head_roll]", scale: 1.25}
+  shoulder_L: {parent: pelvis, pos: [0.66, 0.80, 0.02]}
+  hip_L:      {parent: pelvis, pos: [0.34, 0.0, 0.0]}
+  legyaw:     {parent: root, rot: "[0, twist*0.5, 0]"}
+  footyaw:    {parent: root, rot: "[0, twist*0.4, 0]"}
+  sole_L:     {parent: footyaw, at: ankle_L, rot: "[pitch_foot_L, 0.12, 0]"}
+
+ik:
+  arm_L: {start: shoulder_L, space: root, target: hand_L, lengths: [0.58, 0.56],
+          pole: [0.6, -0.1, -1.0], pole_space: torso_rot, joint: elbow_L, end: wrist_hand_L}
+  leg_L: {start: hip_L, space: root, target: "foot_L + [0, 0.16, -0.02]", lengths: [0.46, 0.44],
+          pole: [0.25, 0, 1.0], pole_space: legyaw, joint: knee_L, end: ankle_L}
+
+# ---------------------------------------------------------------- geometry
+parts:
+  torso:                       # massa de pelo: barriga, peito largo, corcunda de gorila
+    material: fur
+    space: pelvis
+    blend: 0.12
+    prims:
+      - ellipsoid: {c: [0, 0.12, 0], r: [0.40, 0.30, 0.35]}
+      - ellipsoid: {c: [0, 0.52, 0.04], r: [0.56, 0.40, 0.44]}
+      - ellipsoid: {c: [0, 0.78, -0.04], r: [0.62, 0.26, 0.42]}
+      - ellipsoid: {c: [0, 0.88, -0.24], r: [0.42, 0.18, 0.30]}      # corcunda
+  ruff:                        # gola de pelo em volta do crânio
+    material: fur
+    space: headbase
+    blend: 0.06
+    prims:
+      - ellipsoid: {c: [0, -0.16, 0.04], r: [0.30, 0.16, 0.28]}
+  collar:                      # gola de blocos de pedra separados em arco (como no conceito)
+    material: rock
+    space: pelvis
+    blend: {mode: chamfer, k: 0.02}
+    prims:
+      - box: {c: [0.00, 0.93, 0.36], half: [0.07, 0.06, 0.06], rot: [0.3, 0.00, 0], round: 0.01}
+      - box: {c: [0.15, 0.94, 0.33], half: [0.07, 0.06, 0.06], rot: [0.3, 0.45, 0], round: 0.01}
+      - box: {c: [-0.15, 0.94, 0.33], half: [0.07, 0.06, 0.06], rot: [0.3, -0.45, 0], round: 0.01}
+      - box: {c: [0.28, 0.97, 0.24], half: [0.07, 0.07, 0.06], rot: [0.2, 0.9, 0], round: 0.01}
+      - box: {c: [-0.28, 0.97, 0.24], half: [0.07, 0.07, 0.06], rot: [0.2, -0.9, 0], round: 0.01}
+      - box: {c: [0.35, 1.02, 0.08], half: [0.06, 0.08, 0.07], rot: [0, 1.3, 0], round: 0.01}
+      - box: {c: [-0.35, 1.02, 0.08], half: [0.06, 0.08, 0.07], rot: [0, -1.3, 0], round: 0.01}
+  chestplate:                  # duas placas facetadas em V e o medalhão octogonal
+    material: rock
+    space: pelvis
+    blend: {mode: chamfer, k: 0.02}
+    prims:
+      - extrude: {c: [0.25, 0.62, 0.42], rot: [0, 0.35, 0], depth: 0.07, round: 0.01,
+                  profile: {polygon: [[-0.16, 0.10], [0.20, 0.06], [0.24, -0.02], [0.14, -0.08], [-0.18, -0.02]]}}
+      - extrude: {c: [-0.25, 0.62, 0.42], rot: [0, -0.35, 0], depth: 0.07, round: 0.01,
+                  profile: {polygon: [[0.16, 0.10], [-0.20, 0.06], [-0.24, -0.02], [-0.14, -0.08], [0.18, -0.02]]}}
+      - extrude: {c: [0.22, 0.42, 0.42], rot: [0, 0.35, 0], depth: 0.06, round: 0.01,
+                  profile: {polygon: [[-0.14, 0.06], [0.18, 0.04], [0.20, -0.03], [-0.16, -0.05]]}}
+      - extrude: {c: [-0.22, 0.42, 0.42], rot: [0, -0.35, 0], depth: 0.06, round: 0.01,
+                  profile: {polygon: [[0.14, 0.06], [-0.18, 0.04], [-0.20, -0.03], [0.16, -0.05]]}}
+      - extrude: {c: [0, 0.52, 0.46], depth: 0.09, round: 0.012,
+                  profile: {polygon: [[-0.08, 0.19], [0.08, 0.19], [0.19, 0.08], [0.19, -0.08], [0.08, -0.19], [-0.08, -0.19], [-0.19, -0.08], [-0.19, 0.08]]}}
+  chestrune:
+    material: rune
+    space: pelvis
+    prims:
+      - torus: {c: [0, 0.52, 0.505], R: 0.10, r: 0.028, rot: [1.5708, 0, 0]}
+      - sphere: {c: [0, 0.52, 0.50], r: 0.032}
+  belt:                        # cinto de blocos
+    material: rock
+    space: pelvis
+    blend: {mode: chamfer, k: 0.02}
+    prims:
+      - box: {c: [0, 0.00, 0.36], half: [0.10, 0.07, 0.05], round: 0.01}
+      - box: {c: [0.21, 0.00, 0.30], half: [0.09, 0.07, 0.05], rot: [0, 0.6, 0], round: 0.01}
+      - box: {c: [-0.21, 0.00, 0.30], half: [0.09, 0.07, 0.05], rot: [0, -0.6, 0], round: 0.01}
+      - box: {c: [0.35, 0.00, 0.12], half: [0.08, 0.07, 0.05], rot: [0, 1.2, 0], round: 0.01}
+      - box: {c: [-0.35, 0.00, 0.12], half: [0.08, 0.07, 0.05], rot: [0, -1.2, 0], round: 0.01}
+  beltrune:
+    material: rune
+    space: pelvis
+    prims:
+      - box: {c: [0, -0.26, 0.40], half: [0.022, 0.10, 0.01]}
+      - box: {c: [0.03, -0.18, 0.40], half: [0.035, 0.018, 0.01]}
+  skull:
+    material: skull
+    space: head
+    blend: 0.04
+    prims:
+      - ellipsoid: {c: [0, 0.12, 0], r: [0.20, 0.19, 0.20]}          # calota
+      - ellipsoid: {c: [0, 0.02, 0.10], r: [0.15, 0.10, 0.12]}       # face
+      - ellipsoid: {c: [0, -0.08, 0.12], r: [0.12, 0.06, 0.10]}      # maxilar
+  templeplates_L:              # placa de pedra facetada na têmpora
+    material: rock
+    space: head
+    prims:
+      - extrude: {c: [0.19, 0.13, 0.0], rot: [0, 1.2, -0.2], depth: 0.06, round: 0.008,
+                  profile: {polygon: [[-0.09, 0.08], [0.06, 0.09], [0.09, -0.02], [0.02, -0.09], [-0.08, -0.05]]}}
+  sockets:
+    material: socket
+    space: head
+    prims:
+      - sphere: {c: [0.10, 0.10, 0.16], r: 0.065}
+      - sphere: {c: [-0.10, 0.10, 0.16], r: 0.065}
+      - box: {c: [0, -0.12, 0.17], half: [0.06, 0.025, 0.05]}         # boca
+  eye_L:
+    material: rune
+    space: head
+    prims:
+      - sphere: {c: [0.11, 0.10, 0.205], r: 0.036}
+  fangs:
+    material: skull
+    space: head
+    line: false
+    prims:
+      - cone: {a: [0.07, -0.10, 0.20], b: [0.075, -0.22, 0.22], r: [0.035, 0.01]}
+      - cone: {a: [-0.07, -0.10, 0.20], b: [-0.075, -0.22, 0.22], r: [0.035, 0.01]}
+  arm_L:                       # braço de pelo, grosso
+    material: fur
+    blend: 0.06
+    prims:
+      - ellipsoid: {c: {at: shoulder_L, off: [0.02, -0.04, 0]}, r: [0.22, 0.22, 0.22]}
+      - cone: {a: "@shoulder_L", b: "@elbow_L", r: [0.19, 0.15]}
+      - cone: {a: "@elbow_L", b: "@wrist_hand_L", r: [0.15, 0.16]}
+  pauldron_L:                  # ombreira de placas facetadas em degrau
+    material: rock
+    space: shoulder_L
+    blend: {mode: chamfer, k: 0.025}
+    prims:
+      - extrude: {c: [0.06, 0.12, 0], rot: [1.5708, 0, -0.35], depth: 0.14, round: 0.012,
+                  profile: {polygon: [[-0.22, 0.20], [0.14, 0.24], [0.28, 0.06], [0.24, -0.18], [-0.10, -0.24], [-0.26, -0.04]]}}
+      - extrude: {c: [0.14, 0.00, 0], rot: [1.5708, 0, -0.55], depth: 0.10, round: 0.01,
+                  profile: {polygon: [[-0.14, 0.18], [0.14, 0.20], [0.24, 0.0], [0.14, -0.18], [-0.14, -0.20]]}}
+  spikes_L:                    # espinhos cônicos afiados
+    material: rock
+    space: shoulder_L
+    prims:
+      - cone: {a: [0.00, 0.18, 0.04], b: [-0.03, 0.50, 0.04], r: [0.085, 0.004]}
+      - cone: {a: [0.16, 0.14, 0.02], b: [0.38, 0.40, 0.02], r: [0.07, 0.004]}
+      - cone: {a: [-0.12, 0.18, 0.04], b: [-0.17, 0.38, 0.04], r: [0.05, 0.004]}
+  gauntlet_L:                  # antebraço em anéis de pedra
+    material: rock
+    blend: {mode: stairs, k: 0.03, n: 2}
+    prims:
+      - cylinder: {a: {between: ["@elbow_L", "@wrist_hand_L"], t: 0.40}, b: {between: ["@elbow_L", "@wrist_hand_L"], t: 0.62}, r: 0.22, round: 0.015}
+      - cylinder: {a: {between: ["@elbow_L", "@wrist_hand_L"], t: 0.66}, b: {between: ["@elbow_L", "@wrist_hand_L"], t: 0.82}, r: 0.20, round: 0.015}
+      - cylinder: {a: {between: ["@elbow_L", "@wrist_hand_L"], t: 0.86}, b: "@wrist_hand_L", r: 0.21, round: 0.015}
+  armspike_L:
+    material: rock
+    prims:
+      - cone: {a: {between: ["@elbow_L", "@wrist_hand_L"], t: 0.5}, b: {at: elbow_L, off: [0.18, 0.08, 0]}, r: [0.065, 0.004]}
+  leg_L:                       # perna de pelo curta e grossa
+    material: fur
+    blend: 0.06
+    prims:
+      - ellipsoid: {c: {between: ["@hip_L", "@knee_L"], t: 0.45}, r: [0.25, 0.30, 0.24]}
+      - cone: {a: "@knee_L", b: "@ankle_L", r: [0.20, 0.19]}
+  kneeplate_L:                 # joelheira octogonal com runa
+    material: rock
+    space: knee_L
+    prims:
+      - extrude: {c: [0, 0, 0.17], depth: 0.07, round: 0.01,
+                  profile: {polygon: [[-0.05, 0.12], [0.05, 0.12], [0.12, 0.05], [0.12, -0.05], [0.05, -0.12], [-0.05, -0.12], [-0.12, -0.05], [-0.12, 0.05]]}}
+  kneerune_L:
+    material: rune
+    space: knee_L
+    prims:
+      - torus: {c: [0, 0, 0.21], R: 0.055, r: 0.016, rot: [1.5708, 0, 0]}
+  anklet_L:                    # tornozeleira em dois anéis
+    material: rock
+    blend: {mode: stairs, k: 0.02, n: 2}
+    prims:
+      - cylinder: {a: {between: ["@knee_L", "@ankle_L"], t: 0.62}, b: {between: ["@knee_L", "@ankle_L"], t: 0.74}, r: 0.18, round: 0.012}
+      - cylinder: {a: {between: ["@knee_L", "@ankle_L"], t: 0.78}, b: {between: ["@knee_L", "@ankle_L"], t: 0.90}, r: 0.19, round: 0.012}
+  foot_L:                      # pé largo com 3 dedos de pedra
+    material: fur
+    space: sole_L
+    blend: 0.05
+    prims:
+      - ellipsoid: {c: [0, -0.06, 0.08], r: [0.24, 0.11, 0.25]}
+  toes_L:
+    material: rock
+    space: sole_L
+    blend: {mode: chamfer, k: 0.015}
+    prims:
+      - box: {c: [0.12, -0.10, 0.27], half: [0.045, 0.045, 0.055], round: 0.01}
+      - box: {c: [0, -0.10, 0.29], half: [0.045, 0.045, 0.055], round: 0.01}
+      - box: {c: [-0.12, -0.10, 0.27], half: [0.045, 0.045, 0.055], round: 0.01}
+  skirt:                       # saiote de placas pontudas e tanga
+    material: rock
+    space: pelvis
+    prims:
+      - extrude: {c: [0.16, -0.14, 0.33], rot: [-0.15, 0.4, 0], depth: 0.04, profile: {polygon: [[-0.07, 0.07], [0.07, 0.07], [0.0, -0.10]]}}
+      - extrude: {c: [-0.16, -0.14, 0.33], rot: [-0.15, -0.4, 0], depth: 0.04, profile: {polygon: [[-0.07, 0.07], [0.07, 0.07], [0.0, -0.10]]}}
+      - extrude: {c: [0.31, -0.13, 0.20], rot: [-0.15, 0.95, 0], depth: 0.04, profile: {polygon: [[-0.07, 0.07], [0.07, 0.07], [0.0, -0.10]]}}
+      - extrude: {c: [-0.31, -0.13, 0.20], rot: [-0.15, -0.95, 0], depth: 0.04, profile: {polygon: [[-0.07, 0.07], [0.07, 0.07], [0.0, -0.10]]}}
+      - extrude: {c: [0, -0.32, 0.37], rot: [-0.08, 0, 0], depth: 0.05, round: 0.008,
+                  profile: {polygon: [[-0.09, 0.24], [0.09, 0.24], [0.09, -0.12], [0, -0.26], [-0.09, -0.12]]}}
+  fist_L:                      # punho em blocos com os dedos marcados por sulcos
+    material: rock
+    space: wrist_hand_L
+    blend: {mode: chamfer, k: 0.03}
+    prims:
+      - box: {c: [0, -0.12, 0.04], half: [0.21, 0.13, 0.20], round: 0.03}
+      - box: {c: [0, -0.27, 0.10], half: [0.20, 0.06, 0.15], round: 0.03}
+    cut:
+      - box: {c: [0.07, -0.27, 0.22], half: [0.008, 0.07, 0.10]}
+      - box: {c: [-0.07, -0.27, 0.22], half: [0.008, 0.07, 0.10]}
+    cut_blend: {mode: groove, depth: 0.02, width: 0.012}
+
+animations:
+  idle:
+    frames: 8
+    ms: 140
+    channels:
+      bob: "0.04*sin(p) - 0.01"
+      hand_L: "[0.90, 0.56, 0.20]"
+      hand_R: "[0.90, 0.56, 0.20]"
+
+  walk:                        # andar pesado de boss: passo curto, corpo afunda no contato, braços pendulam
+    frames: 8
+    ms: 130
+    events: {0: step_l, 4: step_r}
+    channels:
+      lean: 0.28
+      bob: "-0.07*cos(2*p - 0.3) + 0.01"
+      squash: "1 + 0.035*cos(2*p - 0.3)"
+      twist: "0.10*cos(p)"
+      roll: "0.08*sin(p)"
+      foot_L: "[0.42, 0.10*pos(-sin(p))**1.5, 0.04 + 0.30*cos(p)]"
+      foot_R: "[0.42, 0.10*pos(sin(p))**1.5, 0.04 - 0.30*cos(p)]"
+      pitch_foot_L: "0.35*pos(-sin(p))"
+      pitch_foot_R: "0.35*pos(sin(p))"
+      hand_L: "[0.92 + 0.04*cos(p - 0.7), 0.50 + 0.05*pos(cos(p - 0.7)), 0.14 - 0.26*cos(p - 0.7)]"
+      hand_R: "[0.92 - 0.04*cos(p - 0.7), 0.50 + 0.05*pos(-cos(p - 0.7)), 0.14 + 0.26*cos(p - 0.7)]"
+      head_yaw: "-0.07*cos(p - 0.5)"
+      head_pitch: "0.05*cos(2*p - 0.8)"
+      head_roll: "-0.03*sin(p - 0.6)"

@@ -1,0 +1,43 @@
+# SpriteKiln project settings (https://github.com/LucasJRamos/spritekiln).
+# Commands run anywhere inside this folder find this file.
+
+[project]
+specs = "art/specs"        # where `spritekiln new` creates specs
+engine = "godot"       # godot | unity | monogame | generic
+ai = ["claude"]       # assistants whose files `spritekiln update` refreshes
+
+[export]
+# `spritekiln export <spec>` (or `render --export`) copies the atlas, JSON and maps here;
+# for Godot it also writes SpriteFrames, a CanvasTexture and a ready scene.
+dir = "assets/spritekiln"
+godot_project = "."   # folder with project.godot
+
+[defaults]                # given to specs created by `spritekiln new`
+view = "topdown"
+size = 64
+palette = "gothic"
+camera = { pitch = 38, scale = 0.03667 }
+
+[style]                   # the art style every asset follows (`spritekiln style`); change it only when asked
+recorded = 2026-11-10
+view = "topdown"
+height = 48               # px on screen of a human-sized character
+scale = 0.03667           # camera.scale of every asset (from height)
+size = 64                 # frame px for that character
+directions = 8
+mirror = false
+palette = "gothic"
+colors = "dark, desaturated, one warm orange accent (runes, eyes)"
+outline = "selective"
+outline_color = ""        # with outline "dark"; empty: the darkest tone of the ramps
+shading = "soft"
+lines = "depth"
+highlights = true
+dither = "none"
+light = "classic"
+proportions = "stylized"
+face = "minimal"          # minimal: eyes only, no nose; simple: + a hint of brow or nose on big heads; detailed
+animation = "fluid"
+snap = false              # root and torso move in whole pixels
+references = ["C:/Users/artur/.horys-pixel/experimentos/golem-caveira/conceito.png"]
+notes = "bosses are bigger with the same density; runes and eyes glow orange"

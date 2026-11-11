@@ -12,3 +12,8 @@ estilos/*/lora/
 
 # testes locais
 tmp-*/
+
+# SpriteKiln: renders and caches are regenerated; exported files live in the engine folder
+art/specs/**/out/
+art/specs/**/.kilncache/
+art/specs/**/*_ref/
