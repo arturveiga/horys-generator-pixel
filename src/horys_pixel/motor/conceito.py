@@ -125,9 +125,40 @@ def tirar_fundo(rgb, fundo, tol):
     return fig
 
 
-def grade_nativa(rgb):
+def _sobel_eixos(rgb):
+    """Soma do |Sobel| por coluna (x) e por linha (y) do cinza, com borda refletida (perfectPixel/Pixelate)."""
+    c = rgb[..., :3].astype(np.float64) @ np.array([0.299, 0.587, 0.114])
+    g = np.pad(c, 1, mode="reflect")
+    gx = (g[:-2, 2:] + 2 * g[1:-1, 2:] + g[2:, 2:]) - (g[:-2, :-2] + 2 * g[1:-1, :-2] + g[2:, :-2])
+    gy = (g[2:, :-2] + 2 * g[2:, 1:-1] + g[2:, 2:]) - (g[:-2, :-2] + 2 * g[:-2, 1:-1] + g[:-2, 2:])
+    return np.abs(gx).sum(0), np.abs(gy).sum(1)
+
+
+def fase_sobel(grad, passo):
+    """Fase da grade rígida (passo fixo) que mais cai em cima das bordas: média da raiz do gradiente nas linhas da
+    grade (a raiz impede que um contorno forte decida sozinho). Portado do Pixelate (alignRigidFftBoundaries, MIT).
+    Devolve a posição da primeira linha da grade, em [0, passo)."""
+    n = len(grad)
+    raiz = np.sqrt(np.maximum(grad, 0))
+    eixo = np.arange(n)
+    melhor_f, melhor_s = 0.0, -np.inf
+    for f in np.arange(0.0, passo, min(0.25, passo / 16)):
+        pos = np.arange(f, n - 1, passo)
+        pos = pos[pos > 0]
+        if len(pos):
+            sc = float(np.interp(pos, eixo, raiz).mean())
+            if sc > melhor_s:
+                melhor_s, melhor_f = sc, float(f)
+    return melhor_f
+
+
+def grade_nativa(rgb, quadrado=True, fase="sobel"):
     """O conceito do Codex é pixel art ampliada: acha o tamanho do bloco e a fase em cada eixo pelas bordas de cor
-    (coerência de fase das bordas módulo o bloco)."""
+    (coerência de fase das bordas módulo o bloco).
+    quadrado=True: o pixel é quadrado, então os dois eixos usam o bloco do eixo de maior coerência (no menino de
+    teste, 2026-11-12, o y dava 15,45 contra 13,6 certo no x). fase='sobel': a fase de cada eixo vem do Sobel numa
+    grade rígida (fase_sobel); fase='bordas' mantém a fase da coerência. Com as duas, o erro de cor contra o
+    conceito caiu de 42,8 para 37,6 no menino."""
     res = []
     for eixo in (1, 0):
         d = np.abs(np.diff(rgb.astype(int), axis=eixo)).sum(-1) > 60
@@ -139,6 +170,14 @@ def grade_nativa(rgb):
             if r > melhor[0]:
                 melhor = (r, s, (np.angle(z) % (2 * np.pi)) / (2 * np.pi) * s)
         res.append(melhor)
+    if quadrado:
+        bloco = max(res, key=lambda t: t[0])[1]
+        res = [(r, bloco, f if abs(b - bloco) < 1e-9 else f % bloco) for r, b, f in res]
+    if fase == "sobel":
+        sx, sy = _sobel_eixos(rgb)
+        res = [(r, b, fase_sobel(g, b)) for (r, b, _), g in zip(res, (sx, sy))]
+    elif fase != "bordas":
+        raise ValueError(f"fase '{fase}' inválida: use sobel ou bordas")
     return res  # [(coerência, bloco, fase) em x, idem em y]
 
 
@@ -268,7 +307,7 @@ def converter(a):
     im = np.array(Image.open(a.imagem).convert("RGBA"))
     rgb = im[..., :3]
     if a.nativo:
-        gx, gy = grade_nativa(rgb)
+        gx, gy = grade_nativa(rgb, quadrado=not a.bloco_livre, fase=a.fase)
         print(f"grade nativa: bloco {gx[1]:.2f} x {gy[1]:.2f} px (coerência {gx[0]:.2f}/{gy[0]:.2f})")
         peq = amostrar_nativo(rgb, gx, gy)
         fig_s = tirar_fundo(peq.clip(0, 255).astype(np.uint8), a.fundo, a.tolerancia)
@@ -417,6 +456,10 @@ def main():
     c.add_argument("--altura", type=int, default=100, help="altura com contorno (ignorada com --nativo)")
     c.add_argument("--nativo", action="store_true",
                    help="lê o conceito na grade de pixel dele (um pixel por bloco), sem reamostrar")
+    c.add_argument("--fase", choices=("sobel", "bordas"), default="sobel",
+                   help="com --nativo: fase da grade pelo Sobel numa grade rígida (padrão) ou pela coerência das bordas")
+    c.add_argument("--bloco-livre", action="store_true",
+                   help="com --nativo: deixa o bloco de x e de y diferentes (padrão: pixel quadrado)")
     c.add_argument("--saida", required=True)
     c.add_argument("--modo", choices=("media", "moda"), default="media",
                    help="media = média de área (padrão antigo); moda = quantiza a imagem inteira e pega a cor mais "
