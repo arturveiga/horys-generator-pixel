@@ -20,6 +20,20 @@ from .registro import BOOL, INT, STR, ErroFerramenta, ferramenta, imagem, texto
 
 # ------------------------------------------------------------------ apoio (também usado pelo portão)
 
+# Rig de partes recortadas só para personagem pequeno: no boss (~198 px) ele travou em ~55% (frestas nas juntas,
+# degraus da rotação, pé deslizando). Animação de boss vem de render 3D com câmera fixa (docs/plano.md).
+ALTURA_MAX_RIG = 128
+
+
+def _recusar_rig_de_boss(st: dict, a: dict) -> None:
+    alt = int(st["sprite"]["altura"])
+    if alt > ALTURA_MAX_RIG and not (a.get("forcar") and (a.get("motivo") or "").strip()):
+        raise ErroFerramenta(
+            f"sprite de {alt} px de altura: o rig de partes recortadas não serve para boss/personagem grande "
+            f"(> {ALTURA_MAX_RIG} px; teto medido ~55%). Anime por render 3D com câmera fixa e passe o "
+            "manifest.json no horys_sequencia. Só se o usuário pediu: forcar: true e motivo: '<o que ele disse>'.")
+
+
 def _rgb(hexes) -> set[tuple[int, int, int]]:
     out = set()
     for h in hexes:
@@ -181,11 +195,14 @@ def _par(f: dict, a: dict, ordem: list[str]) -> tuple[str, str, str]:
 @ferramenta("horys_partes_recortar", """Copia uma 'regiao' {x,y,w,h} da camada OCULTA 'referencia' para uma 'parte', no
 'quadro' (padrão o ativo; 'quadro_ref' se a referência estiver em outro). Só escreve onde a imagem composta final NÃO
 muda (pixel coberto por parte de cima ou da mesma cor que a composição já mostra); o resto é recusado e contado.
+Recusa sprite com mais de 128 px de altura (boss: anime por render 3D), salvo 'forcar' + 'motivo'.
 Confere a composição depois e desfaz se mudou. 'sobrescrever': troca também pixels já existentes na parte.""",
-            {"parte": STR, "regiao": {"type": "object"}, "quadro": INT, "quadro_ref": INT, "sobrescrever": BOOL},
+            {"parte": STR, "regiao": {"type": "object"}, "quadro": INT, "quadro_ref": INT, "sobrescrever": BOOL,
+             "forcar": BOOL, "motivo": STR},
             ["parte", "regiao"])
 async def partes_recortar(ctx, a):
     chave, f, st = await _ficha(ctx)
+    _recusar_rig_de_boss(st, a)
     ordem = _partes(f, st)
     parte = a["parte"]
     if parte not in ordem:

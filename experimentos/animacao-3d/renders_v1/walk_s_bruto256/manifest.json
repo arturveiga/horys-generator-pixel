@@ -1,0 +1,30 @@
+{
+  "versao": 1,
+  "fonte": "blender",
+  "acao": "walk_s",
+  "fps": 8,
+  "canvas": [
+    256,
+    256
+  ],
+  "pivo": [
+    128.0,
+    209.59
+  ],
+  "camera": {
+    "pitch": 32.0,
+    "yaw": 0.0,
+    "ortho_scale": 4.347728
+  },
+  "loop": true,
+  "quadros": [
+    "0000.png",
+    "0001.png",
+    "0002.png",
+    "0003.png",
+    "0004.png",
+    "0005.png",
+    "0006.png",
+    "0007.png"
+  ]
+}

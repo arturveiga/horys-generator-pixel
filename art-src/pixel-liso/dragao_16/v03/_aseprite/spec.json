@@ -1,0 +1,71 @@
+{
+ "largura": 48,
+ "altura": 48,
+ "paleta": [
+  "#aa455a",
+  "#db6d60",
+  "#f2a67f",
+  "#e9b452",
+  "#f7e09b",
+  "#855290",
+  "#c082a5",
+  "#18122c",
+  "#fcf7e8"
+ ],
+ "camadas": [
+  {
+   "nome": "sombra",
+   "opacidade": 77
+  },
+  {
+   "nome": "contorno",
+   "opacidade": 255
+  },
+  {
+   "nome": "desenho",
+   "opacidade": 255
+  }
+ ],
+ "quadros": [
+  {
+   "ms": 120,
+   "cels": {
+    "sombra": "v03/_aseprite/q0_sombra.png",
+    "contorno": "v03/_aseprite/q0_contorno.png",
+    "desenho": "v03/_aseprite/q0_desenho.png"
+   }
+  },
+  {
+   "ms": 120,
+   "cels": {
+    "sombra": "v03/_aseprite/q1_sombra.png",
+    "contorno": "v03/_aseprite/q1_contorno.png",
+    "desenho": "v03/_aseprite/q1_desenho.png"
+   }
+  },
+  {
+   "ms": 120,
+   "cels": {
+    "sombra": "v03/_aseprite/q2_sombra.png",
+    "contorno": "v03/_aseprite/q2_contorno.png",
+    "desenho": "v03/_aseprite/q2_desenho.png"
+   }
+  },
+  {
+   "ms": 120,
+   "cels": {
+    "sombra": "v03/_aseprite/q3_sombra.png",
+    "contorno": "v03/_aseprite/q3_contorno.png",
+    "desenho": "v03/_aseprite/q3_desenho.png"
+   }
+  }
+ ],
+ "tags": [
+  {
+   "nome": "baforada",
+   "de": 1,
+   "ate": 4
+  }
+ ],
+ "saida": "v03/dragao_16_baforada.aseprite"
+}

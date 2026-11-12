@@ -1,0 +1,20 @@
+# checagem dragao_16_baforada
+
+PORTÃO DE MEDIDAS: REPROVADO — corrija antes de chamar o revisor
+3 falha(s), 1 aviso(s) -> v03\medidas\baforada\medidas.json
+  FALHA M04 (A7, grave) [baforada]: órfãos 5.27% (pior quadro 6.13%)
+  FALHA M05 (B2, grave) [baforada]: cluster médio 5 px
+  FALHA A09 (A5, bloqueio) [baforada]: 1 px encostando na borda do quadro (cortado)
+  aviso A07 [baforada]: área varia 19% entre quadros (massa constante?)
+(detalhes e overlay em medidas/baforada/; régua animada: dragao_16_baforada_regua_anim.png vs Tiny sheep_idle.png)
+
+AVISO  q0: 11 pixel(s) órfão(s) (col,lin): (11,2) (5,4) (6,5) (18,5) (10,7) (21,7) (10,8) (3,9) (4,9) (4,10) (5,11) — ok só se for olho, brilho ou detalhe intencional
+AVISO  q1: 14 pixel(s) órfão(s) (col,lin): (18,5) (10,7) (21,7) (1,8) (30,8) (3,9) (31,9) (32,9) (30,10) (2,12) (5,12) (1,13) … — ok só se for olho, brilho ou detalhe intencional
+AVISO  q2: 17 pixel(s) órfão(s) (col,lin): (12,6) (18,6) (3,7) (13,7) (5,8) (9,8) (10,8) (21,8) (32,9) (34,10) (35,10) (32,11) … — ok só se for olho, brilho ou detalhe intencional
+AVISO  q3: 12 pixel(s) órfão(s) (col,lin): (12,6) (18,6) (3,7) (13,7) (5,8) (9,8) (10,8) (21,8) (6,12) (2,13) (3,13) (4,13) — ok só se for olho, brilho ou detalhe intencional
+ok     cores usadas: 9 (limite criatura = 11)
+ok     altura do sprite com contorno: 17 px
+ok     q0→q1: 64% dos pixels mudam
+ok     q1→q2: 51% dos pixels mudam
+ok     q2→q3: 38% dos pixels mudam
+ok     .aseprite: 3 camadas (sombra, contorno, desenho), tag 'baforada', 4 quadro(s); reaberto e igual à folha pixel a pixel

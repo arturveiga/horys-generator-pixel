@@ -1,0 +1,172 @@
+{
+ "asset": "dragao_16",
+ "tipo": "criatura",
+ "modo": "normal",
+ "contorno": "#18122c",
+ "limite_cores": 11,
+ "contorno_px": 1,
+ "folhas": {
+  "idle_s": {
+   "arquivo": "C:\\Users\\artur\\workspace\\repos\\horys\\horys-generator-pixel\\art-src\\pixel-liso\\dragao_16\\hibrido\\v04\\dragao_16_idle_s.png",
+   "sha256": "da97fe668047faad69f51c8984f18de3875f7b3848bd3da36f91f66c07f9a91f",
+   "categoria": "idle",
+   "quadros": 4,
+   "tamanho_quadro": [
+    40,
+    40
+   ],
+   "M03_cores": 9,
+   "M01_cores_fora": [],
+   "M01_px_fora": 0,
+   "M02_alfa_invalido": 0,
+   "resumo": {
+    "M04_orfaos_media": 0.03130204577298538,
+    "M04_orfaos_max": 0.06132075471698113,
+    "M05_cluster_medio": 4.420595533498759,
+    "M06_anel1_mediana": 1.0,
+    "M07_anel2_mediana": 0.04772727272727273,
+    "M06_anel1_escuro_mediana": 1.0,
+    "M08_escuro_max": 0.0,
+    "M10_degraus_total": 29,
+    "M17_retas_media": 0.1328125,
+    "M15_luz_x": 0.026244197058486244,
+    "M15_luz_y": -0.014307895701517952,
+    "M14_contraste_grama": 0.41617311423028647,
+    "M14_contraste_masmorra": 0.6505360290108664,
+    "altura": [
+     16,
+     17
+    ],
+    "largura": [
+     28,
+     28
+    ],
+    "M10_degraus_por_quadro": 7.2
+   },
+   "animacao": {
+    "A01_muda": 0.5766528331924359,
+    "A02_redesenho": 0.46057325825940215,
+    "A03_iguais": 0,
+    "A04_costura": 1.3145398649847917,
+    "A05_linha_pe": 2,
+    "A06_quique": 2.013674480655613,
+    "A07_massa": 0.0682095006090134,
+    "A08_boil_max": 0.0,
+    "A10_quadros_com_sombra": 4,
+    "loop": true,
+    "A05_salto_max": 1
+   },
+   "por_quadro": [
+    {
+     "anel1": 1.0,
+     "anel2": 0.045454545454545456,
+     "anel1_escuro": 1.0,
+     "orfaos_pct": 0.06132075471698113,
+     "cluster_medio": 3.4615384615384617,
+     "escuro_pct": 0.0,
+     "degraus": 9,
+     "retas": 0.0,
+     "luz_x": 0.020085846543956218,
+     "luz_y": 0.12782060949275886,
+     "contraste_grama": 0.4,
+     "contraste_masmorra": 0.6592592592592592,
+     "altura": 17,
+     "largura": 28,
+     "area": 212,
+     "centro_y": 17.693396226415093,
+     "pe": 26,
+     "na_borda": 0,
+     "semi": 78,
+     "sombra_largura_rel": 0.6428571428571429
+    },
+    {
+     "anel1": 1.0,
+     "anel2": 0.05,
+     "anel1_escuro": 1.0,
+     "orfaos_pct": 0.020100502512562814,
+     "cluster_medio": 4.884615384615385,
+     "escuro_pct": 0.0,
+     "degraus": 8,
+     "retas": 0.28125,
+     "luz_x": 0.03238142503439393,
+     "luz_y": -0.018979996450219166,
+     "contraste_grama": 0.4330708661417323,
+     "contraste_masmorra": 0.6456692913385826,
+     "altura": 16,
+     "largura": 28,
+     "area": 199,
+     "centro_y": 17.693467336683415,
+     "pe": 25,
+     "na_borda": 0,
+     "semi": 120,
+     "sombra_largura_rel": 0.7857142857142857
+    },
+    {
+     "anel1": 1.0,
+     "anel2": 0.03125,
+     "anel1_escuro": 1.0,
+     "orfaos_pct": 0.02358490566037736,
+     "cluster_medio": 4.451612903225806,
+     "escuro_pct": 0.0,
+     "degraus": 5,
+     "retas": 0.0,
+     "luz_x": 0.026506339683168102,
+     "luz_y": -0.16361648972624482,
+     "contraste_grama": 0.39855072463768115,
+     "contraste_masmorra": 0.6594202898550725,
+     "altura": 17,
+     "largura": 28,
+     "area": 212,
+     "centro_y": 19.41509433962264,
+     "pe": 26,
+     "na_borda": 0,
+     "semi": 131,
+     "sombra_largura_rel": 0.8571428571428571
+    },
+    {
+     "anel1": 1.0,
+     "anel2": 0.05,
+     "anel1_escuro": 1.0,
+     "orfaos_pct": 0.020202020202020204,
+     "cluster_medio": 4.884615384615385,
+     "escuro_pct": 0.0,
+     "degraus": 7,
+     "retas": 0.25,
+     "luz_x": 0.026003176972426722,
+     "luz_y": -0.002455706122366688,
+     "contraste_grama": 0.4330708661417323,
+     "contraste_masmorra": 0.6377952755905512,
+     "altura": 16,
+     "largura": 28,
+     "area": 198,
+     "centro_y": 19.707070707070706,
+     "pe": 27,
+     "na_borda": 0,
+     "semi": 124,
+     "sombra_largura_rel": 0.8571428571428571
+    }
+   ]
+  }
+ },
+ "falhas": [
+  {
+   "id": "M04",
+   "criterio": "A7",
+   "severidade": "grave",
+   "estado": "idle_s",
+   "valor": 3.13,
+   "meta": "<= 0.6% (pior quadro 1.0%)",
+   "texto": "órfãos 3.13% (pior quadro 6.13%)"
+  },
+  {
+   "id": "M05",
+   "criterio": "B2",
+   "severidade": "grave",
+   "estado": "idle_s",
+   "valor": 4.4,
+   "meta": ">= 28",
+   "texto": "cluster médio 4 px"
+  }
+ ],
+ "avisos": []
+}

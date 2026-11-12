@@ -1,0 +1,92 @@
+nome dragao_16
+estado idle
+tipo criatura
+quadro 32
+pivo 13 15
+ms 150
+contorno suave
+cor_contorno #18122c
+sombra sim
+limite_cores 11
+cores
+  r #aa455a
+  c #db6d60
+  l #f2a67f
+  a #e9b452
+  y #f7e09b
+  v #855290
+  w #c082a5
+  o #18122c
+  b #fcf7e8
+--- q0
+.
+.......vvvv
+....vvwwwwwv
+....vwwwwwwwv
+.....vwwwwwwv...yy
+......vwwwwwwv...yy
+........vvwwwv....clllc
+..........vwwv...cllllcc
+..........clllllcclcobcc
+........clllllccccccocccc
+.....ccccccccccccccaaaacc
+...rrcccrccccaaaaarrrrr
+..rccr..rrcccaaaar
+.rcr......rrrrrrrr
+...........cc..cc
+...........rr..rr
+.
+--- q1
+.
+.
+.
+.
+................yy
+........vvvv.....yy
+.....vvwwwwwv.....clllc
+...vwwwwwwwwwv...cllllcc
+.....vwwwvclllllcclcobcc
+........clllllccccccocccc
+.....ccccccccccccccaaaacc
+...rrcccrccccaaaaarrrrr
+..rccr..rrcccaaaar
+.rcr......rrrrrrrr
+...........cc..cc
+...........rr..rr
+.
+--- q2
+.
+.
+.
+................yy
+.................yy
+..................clllc
+.................cllllcc
+..........clllllcclcobcc
+.vwwwwwvclllllccccccocccc
+...vwwwvcccccccccccaaaacc
+.....cccrccccaaaaarrrrr
+...rrcccrrcccaaaar
+..rccr....rrrrrrrr
+.rcr.......cc..cc
+...........rr..rr
+.
+.
+--- q3
+.
+.
+.
+.
+................yy
+........vvvv.....yy
+.....vvwwwwwv.....clllc
+...vwwwwwwwwwv...cllllcc
+.....vwwwvclllllcclcobcc
+........clllllccccccocccc
+.....ccccccccccccccaaaacc
+...rrcccrccccaaaaarrrrr
+...rccr.rrcccaaaar
+..rcr.....rrrrrrrr
+...........cc..cc
+...........rr..rr
+.

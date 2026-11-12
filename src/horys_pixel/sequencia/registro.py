@@ -46,12 +46,22 @@ def _escalar(q: np.ndarray, s: float) -> np.ndarray:
     return np.concatenate([rgb, pm2[..., 3:4]], -1).round().clip(0, 255).astype(np.uint8)
 
 
+ESCALAS = ("fixa", "comum", "por_quadro")
+
+
 def registrar(quadros: list[np.ndarray], altura_ref: float, tamanho: tuple[int, int], pivo: tuple[float, int],
-              escala: str = "por_quadro") -> list[np.ndarray]:
+              escala: str = "comum") -> list[np.ndarray]:
     """Devolve quadros do mesmo 'tamanho' (w, h) com a figura na altura 'altura_ref', o centro dos pés em pivo[0] e
     a linha dos pés em pivo[1].
-    escala = 'por_quadro' (cada quadro ganha a sua escala: célula de grade ou zoom de câmera) ou 'comum' (uma escala
-    só, a da altura mediana: golpe e salto, em que a altura muda de verdade)."""
+    escala:
+    - 'fixa' (câmera fixa: render 3D, atlas): UMA escala e UM deslocamento para a sequência inteira, calculados da
+      união dos quadros. Preserva tudo o que a câmera viu: quique, agachamento, balanço lateral e pé no ar.
+    - 'comum' (padrão): uma escala só (altura mediana), mas cada quadro é ancorado no próprio pé e centro de massa.
+      Para grade gerada, em que cada célula tem o próprio enquadramento. Apaga o salto (pé volta ao chão).
+    - 'por_quadro': cada quadro ganha a sua escala (zoom de câmera em vídeo). Apaga também o agachamento: só use
+      quando as células vêm em escalas diferentes de verdade."""
+    if escala not in ESCALAS:
+        raise ValueError(f"escala '{escala}' inválida: use {', '.join(ESCALAS)}")
     W, H = tamanho
     caixas = [caixa(q) for q in quadros]
     alturas = [(b[3] - b[1] + 1) if b else 0 for b in caixas]
@@ -59,16 +69,32 @@ def registrar(quadros: list[np.ndarray], altura_ref: float, tamanho: tuple[int, 
     if not validas:
         raise ValueError("nenhum quadro com figura")
     mediana = float(np.median(validas))
+    fixo = None
+    if escala == "fixa":
+        # a mesma transformação para todos: escala pela maior altura (a pose de pé) e âncora na união
+        s_fixa = altura_ref / max(validas)
+        esc = [_escalar(q, s_fixa) for q in quadros]
+        ops = [e[..., 3] >= 128 for e in esc if e.shape == esc[0].shape]
+        if len(ops) != len(esc):
+            raise ValueError("escala 'fixa' exige quadros do mesmo tamanho (câmera fixa)")
+        uniao = np.logical_or.reduce(ops)
+        ys, xs = np.nonzero(uniao)
+        fixo = (round(pivo[0] - float(np.mean([np.nonzero(o)[1].mean() for o in ops if o.any()]))),
+                round(pivo[1] - int(ys.max())))
     out = []
-    for q, b, alt in zip(quadros, caixas, alturas):
+    for i, (q, b, alt) in enumerate(zip(quadros, caixas, alturas)):
         canvas = np.zeros((H, W, 4), np.uint8)
         if not b:
             out.append(canvas)
             continue
-        s = altura_ref / (alt if escala == "por_quadro" else mediana)
-        qs = _escalar(q, s)
-        px, py = ancora(qs)
-        dx, dy = round(pivo[0] - px), round(pivo[1] - py)
+        if fixo is not None:
+            qs = esc[i]
+            dx, dy = fixo
+        else:
+            s = altura_ref / (alt if escala == "por_quadro" else mediana)
+            qs = _escalar(q, s)
+            px, py = ancora(qs)
+            dx, dy = round(pivo[0] - px), round(pivo[1] - py)
         y0, x0 = max(0, dy), max(0, dx)
         y1, x1 = min(H, dy + qs.shape[0]), min(W, dx + qs.shape[1])
         if y1 > y0 and x1 > x0:

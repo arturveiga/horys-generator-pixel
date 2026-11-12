@@ -280,10 +280,11 @@ Monta o PROMPT DE TRADUÇÃO (11 itens do cofre) para o usuário levar a qualque
 gerador de imagem (Codex, ChatGPT, Gemini, vídeo...): 'tipo' (personagem, criatura-pequena, criatura-grande, boss,
 prop, arvore, predio, tile, icone, retrato, efeito), 'descricao' do design, 'estilo' (a paleta vira os hex e os
 papéis), 'altura' alvo em px, 'modo' parado | poses (com 'poses', a lista), 'referencia' (caminho; só vai anexada se
-'referencia_propria'), e opcionais foco, pecas, cortes, nao_fazer, vista, base_aprovada, guia_pose. Grava
+'referencia_propria'), e opcionais foco, pecas, cortes, nao_fazer, vista, base_aprovada, guia_pose e 'rampas' (subpaleta:
+nomes das rampas do estilo que o design usa; sem ela vai a paleta inteira). Grava
 <pasta>/traducao/prompt.md e traducao/paleta-<estilo>.png (amostra com os hex) e devolve o prompt.
 
-Parâmetros: `tipo`*, `descricao`*, `estilo`, `nome`, `altura`, `modo`, `poses`, `referencia`, `referencia_propria`, `foco`, `pecas`, `cortes`, `nao_fazer`, `vista`, `base_aprovada`, `guia_pose`, `pasta` (`*` = obrigatório)
+Parâmetros: `tipo`*, `descricao`*, `estilo`, `nome`, `altura`, `modo`, `poses`, `referencia`, `referencia_propria`, `foco`, `pecas`, `cortes`, `nao_fazer`, `vista`, `base_aprovada`, `guia_pose`, `pasta`, `rampas` (`*` = obrigatório)
 
 ### `horys_referencia_gerar`
 
@@ -341,9 +342,10 @@ Parâmetros: `quadros`, `quadro`, `salvar` (`*` = obrigatório)
 Copia uma 'regiao' {x,y,w,h} da camada OCULTA 'referencia' para uma 'parte', no
 'quadro' (padrão o ativo; 'quadro_ref' se a referência estiver em outro). Só escreve onde a imagem composta final NÃO
 muda (pixel coberto por parte de cima ou da mesma cor que a composição já mostra); o resto é recusado e contado.
+Recusa sprite com mais de 128 px de altura (boss: anime por render 3D), salvo 'forcar' + 'motivo'.
 Confere a composição depois e desfaz se mudou. 'sobrescrever': troca também pixels já existentes na parte.
 
-Parâmetros: `parte`*, `regiao`*, `quadro`, `quadro_ref`, `sobrescrever` (`*` = obrigatório)
+Parâmetros: `parte`*, `regiao`*, `quadro`, `quadro_ref`, `sobrescrever`, `forcar`, `motivo` (`*` = obrigatório)
 
 ### `horys_partes_estender`
 
@@ -448,16 +450,21 @@ Parâmetros: `json`*, `tags`, `direcao`, `camada`, `limpar_min`, `spec`, `grupos
 
 ### `horys_sequencia`
 
-MOTOR DE SEQUÊNCIA: trata os quadros de uma animação como um todo. 'fonte' = pasta
-de PNGs, uma grade (PNG + 'linhas' e 'colunas'), um vídeo (precisa do ffmpeg) ou o JSON do atlas do Kiln. Etapas:
-fundo por célula → registro (altura alvo, pés e pivô da ficha; 'escala' por_quadro | comum) → escolha de quadros
+MOTOR DE SEQUÊNCIA: trata os quadros de uma animação como um todo. 'fonte' = o
+manifest.json de um render 3D com câmera fixa (Blender/Blockbench; liga o preset render3d), pasta de PNGs, uma grade
+(PNG + 'linhas' e 'colunas'), um vídeo (precisa do ffmpeg) ou o JSON do atlas do Kiln. 'preset' render3d | grade |
+video. Etapas: fundo por célula → registro (altura alvo, pés e pivô da ficha; 'escala' fixa | comum | por_quadro —
+fixa = uma transformação para a sequência inteira, preserva quique e agachamento) → escolha de quadros
 ('plano' andar | golpe com 'n') → quantização conjunta na paleta do estilo → redução por moda → anti-cintilação →
 trava de identidade ('base' = PNG da base aprovada no tamanho final e 'decalques' [{nome, rect [x,y,w,h], busca}]) →
-limpeza (órfãos e borda). Escreve na camada (padrão: a de cima da ficha) a partir do quadro 'quadro_inicial', cria a
+limpeza (órfãos e borda) → validação objetiva (canvas, alpha, paleta, proporção, deriva, cintilação, quadros
+repetidos, loop, identidade). 'proteger' = cores (#hex) que podem mudar sem a forma mudar (brilho do olho).
+'saida_folha' = pasta onde gravar a folha PNG + JSON (Aseprite hash, lido pela Godot 4) + GIF. Uma grade (imagem) só entra com o portão de entrada APROVADO, salvo 'forcar' + 'motivo'.
+Escreve na camada (padrão: a de cima da ficha) a partir do quadro 'quadro_inicial', cria a
 tag 'estado' e devolve o relatório (deriva, % de pixels que piscam antes e depois). Depois: horys_contorno →
 horys_portao.
 
-Parâmetros: `fonte`*, `altura`*, `linhas`, `colunas`, `fps`, `estado`, `camada`, `quadro_inicial`, `ms`, `plano`, `n`, `escala`, `fator`, `base`, `decalques`, `limpar_min`, `regularizar`, `cor_fundo`, `proteger` (`*` = obrigatório)
+Parâmetros: `fonte`*, `altura`*, `linhas`, `colunas`, `fps`, `estado`, `camada`, `quadro_inicial`, `ms`, `plano`, `n`, `escala`, `fator`, `base`, `decalques`, `limpar_min`, `regularizar`, `cor_fundo`, `proteger`, `forcar`, `motivo`, `preset`, `loop`, `saida_folha` (`*` = obrigatório)
 
 ### `horys_guia_poses`
 
@@ -467,6 +474,29 @@ Kiln (ou do Noct 3D) ou uma pasta de PNGs já renderizados; 'linhas' × 'colunas
 golem pede 4–8 silhuetas); 'plano' andar | golpe escolhe os quadros-chave. Grava o PNG em 'saida'.
 
 Parâmetros: `fonte`*, `linhas`, `colunas`, `plano`, `saida`*, `celula_w`, `celula_h` (`*` = obrigatório)
+
+### `horys_validar_sequencia`
+
+VALIDAÇÃO OBJETIVA de uma animação pronta, sem Aseprite: 'fonte' = pasta de PNGs,
+manifest.json de render 3D, grade (com 'linhas' e 'colunas') ou folha PNG em tira (com 'colunas'). Mede: mesmo canvas,
+alpha só 0/255, cores na paleta ('paleta' #hex, ou a do 'estilo'), proporção (altura estável), deriva horizontal,
+linha dos pés, pivô ('pivo' [x,y]), cintilação, quadros repetidos, loop último→primeiro, silhueta e cabeça
+reconhecíveis, elementos que somem. Os números não substituem a revisão: sequência que desliza continua reprovada.
+
+Parâmetros: `fonte`*, `linhas`, `colunas`, `paleta`, `estilo`, `pivo`, `loop` (`*` = obrigatório)
+
+### `horys_colagem`
+
+COLAGEM GUIADA: o gerador só diz ONDE cada peça vai; os pixels vêm da arte-mestra. 'mestre' = conceito aprovado em
+pixel art ampliada (lido na grade dele: pixel quadrado, fase pelo Sobel). 'guia' = os quadros da animação gerados a
+partir desse conceito (prancha de poses soltas, grade com 'linhas' e 'colunas', ou pasta). Os guias vão para a grade
+do mestre (escala única, moda na paleta) e cada peça de 'pecas' [{nome, rect [x,y,w,h], apagar faixa|caixa|nada,
+busca, espelho, erro_max}] é achada em cada quadro e colada exata por cima. Sem 'pecas', devolve só o mestre com
+régua. Grava quadros, mestre, folha PNG + JSON + GIF em 'saida'. Não precisa do Aseprite. No terminal:
+`horys colagem MESTRE GUIA --saida PASTA --peca cabeca:0,0,60,47:faixa --peca tronco:14,47,32,25`.
+
+Parâmetros: `mestre`*, `guia`, `pecas`, `saida`*, `linhas`, `colunas`, `paleta`, `estilo`, `cores`, `cor_fundo`,
+`busca`, `ms`, `estado`, `loop` (`*` = obrigatório)
 
 ## Entrega e retoque
 

@@ -3,9 +3,8 @@
 Gerador de pixel art no estilo de cada pessoa, que desenha **ao vivo no Aseprite**, conversa com você dentro dele e
 funciona com **Claude ou Codex** como motor.
 
-> **Estado (2026-11-06):** v0.1 funcionando de ponta a ponta. Servidor, extensão, ferramentas MCP, skills, estilos,
-> portão de medidas (equivalente pixel a pixel ao fluxo antigo), revisor cruzado e treino (kohya) implementados e
-> testados (126 testes). O que falta validar e decidir está em [PENDENCIAS.md](PENDENCIAS.md).
+> **Plano atual:** animação por modelo 3D low-poly renderizado com câmera fixa, tratado pelo motor de sequência.
+> Ver [docs/plano.md](docs/plano.md).
 
 ## Em uma frase
 No Aseprite você abre **Arquivo › Horys › Novo asset…**, escreve "um viking", anexa uma referência se quiser, escolhe
@@ -51,7 +50,7 @@ Ficha do tipo (`src/horys_pixel/padroes/`) → `horys_prompt_traducao` (você ge
 Gemini, Codex, vídeo) → `horys_portao_entrada` → `horys_converter` → limpeza → portão de medidas → revisor. Animação:
 `horys_sequencia` (motor de sequência) no lugar da conversão. A entrega vem com o acabamento marcado para você
 finalizar no Aseprite, e o seu retoque volta como gosto. Detalhes em [arquitetura](docs/arquitetura.md) e
-[new-task.md](new-task.md).
+[plano](docs/plano.md).
 
 ## Usar
 - **No Aseprite:** Arquivo › Horys › Novo asset… / Revisar este sprite / Novo estilo….
@@ -66,8 +65,8 @@ python -m pytest -q                    # 126 testes (HORYS_PULAR_LENTOS=1 pula a
 python scripts/build_extension.py      # dist/horys-pixel.aseprite-extension
 python scripts/gerar_agente.py         # agents/revisor.md a partir do revisor_prompt.md
 ```
-Documentos: [arquitetura](docs/arquitetura.md) · [protocolo](docs/protocolo.md) · [ferramentas](docs/ferramentas.md) ·
-[estilos](docs/estilos.md) · [treino](docs/treino.md) e [uso do treino](docs/treino-uso.md) · [fases](docs/fases.md) ·
+Documentos: [plano](docs/plano.md) · [arquitetura](docs/arquitetura.md) · [protocolo](docs/protocolo.md) · [ferramentas](docs/ferramentas.md) ·
+[estilos](docs/estilos.md) · [treino](docs/treino.md) e [uso do treino](docs/treino-uso.md) ·
 [decisões](docs/decisoes.md).
 
 ## Créditos

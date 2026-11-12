@@ -1,0 +1,19 @@
+# checagem dragao_16_baforada
+
+PORTÃO DE MEDIDAS: REPROVADO — corrija antes de chamar o revisor
+2 falha(s), 1 aviso(s) -> hibrido/v05\medidas\baforada\medidas.json
+  FALHA M04 (A7, grave) [baforada]: órfãos 1.79% (pior quadro 2.55%)
+  FALHA M05 (B2, grave) [baforada]: cluster médio 10 px
+  aviso A07 [baforada]: área varia 15% entre quadros (massa constante?)
+(detalhes e overlay em medidas/baforada/; régua animada: dragao_16_baforada_regua_anim.png vs Tiny sheep_idle.png)
+
+AVISO  q0: 6 pixel(s) órfão(s) (col,lin): (6,8) (7,9) (18,9) (11,11) (21,11) (10,14) — ok só se for olho, brilho ou detalhe intencional
+AVISO  q1: 4 pixel(s) órfão(s) (col,lin): (19,11) (6,13) (22,13) (8,14) — ok só se for olho, brilho ou detalhe intencional
+AVISO  q2: 7 pixel(s) órfão(s) (col,lin): (14,10) (5,11) (15,11) (19,11) (7,12) (11,12) (22,13) — ok só se for olho, brilho ou detalhe intencional
+AVISO  q3: 8 pixel(s) órfão(s) (col,lin): (14,10) (5,11) (15,11) (19,11) (7,12) (11,12) (22,13) (12,18) — ok só se for olho, brilho ou detalhe intencional
+ok     cores usadas: 9 (limite criatura = 11)
+ok     altura do sprite com contorno: 21 px
+ok     q0→q1: 70% dos pixels mudam
+ok     q1→q2: 24% dos pixels mudam
+ok     q2→q3: 33% dos pixels mudam
+ok     .aseprite: 3 camadas (sombra, contorno, desenho), tag 'baforada', 4 quadro(s); reaberto e igual à folha pixel a pixel

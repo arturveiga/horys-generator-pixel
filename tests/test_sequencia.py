@@ -30,7 +30,7 @@ def test_sequencia_entradas(tmp_path):
 
 def test_registro_deriva_ate_1px():
     qs = [_fig(100, 80, 150), _fig(120, 100, 160), _fig(90, 70, 140), _fig(110, 95, 155)]
-    r = registro.registrar(qs, 100, (200, 200), (100, 180))
+    r = registro.registrar(qs, 100, (200, 200), (100, 180), "por_quadro")
     d = registro.deriva(r)
     assert d["pes"] <= 1 and d["x"] <= 1 and d["altura"] <= 1
 

@@ -1,0 +1,146 @@
+spritekiln: 1
+name: dragao_16
+kind: character
+size: 48
+directions: 4
+mirror: true
+palette: cozy
+camera: {pitch: 38, scale: 0.045, center: [0, 0.40, 0]}
+shadow: {rx: 7, ry: 3, alpha: 110}
+snap: [root, body]
+
+brief:
+  summary: "TESTE de 16 px: filhote de dragão vermelho, chibi, voando (hover). Corpo ~16 px, asas 1-2 px de espessura, cauda de 2 segmentos, chifres e baforada de fogo."
+  reference: "pesquisa: silhueta primeiro, até 8 cores, partes finas de 1 px, batida de asa com o corpo fixo e só o ângulo da asa mudando (4-6 quadros)"
+  proportions: "cabeça ~40% do corpo, asas do tamanho do corpo, cauda curta, perninhas recolhidas"
+  must_keep: [silhueta de dragão legível a 16 px, asas, chifres, olho claro, cauda]
+  simplify: [sem espinhos, sem dentes, sem escamas; barriga clara em 1 tom]
+  exception: "ESCALA: camera.scale 0.045 (o estilo do projeto é 0.07333, 24 px). Teste isolado de 16 px; não vale para os outros assets."
+
+materials:
+  scale:  {ramp: red, bands: [2, 3], finish: matte}
+  belly:  {ramp: gold, bands: [2, 3], finish: matte}
+  wing:   {ramp: violet, bands: [2, 3], finish: matte, two_sided: true}
+  horn:   {ramp: gold, bands: [3, 4], finish: matte}
+  eye:    {ramp: gold, emissive: true, band: 4}
+  flame:  {ramp: gold, emissive: true, band: 3}
+  flame2: {ramp: red, emissive: true, band: 3}
+
+channels:
+  root: [0, 0, 0]
+  bob: 0
+  lean: 0
+  flap: 0
+  head_pitch: 0
+  tail_a: 0
+  tail_y: 0
+  fire: 0
+
+bones:
+  body:    {parent: root, pos: "[0, 0.34 + bob, 0]", rot: "[lean, 0, 0]"}
+  head:    {parent: body, pos: [0, 0.20, 0.22], rot: "[head_pitch, 0, 0]"}
+  wing_L:  {parent: body, pos: [0.12, 0.12, -0.02], rot: "[0, 0, flap + 0.25]"}
+  tail1:   {parent: body, pos: [0, -0.02, -0.24], rot: "[tail_a, tail_y, 0]"}
+  tail2:   {parent: tail1, pos: [0, 0, -0.18], rot: "[tail_a*0.7, tail_y, 0]"}
+  leg_L:   {parent: body, pos: [0.09, -0.10, 0.04]}
+
+parts:
+  body:
+    material: scale
+    space: body
+    blend: 0.05
+    prims:
+      - ellipsoid: {c: [0, 0, 0], r: [0.17, 0.15, 0.25]}
+  belly:
+    material: belly
+    space: body
+    prims:
+      - ellipsoid: {c: [0, -0.08, 0.05], r: [0.11, 0.08, 0.19]}
+  head:
+    material: scale
+    space: head
+    blend: 0.05
+    prims:
+      - ellipsoid: {c: [0, 0, 0.02], r: [0.20, 0.17, 0.18]}
+      - ellipsoid: {c: [0, -0.05, 0.22], r: [0.11, 0.07, 0.11]}
+  horn_L:
+    material: horn
+    space: head
+    prims:
+      - cone: {a: [0.09, 0.12, -0.03], b: [0.15, 0.27, -0.12], r: [0.045, 0.008]}
+  eye_L:
+    material: eye
+    space: head
+    prims:
+      - sphere: {c: [0.11, 0.05, 0.14], r: 0.07}
+  eye_R:
+    material: eye
+    space: head
+    prims:
+      - sphere: {c: [-0.11, 0.05, 0.14], r: 0.07}
+  wing_L:
+    material: wing
+    space: wing_L
+    prims:
+      - extrude: {c: [0.20, 0.0, -0.04], rot: [1.5708, 0, 0], depth: 0.03, round: 0.004,
+                  profile: {polygon: [[-0.08, 0.16], [0.30, 0.10], [0.34, -0.02], [0.26, -0.04], [0.20, -0.14], [0.10, -0.06], [-0.08, -0.12]]}}
+  wingbone_L:
+    material: horn
+    space: wing_L
+    prims:
+      - cone: {a: [0.0, 0.0, 0.0], b: [0.38, 0.04, 0.0], r: [0.025, 0.012]}
+  tail1:
+    material: scale
+    space: tail1
+    blend: 0.04
+    prims:
+      - cone: {a: [0, 0, 0.02], b: [0, 0, -0.18], r: [0.08, 0.06]}
+  tail2:
+    material: scale
+    space: tail2
+    prims:
+      - cone: {a: [0, 0, 0.02], b: [0, 0, -0.26], r: [0.06, 0.012]}
+  leg_L:
+    material: scale
+    space: leg_L
+    prims:
+      - ellipsoid: {c: [0, -0.05, 0.02], r: [0.05, 0.07, 0.06]}
+      - ellipsoid: {c: [0, -0.11, 0.05], r: [0.05, 0.03, 0.07]}
+  fire:
+    material: flame
+    space: head
+    prims:
+      - cone: {a: [0, -0.05, 0.30], b: "[0, -0.06, 0.30 + 0.40*fire]", r: "[0.001 + 0.04*fire, 0.001 + 0.09*fire]"}
+  fire_core:
+    material: flame2
+    space: head
+    prims:
+      - cone: {a: [0, -0.05, 0.30], b: "[0, -0.06, 0.30 + 0.28*fire]", r: "[0.001 + 0.02*fire, 0.001 + 0.05*fire]"}
+
+animations:
+  idle:                          # hover: batida lenta, corpo sobe e desce 1 px
+    frames: 4
+    ms: 150
+    channels:
+      bob: "0.045*sin(p)"
+      flap: "0.4*sin(p)"
+      tail_y: "0.35*sin(p)"
+      head_pitch: "0.05*sin(p + 0.8)"
+
+  fly:                           # voo: inclinado, batida rápida
+    frames: 4
+    ms: 100
+    channels:
+      lean: 0.10
+      bob: "0.045*sin(p)"
+      flap: "0.6*sin(p)"
+      tail_y: "0.2*sin(p)"
+      tail_a: -0.12
+
+  attack:                        # baforada: recua, cospe, segura, volta
+    loop: false
+    keys:
+      - {ms: 160, event: windup, set: {lean: -0.2, bob: 0.045, flap: 0.8, head_pitch: -0.35, tail_a: 0.25}}
+      - {ms: 90, event: fire, set: {lean: 0.12, bob: 0, flap: -0.2, head_pitch: 0.18, fire: 1, tail_a: -0.15}}
+      - {ms: 220, set: {lean: 0.12, bob: 0, flap: 0.4, head_pitch: 0.18, fire: 0.85, tail_a: -0.15}}
+      - {ms: 130, set: {lean: 0.04, bob: 0.02, flap: 0.5, head_pitch: 0.05, fire: 0.0}}

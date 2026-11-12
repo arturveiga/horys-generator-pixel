@@ -52,9 +52,27 @@ def mapa_para_paleta(centros: np.ndarray, paleta_rgb: np.ndarray) -> np.ndarray:
     return np.linalg.norm(centros[:, None, :] - pal[None], axis=-1).argmin(1)
 
 
-def quantizar(quadros: list[np.ndarray], paleta_hex: list[str], raio: float = 0.04) -> list[np.ndarray]:
-    """Índices da paleta por pixel (-1 = transparente), com o MESMO mapa para todos os quadros."""
+def quantizar(quadros: list[np.ndarray], paleta_hex: list[str], raio: float = 0.04,
+              direto: bool = False) -> list[np.ndarray]:
+    """Índices da paleta por pixel (-1 = transparente), com o MESMO mapa para todos os quadros.
+    direto=True: cada pixel vai para a cor da paleta mais próxima (OKLab), sem agrupar antes. Para render 3D com
+    paleta definida: o agrupamento guloso junta degradês (pelo escuro → pedra clara) num tom médio só."""
     pal_rgb = hex_para_rgb(paleta_hex)
+    if direto:
+        pal = _lab(pal_rgb)
+        out = []
+        for q in quadros:
+            h, w = q.shape[:2]
+            idx = np.full((h, w), -1, np.int16)
+            op = q[..., 3] >= 128
+            if op.any():
+                lab = _lab(q[op][:, :3])
+                esc = np.empty(len(lab), np.int16)
+                for a in range(0, len(lab), 200_000):
+                    esc[a:a + 200_000] = np.linalg.norm(lab[a:a + 200_000, None, :] - pal[None], axis=-1).argmin(1)
+                idx[op] = esc
+            out.append(idx)
+        return out
     centros, _ = agrupar(quadros, raio)
     para_pal = mapa_para_paleta(centros, pal_rgb) if len(centros) else np.zeros(0, int)
     out = []

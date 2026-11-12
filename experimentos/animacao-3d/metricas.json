@@ -1,0 +1,1046 @@
+{
+ "idle_s": {
+  "antes": {
+   "aprovado": false,
+   "metricas": {
+    "quadros": 4,
+    "canvas": [
+     256,
+     256
+    ],
+    "altura": [
+     164,
+     172
+    ],
+    "deriva_x": 0.85,
+    "pes_var": 1.0,
+    "pisca": 0.0033,
+    "pisca_total": 0.4154,
+    "cores": 29358,
+    "iou_min": 0.89
+   },
+   "falhas": [
+    {
+     "id": "V03",
+     "nome": "cores dentro da paleta",
+     "ok": false,
+     "valor": [
+      "#070101",
+      "#080000",
+      "#080506",
+      "#090306",
+      "#090406",
+      "#090707",
+      "#0a0a0c",
+      "#0b0101",
+      "#0b0304",
+      "#0b0502",
+      "#0b0508",
+      "#0b060a"
+     ],
+     "limite": "16 cores",
+     "grave": true
+    },
+    {
+     "id": "V03b",
+     "nome": "total de cores da sequência",
+     "ok": false,
+     "valor": 29358,
+     "limite": "<= 16",
+     "grave": false
+    },
+    {
+     "id": "V13",
+     "nome": "nenhum elemento some (cores do quadro 0 em todos)",
+     "ok": false,
+     "valor": [
+      "#271e25",
+      "#32272d",
+      "#352931",
+      "#3d352d",
+      "#3e362d",
+      "#3e372e",
+      "#3f372f",
+      "#453b30",
+      "#453c31",
+      "#4e4438",
+      "#574c3f",
+      "#5a4e40",
+      "#685949",
+      "#685a49",
+      "#6c5d4b",
+      "#6c5d4c",
+      "#6d5e4c",
+      "#6d5e4d",
+      "#6e5f4d",
+      "#6f5f4d",
+      "#6f5f4e",
+      "#6f604e",
+      "#766653",
+      "#776653",
+      "#776754",
+      "#7b6c5a",
+      "#83715c",
+      "#83715d",
+      "#83725d",
+      "#887661",
+      "#8b7862",
+      "#8b7963",
+      "#8c7963",
+      "#927f68",
+      "#937f68",
+      "#938068",
+      "#94816a",
+      "#95816b",
+      "#96836c",
+      "#99856e",
+      "#9c876f",
+      "#9c8870",
+      "#9d8871",
+      "#9d8973",
+      "#9d8a73",
+      "#9d8a74",
+      "#9e8971",
+      "#a18c73",
+      "#a38e76",
+      "#a38f76",
+      "#a48f76",
+      "#a48f77",
+      "#baa895",
+      "#baa996",
+      "#bcab98",
+      "#ffb827",
+      "#ffb828",
+      "#ffb927",
+      "#ffb928"
+     ],
+     "limite": "[]",
+     "grave": true
+    }
+   ]
+  },
+  "depois": {
+   "aprovado": true,
+   "metricas": {
+    "quadros": 4,
+    "canvas": [
+     256,
+     256
+    ],
+    "altura": [
+     164,
+     173
+    ],
+    "deriva_x": 0.89,
+    "pes_var": 2.0,
+    "pisca": 0.0186,
+    "pisca_total": 0.2765,
+    "cores": 16,
+    "iou_min": 0.891
+   },
+   "falhas": [],
+   "pisca_antes": 0.3051,
+   "pisca_depois": 0.3051
+  }
+ },
+ "idle_se": {
+  "antes": {
+   "aprovado": false,
+   "metricas": {
+    "quadros": 4,
+    "canvas": [
+     256,
+     256
+    ],
+    "altura": [
+     186,
+     187
+    ],
+    "deriva_x": 0.77,
+    "pes_var": 1.0,
+    "pisca": 0.0036,
+    "pisca_total": 0.4044,
+    "cores": 26055,
+    "iou_min": 0.91
+   },
+   "falhas": [
+    {
+     "id": "V03",
+     "nome": "cores dentro da paleta",
+     "ok": false,
+     "valor": [
+      "#050305",
+      "#070205",
+      "#080305",
+      "#090403",
+      "#090406",
+      "#0a0000",
+      "#0a0204",
+      "#0a0607",
+      "#0b0203",
+      "#0b0608",
+      "#0b0609",
+      "#0b0705"
+     ],
+     "limite": "16 cores",
+     "grave": true
+    },
+    {
+     "id": "V03b",
+     "nome": "total de cores da sequência",
+     "ok": false,
+     "valor": 26055,
+     "limite": "<= 16",
+     "grave": false
+    },
+    {
+     "id": "V13",
+     "nome": "nenhum elemento some (cores do quadro 0 em todos)",
+     "ok": false,
+     "valor": [
+      "#332731",
+      "#3e352c",
+      "#3e362c",
+      "#433a2f",
+      "#4a4035",
+      "#4b4135",
+      "#4b4136",
+      "#53473a",
+      "#5b4f41",
+      "#5b4f42",
+      "#5b5042",
+      "#645646",
+      "#665848",
+      "#6b5c4b",
+      "#756552",
+      "#7b6a56",
+      "#7e6c58",
+      "#7e6d58",
+      "#7e6d59",
+      "#83715c",
+      "#83725d",
+      "#84725d",
+      "#8a7862",
+      "#8b7862",
+      "#8f7b65",
+      "#8f7c65",
+      "#8f7c66",
+      "#907d67",
+      "#927e67",
+      "#937f68",
+      "#96826b",
+      "#9b866e",
+      "#9b876f",
+      "#9c876f",
+      "#a6927a",
+      "#a7927a",
+      "#a7927b",
+      "#a7937b",
+      "#b5a390",
+      "#b5a490",
+      "#ffc42b",
+      "#ffc42c",
+      "#ffc52c"
+     ],
+     "limite": "[]",
+     "grave": true
+    }
+   ]
+  },
+  "depois": {
+   "aprovado": false,
+   "metricas": {
+    "quadros": 4,
+    "canvas": [
+     256,
+     256
+    ],
+    "altura": [
+     186,
+     187
+    ],
+    "deriva_x": 0.75,
+    "pes_var": 1.0,
+    "pisca": 0.0207,
+    "pisca_total": 0.2614,
+    "cores": 16,
+    "iou_min": 0.912
+   },
+   "falhas": [
+    {
+     "id": "V09",
+     "nome": "sem cintilação (pixel solto piscando)",
+     "ok": false,
+     "valor": 0.0207,
+     "limite": 0.02,
+     "grave": true
+    }
+   ],
+   "pisca_antes": 0.2928,
+   "pisca_depois": 0.2928
+  }
+ },
+ "idle_e": {
+  "antes": {
+   "aprovado": false,
+   "metricas": {
+    "quadros": 4,
+    "canvas": [
+     256,
+     256
+    ],
+    "altura": [
+     199,
+     203
+    ],
+    "deriva_x": 0.7,
+    "pes_var": 1.0,
+    "pisca": 0.0032,
+    "pisca_total": 0.3909,
+    "cores": 17440,
+    "iou_min": 0.908
+   },
+   "falhas": [
+    {
+     "id": "V03",
+     "nome": "cores dentro da paleta",
+     "ok": false,
+     "valor": [
+      "#010101",
+      "#070307",
+      "#090409",
+      "#0a050a",
+      "#0b0707",
+      "#0c0301",
+      "#0c080a",
+      "#0d0203",
+      "#0d080b",
+      "#0d090c",
+      "#0d0a0b",
+      "#0d0b0a"
+     ],
+     "limite": "16 cores",
+     "grave": true
+    },
+    {
+     "id": "V03b",
+     "nome": "total de cores da sequência",
+     "ok": false,
+     "valor": 17440,
+     "limite": "<= 16",
+     "grave": false
+    },
+    {
+     "id": "V13",
+     "nome": "nenhum elemento some (cores do quadro 0 em todos)",
+     "ok": false,
+     "valor": [
+      "#352935",
+      "#473d32",
+      "#473e32",
+      "#483e32",
+      "#483e33",
+      "#4f4437",
+      "#4f4438",
+      "#504538",
+      "#5e5142",
+      "#5f5242",
+      "#5f5243",
+      "#675a4b",
+      "#6b5c4b",
+      "#70604e",
+      "#7d6c58",
+      "#7d6c59",
+      "#7f6d59",
+      "#7f6e59",
+      "#867460",
+      "#87755f",
+      "#877560",
+      "#887660",
+      "#887661",
+      "#8d7a64",
+      "#8d7b65",
+      "#937f68",
+      "#95826a",
+      "#96826b",
+      "#9b8770",
+      "#9c8770",
+      "#9c8870",
+      "#9c8871",
+      "#b6a490",
+      "#b7a591"
+     ],
+     "limite": "[]",
+     "grave": true
+    }
+   ]
+  },
+  "depois": {
+   "aprovado": true,
+   "metricas": {
+    "quadros": 4,
+    "canvas": [
+     256,
+     256
+    ],
+    "altura": [
+     199,
+     203
+    ],
+    "deriva_x": 0.76,
+    "pes_var": 1.0,
+    "pisca": 0.0198,
+    "pisca_total": 0.2683,
+    "cores": 16,
+    "iou_min": 0.907
+   },
+   "falhas": [],
+   "pisca_antes": 0.2978,
+   "pisca_depois": 0.2978
+  }
+ },
+ "walk_s": {
+  "antes": {
+   "aprovado": false,
+   "metricas": {
+    "quadros": 8,
+    "canvas": [
+     256,
+     256
+    ],
+    "altura": [
+     160,
+     176
+    ],
+    "deriva_x": 6.78,
+    "pes_var": 18.0,
+    "pisca": 0.0052,
+    "pisca_total": 0.0476,
+    "cores": 51810,
+    "iou_min": 0.607
+   },
+   "falhas": [
+    {
+     "id": "V03",
+     "nome": "cores dentro da paleta",
+     "ok": false,
+     "valor": [
+      "#070101",
+      "#070102",
+      "#070205",
+      "#080305",
+      "#080306",
+      "#090203",
+      "#090306",
+      "#090404",
+      "#090507",
+      "#090509",
+      "#0a0102",
+      "#0a0200"
+     ],
+     "limite": "16 cores",
+     "grave": true
+    },
+    {
+     "id": "V03b",
+     "nome": "total de cores da sequência",
+     "ok": false,
+     "valor": 51810,
+     "limite": "<= 16",
+     "grave": false
+    },
+    {
+     "id": "V05",
+     "nome": "altura estável (proporção)",
+     "ok": false,
+     "valor": 0.093,
+     "limite": 0.06,
+     "grave": true
+    },
+    {
+     "id": "V06",
+     "nome": "sem deriva horizontal",
+     "ok": false,
+     "valor": 6.78,
+     "limite": 5.12,
+     "grave": true
+    },
+    {
+     "id": "V07",
+     "nome": "linha dos pés estável",
+     "ok": false,
+     "valor": 18.0,
+     "limite": 3,
+     "grave": false
+    },
+    {
+     "id": "V13",
+     "nome": "nenhum elemento some (cores do quadro 0 em todos)",
+     "ok": false,
+     "valor": [
+      "#1c161b",
+      "#1e171c",
+      "#261e23",
+      "#271e22",
+      "#2b2229",
+      "#3e3139",
+      "#3e362c",
+      "#3e372f",
+      "#3f372d",
+      "#3f3830",
+      "#4f4437",
+      "#4f453a",
+      "#514639",
+      "#52473b",
+      "#53483b",
+      "#53483c",
+      "#665847",
+      "#665848",
+      "#675848",
+      "#675948",
+      "#695a49",
+      "#6a5c4b",
+      "#6b5c4c",
+      "#71624f",
+      "#716250",
+      "#726250",
+      "#7d6c58",
+      "#7e6d58",
+      "#7e6d59",
+      "#7f6d59",
+      "#7f6e59",
+      "#7f6e5a",
+      "#84725d",
+      "#85735e",
+      "#87755f",
+      "#877560",
+      "#887560",
+      "#887660",
+      "#8c7964",
+      "#907c66",
+      "#907d66",
+      "#917d66",
+      "#937f69",
+      "#938069",
+      "#948069",
+      "#96826c",
+      "#96836c",
+      "#97836c",
+      "#99856d",
+      "#99856e",
+      "#9a856d",
+      "#9a856e",
+      "#9a866e",
+      "#9b8872",
+      "#9c8872",
+      "#9c8973",
+      "#a38e75",
+      "#a69179",
+      "#a6917a",
+      "#a6927a",
+      "#a7927a",
+      "#b7a592",
+      "#bdac9a",
+      "#bead9b",
+      "#ffb525",
+      "#ffb526",
+      "#ffb626",
+      "#ffb627"
+     ],
+     "limite": "[]",
+     "grave": true
+    }
+   ]
+  },
+  "depois": {
+   "aprovado": false,
+   "metricas": {
+    "quadros": 8,
+    "canvas": [
+     256,
+     256
+    ],
+    "altura": [
+     160,
+     175
+    ],
+    "deriva_x": 6.79,
+    "pes_var": 18.0,
+    "pisca": 0.0284,
+    "pisca_total": 0.1267,
+    "cores": 16,
+    "iou_min": 0.608
+   },
+   "falhas": [
+    {
+     "id": "V05",
+     "nome": "altura estável (proporção)",
+     "ok": false,
+     "valor": 0.0875,
+     "limite": 0.06,
+     "grave": true
+    },
+    {
+     "id": "V06",
+     "nome": "sem deriva horizontal",
+     "ok": false,
+     "valor": 6.79,
+     "limite": 5.12,
+     "grave": true
+    },
+    {
+     "id": "V07",
+     "nome": "linha dos pés estável",
+     "ok": false,
+     "valor": 18.0,
+     "limite": 3,
+     "grave": false
+    },
+    {
+     "id": "V09",
+     "nome": "sem cintilação (pixel solto piscando)",
+     "ok": false,
+     "valor": 0.0284,
+     "limite": 0.02,
+     "grave": true
+    }
+   ],
+   "pisca_antes": 0.1344,
+   "pisca_depois": 0.1344
+  }
+ },
+ "walk_se": {
+  "antes": {
+   "aprovado": false,
+   "metricas": {
+    "quadros": 8,
+    "canvas": [
+     256,
+     256
+    ],
+    "altura": [
+     171,
+     194
+    ],
+    "deriva_x": 12.85,
+    "pes_var": 26.0,
+    "pisca": 0.0051,
+    "pisca_total": 0.0506,
+    "cores": 46559,
+    "iou_min": 0.522
+   },
+   "falhas": [
+    {
+     "id": "V03",
+     "nome": "cores dentro da paleta",
+     "ok": false,
+     "valor": [
+      "#000000",
+      "#010101",
+      "#060206",
+      "#070000",
+      "#070101",
+      "#070205",
+      "#080101",
+      "#080506",
+      "#080606",
+      "#090202",
+      "#090302",
+      "#090305"
+     ],
+     "limite": "16 cores",
+     "grave": true
+    },
+    {
+     "id": "V03b",
+     "nome": "total de cores da sequência",
+     "ok": false,
+     "valor": 46559,
+     "limite": "<= 16",
+     "grave": false
+    },
+    {
+     "id": "V05",
+     "nome": "altura estável (proporção)",
+     "ok": false,
+     "valor": 0.1267,
+     "limite": 0.06,
+     "grave": true
+    },
+    {
+     "id": "V06",
+     "nome": "sem deriva horizontal",
+     "ok": false,
+     "valor": 12.85,
+     "limite": 5.12,
+     "grave": true
+    },
+    {
+     "id": "V07",
+     "nome": "linha dos pés estável",
+     "ok": false,
+     "valor": 26.0,
+     "limite": 3,
+     "grave": false
+    },
+    {
+     "id": "V12",
+     "nome": "silhueta reconhecível (IoU × quadro 0)",
+     "ok": false,
+     "valor": 0.522,
+     "limite": 0.55,
+     "grave": true
+    },
+    {
+     "id": "V13",
+     "nome": "nenhum elemento some (cores do quadro 0 em todos)",
+     "ok": false,
+     "valor": [
+      "#221b1f",
+      "#251e22",
+      "#272024",
+      "#292025",
+      "#2b2631",
+      "#2c222a",
+      "#2d2732",
+      "#3f372d",
+      "#403932",
+      "#41392f",
+      "#413930",
+      "#594d3f",
+      "#5e5142",
+      "#635647",
+      "#6c5d4c",
+      "#70614f",
+      "#71614f",
+      "#786957",
+      "#796855",
+      "#796955",
+      "#7a6955",
+      "#7a6956",
+      "#7a6a56",
+      "#806e5a",
+      "#806f5a",
+      "#816f5b",
+      "#82705b",
+      "#82705c",
+      "#82715c",
+      "#83715c",
+      "#86745e",
+      "#86745f",
+      "#87745f",
+      "#87755f",
+      "#877560",
+      "#8a7761",
+      "#8a7862",
+      "#8b7964",
+      "#8f7c65",
+      "#917e68",
+      "#948069",
+      "#94816a",
+      "#9d8870",
+      "#9d8970",
+      "#9e8970",
+      "#a28d74",
+      "#a9947c",
+      "#a9957d",
+      "#aa957d",
+      "#aa967e",
+      "#aa967f",
+      "#ab967f",
+      "#af9d89",
+      "#b9a895",
+      "#b9a896",
+      "#ffc12a",
+      "#ffc22b"
+     ],
+     "limite": "[]",
+     "grave": true
+    }
+   ]
+  },
+  "depois": {
+   "aprovado": false,
+   "metricas": {
+    "quadros": 8,
+    "canvas": [
+     256,
+     256
+    ],
+    "altura": [
+     171,
+     194
+    ],
+    "deriva_x": 12.86,
+    "pes_var": 26.0,
+    "pisca": 0.028,
+    "pisca_total": 0.1278,
+    "cores": 15,
+    "iou_min": 0.522
+   },
+   "falhas": [
+    {
+     "id": "V05",
+     "nome": "altura estável (proporção)",
+     "ok": false,
+     "valor": 0.1264,
+     "limite": 0.06,
+     "grave": true
+    },
+    {
+     "id": "V06",
+     "nome": "sem deriva horizontal",
+     "ok": false,
+     "valor": 12.86,
+     "limite": 5.12,
+     "grave": true
+    },
+    {
+     "id": "V07",
+     "nome": "linha dos pés estável",
+     "ok": false,
+     "valor": 26.0,
+     "limite": 3,
+     "grave": false
+    },
+    {
+     "id": "V09",
+     "nome": "sem cintilação (pixel solto piscando)",
+     "ok": false,
+     "valor": 0.028,
+     "limite": 0.02,
+     "grave": true
+    },
+    {
+     "id": "V12",
+     "nome": "silhueta reconhecível (IoU × quadro 0)",
+     "ok": false,
+     "valor": 0.522,
+     "limite": 0.55,
+     "grave": true
+    }
+   ],
+   "pisca_antes": 0.1347,
+   "pisca_depois": 0.1347
+  }
+ },
+ "walk_e": {
+  "antes": {
+   "aprovado": false,
+   "metricas": {
+    "quadros": 8,
+    "canvas": [
+     256,
+     256
+    ],
+    "altura": [
+     187,
+     201
+    ],
+    "deriva_x": 13.33,
+    "pes_var": 18.0,
+    "pisca": 0.0071,
+    "pisca_total": 0.0542,
+    "cores": 35649,
+    "iou_min": 0.631
+   },
+   "falhas": [
+    {
+     "id": "V03",
+     "nome": "cores dentro da paleta",
+     "ok": false,
+     "valor": [
+      "#000000",
+      "#030101",
+      "#080404",
+      "#090202",
+      "#090409",
+      "#0a0201",
+      "#0a0403",
+      "#0a0409",
+      "#0a0505",
+      "#0b0302",
+      "#0b0403",
+      "#0b0405"
+     ],
+     "limite": "16 cores",
+     "grave": true
+    },
+    {
+     "id": "V03b",
+     "nome": "total de cores da sequência",
+     "ok": false,
+     "valor": 35649,
+     "limite": "<= 16",
+     "grave": false
+    },
+    {
+     "id": "V05",
+     "nome": "altura estável (proporção)",
+     "ok": false,
+     "valor": 0.0716,
+     "limite": 0.06,
+     "grave": true
+    },
+    {
+     "id": "V05b",
+     "nome": "largura estável",
+     "ok": false,
+     "valor": 0.2824,
+     "limite": 0.25,
+     "grave": false
+    },
+    {
+     "id": "V06",
+     "nome": "sem deriva horizontal",
+     "ok": false,
+     "valor": 13.33,
+     "limite": 5.12,
+     "grave": true
+    },
+    {
+     "id": "V07",
+     "nome": "linha dos pés estável",
+     "ok": false,
+     "valor": 18.0,
+     "limite": 3,
+     "grave": false
+    },
+    {
+     "id": "V13",
+     "nome": "nenhum elemento some (cores do quadro 0 em todos)",
+     "ok": false,
+     "valor": [
+      "#1d161c",
+      "#1e1a25",
+      "#21191f",
+      "#211920",
+      "#2b2228",
+      "#2c2631",
+      "#3c342b",
+      "#3e323a",
+      "#3f303b",
+      "#3f3830",
+      "#403a32",
+      "#42343d",
+      "#44353e",
+      "#45353f",
+      "#45363f",
+      "#4a4034",
+      "#4b4034",
+      "#4b4135",
+      "#574b3d",
+      "#584c3e",
+      "#615444",
+      "#615445",
+      "#625444",
+      "#645647",
+      "#655747",
+      "#6d5e4c",
+      "#6e5f4d",
+      "#71624f",
+      "#756552",
+      "#786754",
+      "#786854",
+      "#786855",
+      "#796855",
+      "#796955",
+      "#796956",
+      "#7e6d59",
+      "#81705d",
+      "#877561",
+      "#8a7862",
+      "#8c7963",
+      "#907d66",
+      "#907d67",
+      "#917e67",
+      "#95816a",
+      "#97836c",
+      "#98846d",
+      "#99856d",
+      "#99856e",
+      "#9a866e",
+      "#9a866f",
+      "#9b866f",
+      "#9b876f",
+      "#9d8870",
+      "#9d8970",
+      "#9e8970",
+      "#9e8971",
+      "#a48e75",
+      "#b6a38f",
+      "#b6a48f",
+      "#b6a490",
+      "#b7a490"
+     ],
+     "limite": "[]",
+     "grave": true
+    }
+   ]
+  },
+  "depois": {
+   "aprovado": false,
+   "metricas": {
+    "quadros": 8,
+    "canvas": [
+     256,
+     256
+    ],
+    "altura": [
+     186,
+     200
+    ],
+    "deriva_x": 13.24,
+    "pes_var": 18.0,
+    "pisca": 0.0287,
+    "pisca_total": 0.1123,
+    "cores": 16,
+    "iou_min": 0.632
+   },
+   "falhas": [
+    {
+     "id": "V05",
+     "nome": "altura estável (proporção)",
+     "ok": false,
+     "valor": 0.0716,
+     "limite": 0.06,
+     "grave": true
+    },
+    {
+     "id": "V05b",
+     "nome": "largura estável",
+     "ok": false,
+     "valor": 0.284,
+     "limite": 0.25,
+     "grave": false
+    },
+    {
+     "id": "V06",
+     "nome": "sem deriva horizontal",
+     "ok": false,
+     "valor": 13.24,
+     "limite": 5.12,
+     "grave": true
+    },
+    {
+     "id": "V07",
+     "nome": "linha dos pés estável",
+     "ok": false,
+     "valor": 18.0,
+     "limite": 3,
+     "grave": false
+    },
+    {
+     "id": "V09",
+     "nome": "sem cintilação (pixel solto piscando)",
+     "ok": false,
+     "valor": 0.0287,
+     "limite": 0.02,
+     "grave": true
+    }
+   ],
+   "pisca_antes": 0.1192,
+   "pisca_depois": 0.1192
+  }
+ }
+}

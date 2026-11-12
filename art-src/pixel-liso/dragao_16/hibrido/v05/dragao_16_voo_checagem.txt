@@ -1,0 +1,19 @@
+# checagem dragao_16_voo
+
+PORTÃO DE MEDIDAS: REPROVADO — corrija antes de chamar o revisor
+2 falha(s), 1 aviso(s) -> hibrido/v05\medidas\voo\medidas.json
+  FALHA M04 (A7, grave) [voo]: órfãos 2.22% (pior quadro 2.91%)
+  FALHA M05 (B2, grave) [voo]: cluster médio 10 px
+  aviso A07 [voo]: área varia 34% entre quadros (massa constante?)
+(detalhes e overlay em medidas/voo/; régua animada: dragao_16_voo_regua_anim.png vs Tiny sheep_idle.png)
+
+AVISO  q0: 6 pixel(s) órfão(s) (col,lin): (7,8) (8,9) (19,10) (12,11) (22,12) (12,17) — ok só se for olho, brilho ou detalhe intencional
+AVISO  q1: 8 pixel(s) órfão(s) (col,lin): (14,8) (5,9) (15,9) (19,9) (7,10) (11,10) (22,11) (12,16) — ok só se for olho, brilho ou detalhe intencional
+AVISO  q2: 5 pixel(s) órfão(s) (col,lin): (19,10) (6,12) (22,12) (8,13) (12,17) — ok só se for olho, brilho ou detalhe intencional
+AVISO  q3: 9 pixel(s) órfão(s) (col,lin): (14,10) (5,11) (15,11) (19,11) (7,12) (11,12) (22,13) (9,17) (12,18) — ok só se for olho, brilho ou detalhe intencional
+ok     cores usadas: 9 (limite criatura = 11)
+ok     altura do sprite com contorno: 22 px
+ok     q0→q1: 42% dos pixels mudam
+ok     q1→q2: 49% dos pixels mudam
+ok     q2→q3: 45% dos pixels mudam
+ok     .aseprite: 3 camadas (sombra, contorno, desenho), tag 'voo', 4 quadro(s); reaberto e igual à folha pixel a pixel

@@ -1,0 +1,19 @@
+# checagem dragao_16_idle
+
+PORTÃO DE MEDIDAS: REPROVADO — corrija antes de chamar o revisor
+2 falha(s), 1 aviso(s) -> hibrido/v05\medidas\idle\medidas.json
+  FALHA M04 (A7, grave) [idle]: órfãos 2.15% (pior quadro 2.59%)
+  FALHA M05 (B2, grave) [idle]: cluster médio 10 px
+  aviso A07 [idle]: área varia 34% entre quadros (massa constante?)
+(detalhes e overlay em medidas/idle/; régua animada: dragao_16_idle_regua_anim.png vs Tiny sheep_idle.png)
+
+AVISO  q0: 6 pixel(s) órfão(s) (col,lin): (7,8) (8,9) (19,10) (12,11) (22,12) (5,16) — ok só se for olho, brilho ou detalhe intencional
+AVISO  q1: 8 pixel(s) órfão(s) (col,lin): (14,8) (5,9) (15,9) (19,9) (7,10) (11,10) (22,11) (10,15) — ok só se for olho, brilho ou detalhe intencional
+AVISO  q2: 5 pixel(s) órfão(s) (col,lin): (19,10) (6,12) (22,12) (8,13) (5,16) — ok só se for olho, brilho ou detalhe intencional
+AVISO  q3: 8 pixel(s) órfão(s) (col,lin): (14,10) (5,11) (15,11) (19,11) (7,12) (11,12) (22,13) (8,17) — ok só se for olho, brilho ou detalhe intencional
+ok     cores usadas: 9 (limite criatura = 11)
+ok     altura do sprite com contorno: 22 px
+ok     q0→q1: 46% dos pixels mudam
+ok     q1→q2: 52% dos pixels mudam
+ok     q2→q3: 49% dos pixels mudam
+ok     .aseprite: 3 camadas (sombra, contorno, desenho), tag 'idle', 4 quadro(s); reaberto e igual à folha pixel a pixel

@@ -86,3 +86,11 @@ SpriteKiln (`light`) para bater com o M15.
 - **Animação:** o desenho do movimento vem do gerador (grade/vídeo) ou do Kiln como guia; o tratamento é do motor de
   sequência, nunca imagem por imagem. Rig de partes só para personagem pequeno, não para boss.
 - **Entrega:** "pronto" = zero estrutural e aceitação ≥ 80 (limite a recalibrar na tarefa 4.4).
+
+## 2026-11-11: animação por render 3D
+- **Rig 2D abandonado para boss** (teto ~55%); SpriteKiln puro parou em ~46%.
+- **Fonte de animação = modelo 3D low-poly** renderizado com câmera ortográfica fixa 3/4 (30–35°), tratado pelo
+  motor de sequência do Horys. Plano em [plano.md](plano.md).
+- **SpriteKiln vira opcional** (guia de pose/timing), não é mais o caminho principal.
+- **Custo zero:** só ferramentas grátis/open-source e locais; nada de API paga nem crédito com cartão; licença
+  checada antes de cada dependência; código GPL (ex.: BlockBenchMCP) fica externo ao núcleo.

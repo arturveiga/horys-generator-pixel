@@ -1,0 +1,15 @@
+{
+  "saida": "../renders",
+  "resolucao": [256, 256],
+  "pitch": 32.0,
+  "yaw": 0.0,
+  "margem": 0.08,
+  "raiz": "Armature",
+  "objetos": null,
+  "luz_mundo": 1.0,
+  "sol": {"forca": 2.0, "angulo": [50.0, 0.0, 30.0]},
+  "acoes": [
+    {"nome": "idle", "acao": "Boss_Idle", "passo": 2, "loop": true},
+    {"nome": "ataque", "acao": "Boss_Ataque", "passo": 2, "loop": false, "fps": 12}
+  ]
+}

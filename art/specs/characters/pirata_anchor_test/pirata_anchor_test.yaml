@@ -1,0 +1,85 @@
+spritekiln: 1
+# yaml-language-server: $schema=https://raw.githubusercontent.com/LucasJRamos/spritekiln/main/spritekiln/data/spec.schema.json
+name: pirata_anchor_test
+mirror: true
+directions: 4
+camera: {"pitch": 38, "scale": 0.07333}
+palette: "cozy"
+size: 32
+extends: humanoid   # its skeleton, body, kits and animations: write here only what differs
+remove: [animations.walk]
+# `spritekiln spec outline` lists what comes from the base; `spritekiln spec show <path>` prints its lines,
+# `--resolved` the result. Keys given here merge into the base's (parts.belt.prims replaces its prims);
+# `remove: [parts.cape, use.sword]` drops a part or a kit of the base.
+
+brief:
+  summary: "Pirata aventureiro cozy para testar anchor visual + geração estrutural: casaco azul, bandana vermelha e sabre."
+  head: "Cabelo castanho curto sob bandana vermelha, franja lateral, rosto minimal com olhos; mandíbula macia chibi."
+  must_keep: [bandana vermelha com duas pontas, casaco azul, sabre curto, botas marrons]
+  simplify: [sem botões minúsculos, sem estampa, sem papagaio, sem barba detalhada]
+
+materials:
+  skin:    {ramp: skin, finish: soft}
+  hair:    {ramp: hair, finish: matte}
+  cloth:   {ramp: coat, finish: matte}
+  leather: {ramp: leather, finish: matte}
+  steel:   {ramp: steel, finish: matte}
+  red:     {ramp: red, finish: matte}
+
+ramps:
+  skin:  ["#2a1f2d", "#9a5a42", "#d88a62", "#f0b078"]
+  hair:  ["#1a1020", "#3b241f", "#68402c", "#9a663e"]
+  coat:  ["#182744", "#24527a", "#2f83a8", "#68b7c2"]
+  cloth: ["#182744", "#24527a", "#2f83a8", "#68b7c2"]
+  steel: ["#2a1f2d", "#56606c", "#87959d", "#c5cec8"]
+  fx_tail: ["#2a1f2d", "#a06a18", "#e6b02a"]
+  fx_mid:  ["#a06a18", "#e6b02a", "#fbe27a"]
+  fx_core: ["#e6b02a", "#fbe27a", "#fff6d8"]
+
+use:
+  - {kit: head, as: head, at: head, with: {jaw: 0.15, chin: 0.2, width: 1.05, nose: 0, ears: 0}}
+  - {kit: hair, as: hair, at: head, with: {fringe: 0.3, part: 0.35, locks: 0.2, length: 0.05, volume: 0.65}}
+  - {kit: sword, as: sword, at: wrist_R, with: {length: 0.36, width: 0.07, thick: 0.045, guard: 0.12, tilt: 0.62}}
+
+parts:
+  headband:
+    material: red
+    space: head
+    line: false
+    prims:
+      - torus: {c: [0, 0.08, 0], R: 0.19, r: 0.035}
+      - box: {c: [0, 0.12, 0.25], half: [0.20, 0.045, 0.055], round: 0.015}
+  bandana_tail:
+    material: red
+    space: head
+    line: false
+    prims:
+      - tube: {pts: [[-0.12, 0.08, -0.13], [-0.20, 0.02, -0.20], [-0.18, -0.12, -0.24]], r: [0.04, 0.018]}
+      - tube: {pts: [[-0.08, 0.06, -0.15], [-0.12, -0.02, -0.25], [-0.06, -0.15, -0.28]], r: [0.035, 0.015]}
+
+animations:
+  idle:
+    frames: 4
+    ms: [220, 140, 220, 140]
+    channels:
+      bob: "0.07333*sin(p)"
+      head_pitch: "-0.05*sin(p - 0.5)"
+      hand_L: "[0.33, 0.06 + 0.025*sin(p - 0.6), 0.06]"
+      hand_R: "[0.30, 0.10 + 0.025*sin(p - 0.6), 0.16]"
+      coat: "0.15*sin(p - 1.0)"
+  walk:
+    frames: 4
+    ms: 145
+    events: {0: step_l, 2: step_r}
+    channels:
+      lean: 0.12
+      bob: "-0.07333*cos(2*p)"
+      twist: "0.11*cos(p)"
+      foot_L: "[0.13, 0.11*pos(-sin(p)), 0.02 + 0.24*cos(p)]"
+      foot_R: "[0.13, 0.11*pos(sin(p)), 0.02 - 0.24*cos(p)]"
+      pitch_foot_L: "0.4*pos(-sin(p))"
+      pitch_foot_R: "0.4*pos(sin(p))"
+      hand_L: "[0.33, 0.08 + 0.04*pos(cos(p)), 0.06 - 0.20*cos(p)]"
+      hand_R: "[0.30, 0.10 + 0.04*pos(-cos(p)), 0.14 + 0.16*cos(p)]"
+      head_yaw: "-0.06*cos(p)"
+      coat: "0.5*sin(2*p)"

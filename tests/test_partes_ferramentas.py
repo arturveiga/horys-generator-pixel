@@ -209,3 +209,16 @@ def test_ferramentas_de_partes_registradas():
         assert nome in registro.REGISTRO
     assert {"modular", "preset_partes", "juncoes", "partes_oculto"} <= \
         set(registro.REGISTRO["horys_ficha"].esquema["properties"])
+
+
+def test_rig_de_partes_recusa_boss():
+    """Rig 2D de partes não serve para boss (teto ~55%): acima de 128 px pede render 3D, salvo forcar + motivo."""
+    import pytest
+    from horys_pixel.ferramentas import partes as FP
+    from horys_pixel.ferramentas.registro import ErroFerramenta
+    FP._recusar_rig_de_boss({"sprite": {"altura": 96}}, {})
+    with pytest.raises(ErroFerramenta, match="render 3D"):
+        FP._recusar_rig_de_boss({"sprite": {"altura": 256}}, {})
+    with pytest.raises(ErroFerramenta):
+        FP._recusar_rig_de_boss({"sprite": {"altura": 256}}, {"forcar": True, "motivo": " "})
+    FP._recusar_rig_de_boss({"sprite": {"altura": 256}}, {"forcar": True, "motivo": "usuário pediu"})

@@ -6,6 +6,7 @@
   horys instalar [--tudo] [--simular] [--extensao] [--confiar] [--claude] [--codex] [--skills] [--inicializacao]
   horys estilos [nome]            pacotes de estilo
   horys estilo-novo NOME IMG...   cria um pacote analisando imagens (o assistente completo roda pelo Aseprite)
+  horys colagem MESTRE GUIA --saida PASTA --peca nome:x,y,w,h[:faixa]   colagem guiada, local
   horys ferramenta NOME [JSON]    chama qualquer ferramenta MCP (para testar)
   horys pedido "DESCRIÇÃO" [--motor claude|codex] [--estilo E] [--tipo T] [--estados idle,andar]
   horys extensao                  gera dist/horys-pixel.aseprite-extension
@@ -48,6 +49,9 @@ def main(argv=None):
         except (AttributeError, ValueError):
             pass
     argv = list(sys.argv[1:] if argv is None else argv)
+    if argv[:1] == ["colagem"]:
+        from .sequencia.colagem import main as colagem_main
+        return colagem_main(argv[1:])
     if argv[:1] == ["treino"]:
         return subprocess.call([sys.executable, "-m", "horys_pixel.treino", *argv[1:]])
     ap = argparse.ArgumentParser(prog="horys", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)

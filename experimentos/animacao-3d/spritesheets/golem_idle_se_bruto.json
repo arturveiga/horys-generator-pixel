@@ -1,0 +1,115 @@
+{
+ "frames": {
+  "golem_idle_se_bruto 0.png": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 256
+   },
+   "duration": 125
+  },
+  "golem_idle_se_bruto 1.png": {
+   "frame": {
+    "x": 256,
+    "y": 0,
+    "w": 256,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 256
+   },
+   "duration": 125
+  },
+  "golem_idle_se_bruto 2.png": {
+   "frame": {
+    "x": 512,
+    "y": 0,
+    "w": 256,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 256
+   },
+   "duration": 125
+  },
+  "golem_idle_se_bruto 3.png": {
+   "frame": {
+    "x": 768,
+    "y": 0,
+    "w": 256,
+    "h": 256
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 256
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 256
+   },
+   "duration": 125
+  }
+ },
+ "meta": {
+  "app": "horys-pixel",
+  "version": "1",
+  "image": "golem_idle_se_bruto.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 1024,
+   "h": 256
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "idle_se",
+    "from": 0,
+    "to": 3,
+    "direction": "forward",
+    "repeat": "0"
+   }
+  ],
+  "horys": {
+   "pivo": [
+    133.22,
+    185.53
+   ],
+   "loop": true
+  }
+ }
+}
