@@ -14,30 +14,32 @@ godot_project = "."   # folder with project.godot
 
 [defaults]                # given to specs created by `spritekiln new`
 view = "topdown"
-size = 64
-palette = "gothic"
-camera = { pitch = 38, scale = 0.03667 }
+size = 32
+palette = "cozy"
+camera = { pitch = 38, scale = 0.07333 }
+directions = 4
+mirror = true
 
 [style]                   # the art style every asset follows (`spritekiln style`); change it only when asked
-recorded = 2026-11-10
+recorded = 2026-11-11
 view = "topdown"
-height = 48               # px on screen of a human-sized character
-scale = 0.03667           # camera.scale of every asset (from height)
-size = 64                 # frame px for that character
-directions = 8
-mirror = false
-palette = "gothic"
-colors = "dark, desaturated, one warm orange accent (runes, eyes)"
-outline = "selective"
-outline_color = ""        # with outline "dark"; empty: the darkest tone of the ramps
-shading = "soft"
+height = 24               # px on screen of a human-sized character
+scale = 0.07333           # camera.scale of every asset (from height)
+size = 32                 # frame px for that character
+directions = 4
+mirror = true
+palette = "cozy"
+colors = "saturated, warm, cozy; cool hue-shifted shadows"
+outline = "dark"
+outline_color = "#2a1f2d" # with outline "dark"; empty: the darkest tone of the ramps
+shading = "toon"
 lines = "depth"
-highlights = true
+highlights = false
 dither = "none"
 light = "classic"
-proportions = "stylized"
+proportions = "chibi"
 face = "minimal"          # minimal: eyes only, no nose; simple: + a hint of brow or nose on big heads; detailed
-animation = "fluid"
-snap = false              # root and torso move in whole pixels
-references = ["C:/Users/artur/.horys-pixel/experimentos/golem-caveira/conceito.png"]
-notes = "bosses are bigger with the same density; runes and eyes glow orange"
+animation = "snappy"
+snap = true               # root and torso move in whole pixels
+references = ["Stardew Valley", "Sprout Lands"]
+notes = "estilo horys-cozy: 2-3 tons chapados por material, sem dithering, VFX como sprites em loop curto; bosses maiores com a mesma densidade"

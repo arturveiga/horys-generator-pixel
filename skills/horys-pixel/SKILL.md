@@ -13,8 +13,8 @@ Você pergunta, pesquisa, aplica as boas práticas do estilo e não entrega nada
 A régua é de QUALIDADE, não estilo a copiar. A arte é sempre original.
 
 ## Onde está cada coisa
-- **Estilo:** `horys_estilos` (sem nome lista; com nome mostra paleta, régua, KB e as notas a ler). Padrão do projeto:
-  Hunvix → `horys-pixel-liso` (KB no Obsidian do usuário). `KB` abaixo = a pasta `kb` do estilo.
+- **Estilo:** `horys_estilos` (sem nome lista; com nome mostra paleta, régua, KB e as notas a ler).
+  Padrão: `horys-cozy` (RPG cozy top-down, tile 16 px, personagem 20–24 px, 8 fps; bíblia em `estilos/horys-cozy/estilo.md`). Hunvix legado → `horys-pixel-liso`. `KB` abaixo = a pasta `kb` do estilo (no cozy, a própria pasta do pacote).
 - **Pasta do asset:** com terminal, `art-src/pixel-liso/<asset>/` no projeto (fora dele, a que o usuário disser);
   sem terminal, a **pasta de trabalho do pedido**. Os textos (pesquisa, práticas, ficha) você grava com as suas
   ferramentas de arquivo; as versões `vNN` saem das ferramentas `horys_portao`/`horys_exportar`.
@@ -102,6 +102,18 @@ A lição da v4.2: **limpe por cima da conversão; nunca redesenhe do zero na gr
 Asset fiel ("1:1") a uma referência do usuário: o mesmo caminho, comparando em 1× e 2× lado a lado. Diagnóstico
 quando sair longe: se a quantização bruta já parece mais que a sua versão, a perda veio do desenho; se a reduzida com
 cores reais parece e a quantização não, veio da paleta.
+
+### 5j. Animação por render 3D (boss e personagem grande — caminho principal)
+Plano em `docs/plano.md`. A animação existe no modelo 3D low-poly (Blender ou Blockbench), renderizada com câmera
+ortográfica **fixa** (3/4, ~32°), fundo transparente, mesmo canvas em todos os quadros, mais o `manifest.json`
+(contrato em `experimentos/animacao-3d/README.md`). Nunca gere quadros independentes com IA, nem rig de partes
+recortadas para boss (`horys_partes_recortar` recusa sprite > 128 px).
+1. `horys_validar_sequencia(fonte: <manifest.json>, paleta)` no render cru: o antes.
+2. `horys_sequencia(fonte: <manifest.json>, altura, estado, proteger: [<#hex do olho>], saida_folha)`: o manifesto
+   liga o preset `render3d` (escala `fixa`: uma transformação para a sequência inteira, preserva quique e agachamento;
+   sem regularizar borda por quadro; limpeza só de órfãos). Não passe `decalques` em peça que gira.
+3. Leia a validação do relatório (V01–V13) e compare com o antes; depois `horys_contorno` → `horys_portao` →
+   `horys_revisar`. Animação que passa nos números mas desliza está reprovada.
 
 ### 5k. Guia de pose pelo SpriteKiln (personagem animado, se instalado)
 O Kiln/Noct 3D serve de **guia de pose** (silhuetas em grade, mesma escala e chão) para anexar ao prompt de poses, e como

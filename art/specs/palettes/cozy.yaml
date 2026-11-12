@@ -1,0 +1,13 @@
+# Cozy: paleta saturada e quente do estilo horys-cozy (estilos/horys-cozy). Rampas escuro -> claro; sombra puxa para o frio.
+ramps:
+  fur:    ["#1a1020", "#2a1f2d", "#4c1c48", "#70346c", "#8e4a88"]
+  stone:  ["#2a1f2d", "#7a5470", "#a06c88", "#c89ca0", "#f0ccb8"]
+  leather: ["#2a1f2d", "#5c3424", "#8a5332", "#b97c48", "#d9a46a"]
+  gold:   ["#2a1f2d", "#a06a18", "#e6b02a", "#fbe27a", "#fff6d8"]
+  eye:    ["#2a1f2d", "#3f6a1e", "#78f400", "#b4ff60", "#fff6d8"]
+  socket: ["#140f18", "#2a1f2d", "#3a2a40"]
+  grass:  ["#1f4a28", "#2f7a3a", "#4fa847", "#8fd15a", "#c4ec8a"]
+  earth:  ["#5c3424", "#9a5a34", "#c98a52", "#e6b77a", "#f6dcae"]
+  water:  ["#163c66", "#1f5c8f", "#2fa0d0", "#86e0f0", "#d8f8ff"]
+  red:    ["#4a1220", "#8a2232", "#d0404a", "#f08070", "#ffc0a8"]
+  violet: ["#2a1648", "#4a2a7a", "#7a46c0", "#b088f0", "#e0c8ff"]

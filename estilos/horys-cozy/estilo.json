@@ -1,0 +1,25 @@
+{
+ "nome": "horys-cozy",
+ "versao": "1.0",
+ "autor": "Artur",
+ "licenca": "pessoal",
+ "descricao": "Pixel art cozy top-down 3/4 em baixa resolução: tile 16 px, personagem chibi de 20–24 px, paleta saturada de 2–3 tons por material, sem dithering, sem anti-alias, sem luz; animação de 2–4 quadros a 8 fps; VFX como sprites chapados em loop curto.",
+ "kb": null,
+ "paleta": "paleta.json",
+ "regua": null,
+ "chao": {
+  "grama": "#4fa847",
+  "terra": "#c98a52"
+ },
+ "contorno_regua": "#2a1f2d",
+ "brilho_regua": [
+  "#fff6d8"
+ ],
+ "metas": null,
+ "leitura": [
+  "estilo.md"
+ ],
+ "motor_padrao": "claude",
+ "referencia_padrao": "pedir",
+ "trigger": "horyscozy"
+}

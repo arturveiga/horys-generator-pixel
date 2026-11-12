@@ -14,7 +14,7 @@ PORTA_PADRAO = 9140
 PREFERENCIAS_PADRAO = {
     "motor_padrao": "claude",          # claude | codex
     "revisor": "claude",               # claude | cruzado | codex (Codex é opcional)
-    "estilo_padrao": "horys-pixel-liso",
+    "estilo_padrao": "horys-cozy",
     "pastas_permitidas": [],           # além da pasta home do usuário e de ~/.horys-pixel
     "aseprite": None,                  # caminho do aseprite.exe (para modo batch); None = procura
     "claude": "claude",

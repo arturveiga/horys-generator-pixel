@@ -1,0 +1,194 @@
+pxforge: 1
+name: gorila_cozy
+kind: character
+size: 64                       # boss: frame maior, mesma densidade do jogo (scale 0.07333)
+directions: 4
+palette: [../../palettes/cozy.yaml]
+camera: {pitch: 38, scale: 0.07333, center: [0, 1.3, 0]}
+shadow: {rx: 11, ry: 4, alpha: 110}
+snap: [root, torso_rot, head]          # move o corpo em pixels inteiros (QA: boil)
+
+brief:
+  summary: Gorila boss do estilo cozy, simplificado. Corpo todo de pelo roxo, capacete-caveira de pedra clara com
+    olhos verdes, cinto de couro com fivela dourada, manoplas de pedra nos punhos. Anda pesado, curvado.
+  reference: saida/gorila-cozy/gorila_v03.png (sprite à mão) e referencia.png
+  proportions: "chibi: cabeça grande ~1/4 da altura; ombros 2x a cintura; braços longos, punhos perto do chão;
+    pernas curtas e grossas"
+  head: "capacete-caveira de pedra clara, órbitas escuras com olhos verdes, duas presas (face: minimal)"
+  must_keep: [capacete-caveira claro com olhos verdes, manoplas de pedra grandes, cinto com fivela dourada,
+    corpo de pelo roxo]
+  simplify: [sem espinhos, sem placas, sem runas, sem musgo; manopla = punho de pedra e um anel]
+  palette_notes: [pelo roxo domina, pedra rosada clara no capacete e manoplas, verde só nos olhos, ouro só na fivela]
+
+materials:
+  fur:     {ramp: fur, finish: soft}
+  rock:    {ramp: stone, finish: matte}
+  skull:   {ramp: stone, finish: matte}
+  socket:  {ramp: socket, bands: [0, 1], line: false}
+  rune:    {ramp: eye, emissive: true, band: 2}
+  leather: {ramp: leather, finish: matte}
+  gold:    {ramp: gold, finish: matte}
+
+# ---------------------------------------------------------------- channels
+# *_R usam a mesma convenção dos *_L (x positivo = para fora do corpo)
+channels:
+  root: [0, 0, 0]
+  bob: 0
+  lean: 0.20
+  twist: 0
+  roll: 0
+  squash: 1
+  head_pitch: 0
+  head_yaw: 0
+  head_roll: 0
+  hand_L: [0.90, 0.56, 0.38]          # espaço root: x lado, y altura do chão (joelho ~0.5), z avanço
+  foot_L: [0.42, 0.0, 0.04]
+  pitch_foot_L: 0
+
+# ---------------------------------------------------------------- skeleton
+bones:
+  torso_rot: {parent: root, pos: "[0, 1.02 + bob, 0]", rot: "[lean, twist, roll]"}
+  pelvis:    {parent: torso_rot, scale: "[1/sqrt(squash), squash, 1/sqrt(squash)]"}
+  headbase:  {parent: pelvis, pos: [0, 1.18, 0.30], inherit_rot: false, inherit_scale: false,
+              rot: "[lean*0.8, twist*0.6, roll]"}
+  head:      {parent: headbase, rot: "[head_pitch, head_yaw, head_roll]", scale: 2.1}
+  shoulder_L: {parent: pelvis, pos: [0.66, 0.80, 0.02]}
+  hip_L:      {parent: pelvis, pos: [0.34, 0.0, 0.0]}
+  legyaw:     {parent: root, rot: "[0, twist*0.5, 0]"}
+  footyaw:    {parent: root, rot: "[0, twist*0.4, 0]"}
+  sole_L:     {parent: footyaw, at: ankle_L, rot: "[pitch_foot_L, 0.12, 0]"}
+
+ik:
+  arm_L: {start: shoulder_L, space: root, target: hand_L, lengths: [0.58, 0.56],
+          pole: [1.0, -0.1, -0.6], pole_space: torso_rot, joint: elbow_L, end: wrist_hand_L}
+  leg_L: {start: hip_L, space: root, target: "foot_L + [0, 0.16, -0.02]", lengths: [0.46, 0.44],
+          pole: [0.25, 0, 1.0], pole_space: legyaw, joint: knee_L, end: ankle_L}
+
+# ---------------------------------------------------------------- geometry
+parts:
+  torso:                       # massa de pelo: barriga, peito largo, corcunda de gorila
+    material: fur
+    space: pelvis
+    blend: 0.12
+    prims:
+      - ellipsoid: {c: [0, 0.12, 0], r: [0.40, 0.30, 0.35]}
+      - ellipsoid: {c: [0, 0.52, 0.04], r: [0.56, 0.40, 0.44]}
+      - ellipsoid: {c: [0, 0.78, -0.04], r: [0.62, 0.26, 0.42]}
+      - ellipsoid: {c: [0, 0.70, -0.28], r: [0.36, 0.14, 0.24]}      # corcunda
+  ruff:                        # gola de pelo em volta do crânio
+    material: fur
+    space: headbase
+    blend: 0.06
+    prims:
+      - ellipsoid: {c: [0, -0.16, 0.04], r: [0.22, 0.10, 0.20]}
+  belt:                        # cinto de couro simples
+    material: leather
+    space: pelvis
+    blend: {mode: chamfer, k: 0.02}
+    prims:
+      - box: {c: [0, 0.00, 0.36], half: [0.10, 0.07, 0.05], round: 0.01}
+      - box: {c: [0.21, 0.00, 0.30], half: [0.09, 0.07, 0.05], rot: [0, 0.6, 0], round: 0.01}
+      - box: {c: [-0.21, 0.00, 0.30], half: [0.09, 0.07, 0.05], rot: [0, -0.6, 0], round: 0.01}
+      - box: {c: [0.35, 0.00, 0.12], half: [0.08, 0.07, 0.05], rot: [0, 1.2, 0], round: 0.01}
+      - box: {c: [-0.35, 0.00, 0.12], half: [0.08, 0.07, 0.05], rot: [0, -1.2, 0], round: 0.01}
+  buckle:
+    material: gold
+    space: pelvis
+    prims:
+      - box: {c: [0, 0.00, 0.42], half: [0.07, 0.06, 0.02], round: 0.01}
+  skull:
+    material: skull
+    space: head
+    blend: 0.04
+    prims:
+      - ellipsoid: {c: [0, 0.12, 0], r: [0.20, 0.19, 0.20]}          # calota
+      - ellipsoid: {c: [0, 0.02, 0.10], r: [0.15, 0.10, 0.12]}       # face
+      - ellipsoid: {c: [0, -0.08, 0.12], r: [0.12, 0.06, 0.10]}      # maxilar
+  sockets:
+    material: socket
+    space: head
+    prims:
+      - sphere: {c: [0.10, 0.10, 0.16], r: 0.10}
+      - sphere: {c: [-0.10, 0.10, 0.16], r: 0.10}
+      - box: {c: [0, -0.12, 0.17], half: [0.06, 0.025, 0.05]}         # boca
+  eye_L:
+    material: rune
+    space: head
+    prims:
+      - sphere: {c: [0.105, 0.10, 0.20], r: 0.07}
+  fangs:
+    material: skull
+    space: head
+    line: false
+    prims:
+      - cone: {a: [0.07, -0.10, 0.20], b: [0.075, -0.22, 0.22], r: [0.035, 0.01]}
+      - cone: {a: [-0.07, -0.10, 0.20], b: [-0.075, -0.22, 0.22], r: [0.035, 0.01]}
+  arm_L:                       # braço de pelo, grosso
+    material: fur
+    blend: 0.06
+    prims:
+      - ellipsoid: {c: {at: shoulder_L, off: [0.02, -0.04, 0]}, r: [0.22, 0.22, 0.22]}
+      - cone: {a: "@shoulder_L", b: "@elbow_L", r: [0.24, 0.20]}
+      - cone: {a: "@elbow_L", b: "@wrist_hand_L", r: [0.20, 0.22]}
+  gauntlet_L:                  # anel simples da manopla
+    material: rock
+    blend: {mode: stairs, k: 0.03, n: 2}
+    prims:
+      - cylinder: {a: {between: ["@elbow_L", "@wrist_hand_L"], t: 0.6}, b: "@wrist_hand_L", r: 0.27, round: 0.015}
+  leg_L:                       # perna de pelo curta e grossa
+    material: fur
+    blend: 0.06
+    prims:
+      - ellipsoid: {c: {between: ["@hip_L", "@knee_L"], t: 0.45}, r: [0.25, 0.30, 0.24]}
+      - cone: {a: "@knee_L", b: "@ankle_L", r: [0.20, 0.19]}
+  foot_L:                      # pé largo com 3 dedos de pedra
+    material: fur
+    space: sole_L
+    blend: 0.05
+    prims:
+      - ellipsoid: {c: [0, -0.06, 0.08], r: [0.24, 0.11, 0.25]}
+  fist_L:                      # punho em blocos com os dedos marcados por sulcos
+    material: rock
+    space: wrist_hand_L
+    blend: {mode: chamfer, k: 0.03}
+    prims:
+      - box: {c: [0, -0.12, 0.04], half: [0.30, 0.20, 0.28], round: 0.03}
+      - box: {c: [0, -0.27, 0.10], half: [0.28, 0.08, 0.22], round: 0.03}
+    cut:
+      - box: {c: [0.07, -0.27, 0.22], half: [0.008, 0.07, 0.10]}
+      - box: {c: [-0.07, -0.27, 0.22], half: [0.008, 0.07, 0.10]}
+    cut_blend: {mode: groove, depth: 0.02, width: 0.012}
+
+animations:
+  idle:                        # snappy: 4 quadros, respira 1 px
+    frames: 4
+    ms: 220
+    channels:
+      bob: "0.07*sin(p)"
+      hand_L: "[0.90, 0.56, 0.38]"
+      hand_R: "[0.90, 0.56, 0.38]"
+      head_pitch: "0.04*sin(p)"
+
+  walk:                        # 4 quadros: contato, passagem, contato, passagem
+    frames: 4
+    ms: 150
+    events: {0: step_l, 2: step_r}
+    channels:
+      lean: 0.28
+      bob: "-0.08*cos(2*p) + 0.01"
+      twist: "0.10*cos(p)"
+      foot_L: "[0.42, 0.14*pos(-sin(p)), 0.04 + 0.32*cos(p)]"
+      foot_R: "[0.42, 0.14*pos(sin(p)), 0.04 - 0.32*cos(p)]"
+      pitch_foot_L: "0.35*pos(-sin(p))"
+      pitch_foot_R: "0.35*pos(sin(p))"
+      hand_L: "[0.92, 0.52 + 0.06*pos(cos(p)), 0.14 - 0.30*cos(p)]"
+      hand_R: "[0.92, 0.52 + 0.06*pos(-cos(p)), 0.14 + 0.30*cos(p)]"
+
+  attack:                      # soco duplo no chão: preparo segurado, golpe, impacto segurado, volta
+    loop: false
+    keys:
+      - {ms: 160, set: {lean: 0.05, bob: 0.04, hand_L: [0.70, 1.75, 0.05], hand_R: [0.70, 1.75, 0.05], head_pitch: -0.15}}
+      - {ms: 200, event: windup, set: {lean: -0.12, bob: 0.08, hand_L: [0.55, 2.05, -0.10], hand_R: [0.55, 2.05, -0.10], head_pitch: -0.25}}
+      - {ms: 70, set: {lean: 0.55, bob: -0.10, squash: 0.92, hand_L: [0.55, 0.10, 0.75], hand_R: [0.55, 0.10, 0.75], head_pitch: 0.15}}
+      - {ms: 240, event: hit, set: {lean: 0.60, bob: -0.16, squash: 0.86, hand_L: [0.60, 0.05, 0.78], hand_R: [0.60, 0.05, 0.78], head_pitch: 0.2}}
+      - {ms: 180, set: {lean: 0.35, bob: -0.04, hand_L: [0.85, 0.40, 0.45], hand_R: [0.85, 0.40, 0.45]}}
