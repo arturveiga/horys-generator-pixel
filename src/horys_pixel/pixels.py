@@ -223,3 +223,95 @@ def diff_bbox(a: np.ndarray, b: np.ndarray):
         return None, 0
     ys, xs = np.nonzero(d)
     return (int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1), int(d.sum())
+
+
+# ---------------------------------------------------------------- comparar, onion, filmstrip, diff
+
+def compor_camadas(camadas: list[np.ndarray]) -> np.ndarray:
+    """Empilha camadas RGBA (de baixo para cima) com alpha."""
+    if not camadas:
+        raise ValueError("nenhuma camada")
+    base = Image.new("RGBA", (camadas[0].shape[1], camadas[0].shape[0]), (0, 0, 0, 0))
+    for c in camadas:
+        base.alpha_composite(Image.fromarray(np.ascontiguousarray(c), "RGBA"))
+    return np.asarray(base).copy()
+
+
+def lado_a_lado(imagens: list[np.ndarray], limite: int = 1024, fundo=(138, 146, 144)) -> Image.Image:
+    """Painéis do mesmo tamanho, lado a lado, na mesma escala inteira."""
+    h = max(i.shape[0] for i in imagens)
+    w = max(i.shape[1] for i in imagens)
+    k = max(1, min(12, limite // max(1, (w + 2) * len(imagens))))
+    tela = Image.new("RGBA", ((w * k + 8) * len(imagens) + 8, h * k + 16), (40, 40, 48, 255))
+    for n, i in enumerate(imagens):
+        tela.paste(_escala(sobre_fundo(i, fundo), k), (8 + n * (w * k + 8), 8))
+    return tela
+
+
+def onion(alvo: np.ndarray, vizinhos: list[np.ndarray], opacidade: int = 90) -> np.ndarray:
+    """O quadro alvo opaco sobre os vizinhos fantasmas (mais antigo primeiro)."""
+    camadas = []
+    for v in vizinhos:
+        f = v.copy()
+        f[..., 3] = (f[..., 3].astype(np.uint16) * opacidade // 255).astype(np.uint8)
+        camadas.append(f)
+    return compor_camadas(camadas + [alvo])
+
+
+def filmstrip(quadros: list[np.ndarray], limite: int = 1400) -> Image.Image:
+    n = len(quadros)
+    cols = min(n, 8)
+    linhas = (n + cols - 1) // cols
+    h, w = quadros[0].shape[:2]
+    k = max(1, min(8, limite // max(1, (w + 2) * cols)))
+    tela = Image.new("RGBA", (cols * (w * k + 6) + 6, linhas * (h * k + 6) + 6), (40, 40, 48, 255))
+    for i, q in enumerate(quadros):
+        r, c = divmod(i, cols)
+        tela.paste(_escala(sobre_fundo(q), k), (6 + c * (w * k + 6), 6 + r * (h * k + 6)))
+    return tela
+
+
+def diff_texto(antes: np.ndarray, depois: np.ndarray, paleta: dict | None = None) -> tuple[str, dict, int]:
+    """Grade de texto: '.' igual, '-' apagado, letra = cor nova. Devolve (texto, paleta, nº mudado)."""
+    pal, linhas, _ = para_linhas(depois, paleta)
+    mud = np.any(antes != depois, axis=-1)
+    apag = mud & (depois[..., 3] == 0)
+    out = []
+    for y in range(depois.shape[0]):
+        lin = linhas[y] if y < len(linhas) else ""
+        lin = lin.ljust(depois.shape[1], ".")
+        out.append("".join("-" if apag[y, x] else (lin[x] if mud[y, x] else ".") for x in range(depois.shape[1])))
+    return "\n".join(out), pal, int(mud.sum())
+
+
+# ---------------------------------------------------------------- trava de paleta (CIELAB ΔE76)
+
+def _lab(hx: str) -> np.ndarray:
+    r, g, b, _ = hex_rgba(hx)
+    c = np.array([r, g, b], np.float64) / 255.0
+    c = np.where(c > 0.04045, ((c + 0.055) / 1.055) ** 2.4, c / 12.92)
+    xyz = np.array([[0.4124, 0.3576, 0.1805], [0.2126, 0.7152, 0.0722], [0.0193, 0.1192, 0.9505]]) @ c
+    xyz /= np.array([0.95047, 1.0, 1.08883])
+    f = np.where(xyz > 0.008856, np.cbrt(xyz), 7.787 * xyz + 16 / 116)
+    return np.array([116 * f[1] - 16, 500 * (f[0] - f[1]), 200 * (f[1] - f[2])])
+
+
+def travar_paleta(paleta: dict, permitidas: list[str]) -> tuple[dict, list[tuple[str, str, str, float]]]:
+    """Troca cada cor da 'paleta' (letra->hex) pela permitida mais próxima. Transparente fica.
+    Devolve (paleta nova, [(letra, de, para, ΔE)] das que mudaram)."""
+    alvos = [(h, _lab(h)) for h in permitidas]
+    if not alvos:
+        return dict(paleta), []
+    nova, movidas = {}, []
+    for k, v in paleta.items():
+        if hex_rgba(v)[3] == 0:
+            nova[k] = v
+            continue
+        lv = _lab(v)
+        h, d = min(((h, float(np.linalg.norm(lv - lab))) for h, lab in alvos), key=lambda t: t[1])
+        a = hex_rgba(v)[3]
+        para = h if a == 255 else h[:7] + f"{a:02x}"
+        nova[k] = para
+        if para.lower()[:7] != v.lower()[:7]:
+            movidas.append((k, v, para, round(d, 1)))
+    return nova, movidas

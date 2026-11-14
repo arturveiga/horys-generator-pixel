@@ -176,12 +176,29 @@ async def tag(ctx, a):
 @ferramenta("horys_pixel_map", """Desenha pixels exatos: 'paleta' {letra: '#rrggbb'} + 'linhas' (uma string por linha).
 '.' e espaço não mexem; uma letra mapeada para '#00000000' apaga. x/y deslocam o bloco. Carimbos: 'stamps'
 {nome:{rows:[...], palette?}} + 'place' [[nome, x, y, 'h'|'v'|'hv'?], ...]. Dado grande: 'arquivo' = um .json com
-esses mesmos campos. 'camada' (criada se faltar) e 'quadro' (0-based) usam os ativos se omitidos.""",
+esses mesmos campos. 'camada' (criada se faltar) e 'quadro' (0-based) usam os ativos se omitidos.
+'trava': lista de '#hex' (a paleta do asset) ou 'oficio:<nome>' (paleta da base): cada cor é puxada para a mais
+próxima (CIELAB) e a resposta diz o que mudou; ΔE > 12 = a paleta não tem esse tom. Vale para o sprite até
+'trava': [] desligar.""",
             {"paleta": OBJ, "linhas": {"type": "array", "items": STR}, "x": INT, "y": INT, "camada": STR,
-             "quadro": INT, "stamps": OBJ, "place": {"type": "array"}, "arquivo": STR})
+             "quadro": INT, "stamps": OBJ, "place": {"type": "array"}, "arquivo": STR,
+             "trava": {"type": ["array", "string"]}})
 async def pixel_map(ctx, a):
     d = pixels.carregar_mapa(a)
     pal = d.get("paleta") or d.get("palette") or {}
+    aviso_trava = ""
+    trava = await _trava(ctx, d)
+    if trava:
+        pal, movidas = pixels.travar_paleta(pal, trava)
+        for nome, st_ in (d.get("stamps") or {}).items():
+            if st_.get("palette"):
+                st_["palette"], m2 = pixels.travar_paleta(st_["palette"], trava)
+                movidas += m2
+        if movidas:
+            longe = [m for m in movidas if m[3] > 12]
+            aviso_trava = ("\ntrava de paleta: " + ", ".join(f"{k} {de}→{para} (ΔE {dE})" for k, de, para, dE in movidas)
+                           + (f"\nATENÇÃO: {len(longe)} cor(es) com ΔE > 12 — a paleta não tem esse tom; "
+                              "diga ao usuário em vez de desligar a trava." if longe else ""))
     try:
         rgba, masc = pixels.compor_mapa(pal, d.get("linhas") or d.get("rows"), d.get("stamps"), d.get("place"))
     except ValueError as e:
@@ -197,7 +214,38 @@ async def pixel_map(ctx, a):
         raise ErroFerramenta("o bloco cai inteiro fora do sprite")
     n = await escrever_rgba(ctx, camada, q, x + x0, y + y0, rgba[y0:y1, x0:x1], masc[y0:y1, x0:x1])
     fora = int(masc.sum()) - int(masc[y0:y1, x0:x1].sum())
-    return [texto(f"{n} pixels em '{camada}' quadro {q}" + (f" ({fora} fora do sprite, ignorados)" if fora else ""))]
+    return [texto(f"{n} pixels em '{camada}' quadro {q}" + (f" ({fora} fora do sprite, ignorados)" if fora else "")
+                  + aviso_trava)]
+
+
+async def _trava(ctx, d: dict) -> list[str]:
+    """Paleta travada do sprite atual: 'trava' do pedido (e guarda) ou a guardada."""
+    mem = getattr(ctx, "travas", None)
+    if mem is None:
+        mem = {}
+        try:
+            ctx.travas = mem
+        except AttributeError:
+            pass
+    try:
+        chave = (await ctx.sprite_atual())["sprite"].get("arquivo") or "_"
+    except Exception:
+        chave = "_"
+    t = d.get("trava")
+    if t is None:
+        return mem.get(chave, [])
+    if isinstance(t, str):
+        if not t.startswith("oficio:"):
+            raise ErroFerramenta("'trava' é uma lista de '#hex' ou 'oficio:<nome da paleta>'")
+        from .. import oficio
+        try:
+            t = oficio.paleta(t[7:])[1]["colors"]
+        except KeyError as e:
+            raise ErroFerramenta(str(e))
+    for h in t:
+        pixels.hex_rgba(h)
+    mem[chave] = list(t)
+    return mem[chave]
 
 
 @ferramenta("horys_set_pixels", "Poucos pixels soltos: 'pixels' [[x, y, '#rrggbb'], ...].",
@@ -227,19 +275,87 @@ async def ler_pixels(ctx, a):
     q = int(a.get("quadro", s.get("quadro_ativo") or 0))
     x, y, w, h = await retangulo(ctx, a, st)
     rgba = await ler_rgba(ctx, camada, q, x, y, w, h)
-    pal, linhas, _ = pixels.para_linhas(rgba, a.get("paleta"))
+    fixas = ctx_letras(ctx, s)
+    pal, linhas, _ = pixels.para_linhas(rgba, {**fixas, **(a.get("paleta") or {})})
+    fixas.update({k: v for k, v in pal.items() if k not in fixas and v not in fixas.values()})
     while linhas and not linhas[-1]:
         linhas.pop()
     cab = f"{'composto' if camada is None else repr(camada)}, quadro {q}, origem ({x},{y}), {w}×{h}"
     return [texto(cab + "\npaleta: " + json.dumps(pal) + "\nlinhas:\n" + "\n".join(linhas or ["(vazio)"]))]
 
 
-@ferramenta("horys_ver", "Mostra o sprite como imagem. 'critica': true = cor | cinza (valores) | silhueta | 1× e 2× "
-            "numa imagem pequena (o melhor jeito de julgar). 'rect' amplia um detalhe. Sem camada = composto.",
-            {"quadro": INT, "camada": STR, "rect": RET, "critica": BOOL, "escala": INT})
+async def _composto_sem(ctx, s: dict, quadro: int, excluir: set[str], x, y, w, h) -> np.ndarray:
+    """Composto das camadas visíveis, menos as excluídas (camadas vêm de baixo para cima)."""
+    pilha = [await ler_rgba(ctx, c["nome"], quadro, x, y, w, h) for c in s.get("camadas", [])
+             if c.get("visivel", True) and c["nome"] not in excluir]
+    return pixels.compor_camadas(pilha) if pilha else np.zeros((h, w, 4), np.uint8)
+
+
+async def _ver_modo(ctx, a, s, st, modo: str):
+    x, y, w, h = await retangulo(ctx, a, st)
+    q = int(a.get("quadro", s.get("quadro_ativo") or 0))
+    nq = len(s.get("quadros", []))
+    cam = a.get("camada")
+    if modo == "comparar":
+        nomes = [c["nome"] for c in s.get("camadas", [])]
+        ref = a.get("referencia") or next((n for n in nomes if n.lower().startswith(("refer", "guia"))), None)
+        if ref not in nomes:
+            raise ErroFerramenta("sem camada de referência: passe 'referencia' (há: " + ", ".join(nomes) + ")")
+        r = await ler_rgba(ctx, ref, q, x, y, w, h)
+        arte = await _composto_sem(ctx, s, q, {ref}, x, y, w, h)
+        return [imagem(pixels.png_b64(pixels.lado_a_lado([r, arte]))),
+                texto(f"quadro {q}: '{ref}' à esquerda, a arte sem ela à direita. Nomeie as 3–5 maiores "
+                      "diferenças (silhueta, proporção, pose, massas de cor) e corrija só essas.")]
+    if modo == "filmstrip":
+        qs = [await ler_rgba(ctx, cam, i, x, y, w, h) for i in range(nq)]
+        return [imagem(pixels.png_b64(pixels.filmstrip(qs))),
+                texto(f"{nq} quadros, da esquerda para a direita. Confira volume, altura e pé entre quadros.")]
+    if modo == "onion":
+        antes, depois = int(a.get("antes", 1)), int(a.get("depois", 1))
+        viz = [i for i in range(q - antes, q + depois + 1) if 0 <= i < nq and i != q]
+        img = pixels.onion(await ler_rgba(ctx, cam, q, x, y, w, h),
+                           [await ler_rgba(ctx, cam, i, x, y, w, h) for i in viz], int(a.get("opacidade", 90)))
+        return [imagem(pixels.png_b64(pixels.ampliar(img))),
+                texto(f"quadro {q} opaco sobre os fantasmas {viz}. Passe 'camada' para ver só a parte que mexe.")]
+    if modo == "diff":
+        de = int(a.get("de", q))
+        ate = int(a.get("ate", de + 1))
+        if not (0 <= de < nq and 0 <= ate < nq):
+            raise ErroFerramenta(f"quadros fora do sprite (há {nq})")
+        txt, pal, n = pixels.diff_texto(await ler_rgba(ctx, cam, de, x, y, w, h),
+                                        await ler_rgba(ctx, cam, ate, x, y, w, h), ctx_letras(ctx, s))
+        return [texto(f"quadro {de} → {ate}: {n} de {w * h} px mudaram. '.' igual, '-' apagado.\n"
+                      f"paleta: {json.dumps(pal)}\n{txt}")]
+    raise ErroFerramenta(f"modo inválido '{modo}' (critica|imagem|comparar|onion|filmstrip|diff)")
+
+
+def ctx_letras(ctx, s: dict) -> dict:
+    """Letras fixas por cor para este sprite: a mesma cor ganha a mesma letra em toda leitura."""
+    mem = getattr(ctx, "letras", None)
+    if mem is None:
+        mem = {}
+        try:
+            ctx.letras = mem
+        except AttributeError:
+            return {}
+    return mem.setdefault(s.get("arquivo") or "_", {})
+
+
+@ferramenta("horys_ver", "Mostra o sprite como imagem. Sem 'modo': 'critica' true = cor | cinza (valores) | "
+            "silhueta | 1× e 2× numa imagem pequena (o melhor jeito de julgar); 'rect' amplia um detalhe. "
+            "'modo': 'comparar' (camada de referência à esquerda, arte sem ela à direita; 'referencia' = nome da "
+            "camada, padrão a que começa com refer/guia), 'filmstrip' (todos os quadros numa imagem: o jeito certo "
+            "de revisar animação), 'onion' (quadro opaco sobre vizinhos fantasmas; 'antes', 'depois', 'opacidade'), "
+            "'diff' (texto do que mudou entre 'de' e 'ate'). Sem camada = composto.",
+            {"quadro": INT, "camada": STR, "rect": RET, "critica": BOOL, "escala": INT, "modo": STR,
+             "referencia": STR, "antes": INT, "depois": INT, "opacidade": INT, "de": INT, "ate": INT})
 async def ver(ctx, a):
     st = await ctx.sprite_atual()
     s = st["sprite"]
+    if a.get("modo") and a["modo"] not in ("critica", "imagem"):
+        return await _ver_modo(ctx, a, s, st, a["modo"])
+    if a.get("modo") == "imagem":
+        a = {**a, "critica": False}
     q = int(a.get("quadro", s.get("quadro_ativo") or 0))
     x, y, w, h = await retangulo(ctx, a, st)
     rgba = await ler_rgba(ctx, a.get("camada"), q, x, y, w, h)

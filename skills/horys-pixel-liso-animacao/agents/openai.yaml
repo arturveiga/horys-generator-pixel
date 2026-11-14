@@ -1,0 +1,4 @@
+interface:
+  display_name: "Horys Pixel Liso — Animação"
+  short_description: "Animação fluida com fidelidade ao personagem"
+  default_prompt: "Use $horys-pixel-liso-animacao para planejar, animar e revisar este personagem preservando sua referência."

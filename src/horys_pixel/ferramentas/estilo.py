@@ -181,7 +181,7 @@ CAMPOS_FICHA = {"estilo": STR, "nome": STR, "tipo": STR, "partes": LISTA_STR, "c
                 "pasta": STR, "estado": STR, "pedido": STR, "descricao": STR,
                 "modular": BOOL, "preset_partes": STR, "juncoes": {"type": "array", "items": {"type": "object"}},
                 "partes_oculto": LISTA_STR, "componentes_max": {"type": "object"},
-                "espessura_fina": LISTA_STR, "motivo": STR}
+                "espessura_fina": LISTA_STR, "motivo": STR, "referencia": STR, "angulo": STR}
 
 
 @ferramenta("horys_ficha", "Lê ou ajusta a ficha do sprite ativo (estilo, tipo, partes de baixo para cima, contorno "
@@ -228,16 +228,32 @@ async def ficha(ctx, a):
     return [texto(saida)]
 
 
-@ferramenta("horys_asset_novo", """Cria o sprite de um asset pela ficha, de uma vez: quadro QxQ (padrão 192; pé no
+@ferramenta("horys_asset_novo", """OBRIGATÓRIOS: 'referencia' = caminho de uma imagem de referência EM PIXEL ART (nativa
+ou ampliada; ilustração lisa, foto ou render são recusados) e 'angulo' = top-down | 3/4 top-down | lateral | frontal |
+3/4 frontal | isometrico. Sem os dois, pergunte ao usuário. Cria o sprite de um asset pela ficha, de uma vez: quadro QxQ (padrão 192; pé no
 pivô (Q/2, Q·127/192) = (96,127)), camadas 'sombra' (opacidade 77) e 'contorno' embaixo, uma camada por PARTE de baixo
 para cima (padrão ['desenho']) e 'revisao' (oculta) em cima, quadros e tags por estado
 (estados [{nome, quadros, ms}]), paleta do estilo travada. Desenhe só nas partes: contorno e sombra são gerados por
 horys_contorno, como o portão espera. Com 'preset_partes' (ex.: 'humanoide-ferreiro') cria o asset MODULAR: as partes
 do preset, a camada 'referencia' (oculta, para o desenho completo) e a ficha com modular, preset_partes, juncoes
 (contratos de junção) e partes_oculto; o portão passa a exigir as partes sem erro (horys_partes_checar).""",
-            {**CAMPOS_FICHA, "quadro": INT, "estados": {"type": "array"}})
+            {**CAMPOS_FICHA, "quadro": INT, "estados": {"type": "array"}}, ["referencia", "angulo"])
 async def asset_novo(ctx, a):
     from .. import partes as P
+    from .. import referencia as R
+    # Exigência do Artur (2026-11-13): todo asset nasce de uma referência EM PIXEL ART e de um ângulo declarado.
+    try:
+        a = {**a, "angulo": R.normalizar_angulo(a.get("angulo"))}
+    except ValueError as e:
+        raise ErroFerramenta(str(e))
+    ref = (a.get("referencia") or "").strip()
+    if not ref:
+        raise ErroFerramenta("falta 'referencia': a imagem de referência EM PIXEL ART (caminho), obrigatória. Peça ao "
+                             "usuário ou gere uma (Codex/ChatGPT) em pixel art, no ângulo '" + a["angulo"] + "'.")
+    chk = await asyncio.to_thread(R.checar_pixel_art, ref)
+    if not chk.get("ok"):
+        raise ErroFerramenta(f"referência recusada ({Path(ref).name}): {chk.get('motivo')}")
+    a["referencia"] = str(Path(ref).resolve())
     est = _estilo(a.get("estilo"))
     Q = int(a.get("quadro") or 192)
     modular = None
@@ -294,6 +310,7 @@ async def asset_novo(ctx, a):
     hid = st["sprite"].get("horys_id") or st["sprite"]["arquivo"]
     f["_horys_id"] = hid
     f["_horys_aliases"] = [st["sprite"]["arquivo"]]
+    f["referencia_checagem"] = {k: v for k, v in chk.items() if k != "ok"}
     ctx.salvar_ficha(hid, f)
     px, py = grade_io.pivo_quadro(Q)
     letras = _cores_letras(est)

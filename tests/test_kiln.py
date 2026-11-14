@@ -7,6 +7,7 @@ from PIL import Image
 
 from horys_pixel import kiln
 from test_nucleo import _ambiente, _txt, rodar
+REF_PIXEL = str(__import__("pathlib").Path(__file__).parent / "dados" / "ref_pixel.png")
 
 VERM = (200, 60, 60, 255)
 AZUL = (60, 60, 200, 255)
@@ -149,7 +150,7 @@ def test_importar_kiln_no_falso(ambiente, tmp_path):
     async def corpo():
         ctx, ase, chamar, fim = await _ambiente(ambiente)
         try:
-            r = await chamar("horys_asset_novo", estilo="exemplo", nome="boneco", tipo="prop", quadro=8,
+            r = await chamar("horys_asset_novo", referencia=REF_PIXEL, angulo="3/4 top-down", estilo="exemplo", nome="boneco", tipo="prop", quadro=8,
                              modular=True, partes=["base", "topo"],
                              juncoes=[{"nome": "j", "inferior": "base", "superior": "topo", "movel": "topo"}],
                              contorno="nenhum", pasta=str(tmp_path / "b"),
@@ -175,7 +176,7 @@ def test_importar_kiln_tamanho_errado(ambiente, tmp_path):
     async def corpo():
         ctx, ase, chamar, fim = await _ambiente(ambiente)
         try:
-            r = await chamar("horys_asset_novo", estilo="exemplo", nome="b", tipo="prop", quadro=16,
+            r = await chamar("horys_asset_novo", referencia=REF_PIXEL, angulo="3/4 top-down", estilo="exemplo", nome="b", tipo="prop", quadro=16,
                              modular=True, partes=["base", "topo"],
                              juncoes=[{"nome": "j", "inferior": "base", "superior": "topo", "movel": "topo"}],
                              contorno="nenhum", pasta=str(tmp_path / "b"))

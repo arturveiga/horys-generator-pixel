@@ -40,7 +40,11 @@ A régua é de QUALIDADE, não estilo a copiar. A arte é sempre original.
 
 ### 1. Briefing (perguntar até ficar claro)
 Siga `KB/pipeline/perguntas.md` se existir. O usuário não escreve prompt grande: VOCÊ pergunta.
-- O estilo já decide (não pergunte): paleta, vista, luz, fps, tamanho padrão, formatos de entrega.
+- OBRIGATÓRIO (Artur, 2026-11-13): uma imagem de referência EM PIXEL ART e o ÂNGULO de câmera (top-down,
+  3/4 top-down, lateral, frontal, 3/4 frontal, isometrico). Sem as duas, pergunte antes de tudo: o
+  horys_asset_novo recusa sem elas e recusa referência que não seja pixel art. Detalhes: skill horys-pixel-liso, 0a.
+- Base de ofício: horys_oficio (62 regras, ~400 modelos de grade, 2006 paletas). É ofício, não régua.
+- O estilo já decide (não pergunte): paleta, luz, fps, tamanho padrão, formatos de entrega.
 - Pergunte o que falta: até 3 rodadas. Em animação, pergunte COMO cada estado se move (golpe de cima, estocada ou
   giro? andar pesado, saltitante ou cauteloso? o objeto acompanha, cai ou flutua? o efeito sai de onde?).
 - Personagem novo: contorno (o do estilo, fino ou sem borda escura).

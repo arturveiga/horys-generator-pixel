@@ -17,3 +17,8 @@ tmp-*/
 art/specs/**/out/
 art/specs/**/.kilncache/
 art/specs/**/*_ref/
+
+# backups da skill pixel-liso
+skills/horys-pixel-liso/**/*.bak*
+skills/horys-pixel-liso/scripts.bak*/
+skills/**/__pycache__/

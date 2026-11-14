@@ -41,6 +41,8 @@ class Contexto:
         self.pend = Pendencias()
         self.pedidos = Pedidos(self)
         self.baseline: dict = {}                 # (camada, quadro) -> rgba, para horys_mudancas
+        self.letras: dict = {}                   # arquivo -> {letra: hex}: letras fixas por cor nas leituras
+        self.travas: dict = {}                   # arquivo -> [hex]: paleta travada do horys_pixel_map
         self.clientes_aseprite = set()
         self.pend.ouvintes.append(self._ao_resolver)
 

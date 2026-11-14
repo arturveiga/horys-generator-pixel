@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Veredito do revisor horys-pixel-liso",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["asset", "versao", "etapa", "rodada", "veredito", "regua", "criterios", "pontos_fracos", "perguntas_ao_usuario", "proxima_acao"],
+  "properties": {
+    "asset": {"type": "string"},
+    "versao": {"type": "string"},
+    "etapa": {"type": "string", "enum": ["silhueta", "cor", "poses", "animacao", "tile", "mosaico", "estados", "efeito", "final"]},
+    "rodada": {"type": "integer"},
+    "veredito": {"type": "string", "enum": ["PASSA", "NAO_PASSA", "INDEFINIDO"]},
+    "regua": {"type": "string"},
+    "criterios": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "resultado", "severidade", "evidencia", "correcao"],
+        "properties": {
+          "id": {"type": "string"},
+          "resultado": {"type": "string", "enum": ["passa", "falha", "indefinido"]},
+          "severidade": {"type": "string", "enum": ["bloqueio", "grave", "leve"]},
+          "evidencia": {"type": "string"},
+          "correcao": {"type": "string"}
+        }
+      }
+    },
+    "pontos_fracos": {"type": "array", "items": {"type": "string"}},
+    "perguntas_ao_usuario": {"type": "array", "items": {"type": "string"}},
+    "proxima_acao": {"type": "string"}
+  }
+}

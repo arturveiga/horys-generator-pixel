@@ -1,0 +1,47 @@
+{
+  "kb": "C:/Users/artur/Dropbox/obsidian/Notes/Desenvolvimento de games/pixel-liso",
+  "regua": "",
+  "aprovados": "C:/Users/artur/Documents/pixel-liso/_aprovados",
+  "corpus_teste": "D:/godot/referencias/eldiran-32/fatias",
+  "corpus_teste_nota": "Só para calibrar as métricas do portão (os bons têm que passar, os estragados reprovar). NÃO é régua de estilo: a régua é o Artur.",
+  "quadro_teste": 36,
+  "contorno_regua": "#000000",
+  "contorno_px_regua": 1,
+  "brilho_regua": [
+    "#ffffff"
+  ],
+  "trabalho": "C:/Users/artur/Documents/pixel-liso",
+  "paleta_json": "estilo/paleta-horys-liso.json",
+  "chao": {
+    "grama": "#68a057",
+    "masmorra": "#55556e"
+  },
+  "fundo_prancha": "#8a9290",
+  "limite_imagem": 1500,
+  "aseprite": "C:/Users/artur/Documents/aseprite/aseprite.exe",
+  "perfis": {
+    "32": {
+      "nota": "figuras de 21 a 40 px; métricas calibradas no corpus de teste (72/72 e 15/15)",
+      "contorno_padrao": "selout",
+      "quadro_padrao": 48,
+      "altura": [
+        24,
+        36
+      ]
+    },
+    "16": {
+      "nota": "figuras de até 20 px. Sem régua calibrada ainda (Ninja Adventure, CC0, pendente): prancha 'boas práticas'",
+      "regua": "",
+      "contorno_padrao": "selout",
+      "quadro_padrao": 24,
+      "altura": [
+        12,
+        20
+      ]
+    },
+    "64": {
+      "nota": "figuras acima de 40 px; métricas herdadas, sem calibração",
+      "regua": ""
+    }
+  }
+}

@@ -17,6 +17,7 @@ from PIL import Image
 
 from horys_pixel import config, grade_io
 from test_nucleo import _ambiente, _txt, rodar
+REF_PIXEL = str(__import__("pathlib").Path(__file__).parent / "dados" / "ref_pixel.png")
 
 SRC = Path(__file__).resolve().parents[1] / "src"
 GRADE_REAL = Path(r"D:\godot\games\hunvix\art-src\pixel-liso\construtor\v03\idle_base_v03.grade")
@@ -30,7 +31,7 @@ def test_fluxo_estilo_exemplo(ambiente, tmp_path):
         try:
             r = await chamar("horys_estilos")
             assert "exemplo" in _txt(r)
-            r = await chamar("horys_asset_novo", estilo="exemplo", nome="bloco", tipo="prop", quadro=64,
+            r = await chamar("horys_asset_novo", referencia=REF_PIXEL, angulo="3/4 top-down", estilo="exemplo", nome="bloco", tipo="prop", quadro=64,
                              partes=["corpo", "topo"], estados=[{"nome": "idle", "quadros": 2, "ms": 100}],
                              pasta=str(tmp_path / "bloco"))
             assert not r["erro"], _txt(r)
@@ -95,7 +96,7 @@ def test_equivalencia_portao_com_grade_real(ambiente, tmp_path, monkeypatch):
         ctx, ase, chamar, fim = await _ambiente(ambiente)
         try:
             partes = meta.get("camadas") or ["desenho"]
-            r = await chamar("horys_asset_novo", estilo="horys-pixel-liso", nome=meta["nome"], tipo=meta["tipo"],
+            r = await chamar("horys_asset_novo", referencia=REF_PIXEL, angulo="3/4 top-down", estilo="horys-pixel-liso", nome=meta["nome"], tipo=meta["tipo"],
                              quadro=Q, partes=partes, contorno=meta["contorno"], sombra=meta["sombra"] == "sim",
                              estados=[{"nome": meta["estado"], "quadros": len(quadros), "ms": meta["ms"]}],
                              pasta=str(tmp_path / "novo"),

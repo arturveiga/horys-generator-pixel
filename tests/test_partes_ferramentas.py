@@ -7,6 +7,7 @@ from horys_pixel import partes as P
 from horys_pixel.ferramentas import registro
 from horys_pixel.ferramentas.registro import ErroFerramenta
 from test_nucleo import _ambiente, _txt, rodar
+REF_PIXEL = str(__import__("pathlib").Path(__file__).parent / "dados" / "ref_pixel.png")
 
 VERMELHO = (200, 60, 60, 255)
 AZUL = (60, 60, 200, 255)
@@ -14,7 +15,7 @@ JUNCAO = [{"nome": "base-topo", "inferior": "base", "superior": "topo", "movel":
 
 
 async def _duo(chamar, tmp_path, **extra):
-    r = await chamar("horys_asset_novo", estilo="exemplo", nome="duo", tipo="prop", quadro=64, modular=True,
+    r = await chamar("horys_asset_novo", referencia=REF_PIXEL, angulo="3/4 top-down", estilo="exemplo", nome="duo", tipo="prop", quadro=64, modular=True,
                      partes=["base", "topo"], juncoes=JUNCAO, contorno="nenhum", pasta=str(tmp_path / "duo"),
                      estados=[{"nome": "idle", "quadros": 1, "ms": 100}], **extra)
     assert not r["erro"], _txt(r)
@@ -30,7 +31,7 @@ def test_asset_novo_com_preset_cria_partes_referencia_e_ficha(ambiente, tmp_path
     async def corpo():
         ctx, ase, chamar, fim = await _ambiente(ambiente)
         try:
-            r = await chamar("horys_asset_novo", estilo="exemplo", nome="ferreiro", tipo="personagem", quadro=64,
+            r = await chamar("horys_asset_novo", referencia=REF_PIXEL, angulo="3/4 top-down", estilo="exemplo", nome="ferreiro", tipo="personagem", quadro=64,
                              preset_partes="humanoide-ferreiro", pasta=str(tmp_path / "fer"))
             assert not r["erro"], _txt(r)
             assert "MODULAR" in _txt(r)
@@ -43,10 +44,10 @@ def test_asset_novo_com_preset_cria_partes_referencia_e_ficha(ambiente, tmp_path
             assert f["partes"] == list(P.HUMANOIDE_FERREIRO.partes) and len(f["juncoes"]) == 10
             assert set(f["partes_oculto"]) == set(P.HUMANOIDE_FERREIRO.oculto)
             # partes conflitantes com o preset são recusadas
-            r = await chamar("horys_asset_novo", estilo="exemplo", preset_partes="humanoide-ferreiro",
+            r = await chamar("horys_asset_novo", referencia=REF_PIXEL, angulo="3/4 top-down", estilo="exemplo", preset_partes="humanoide-ferreiro",
                              partes=["a", "b"])
             assert r["erro"] and "preset" in _txt(r)
-            r = await chamar("horys_asset_novo", estilo="exemplo", preset_partes="nao-existe")
+            r = await chamar("horys_asset_novo", referencia=REF_PIXEL, angulo="3/4 top-down", estilo="exemplo", preset_partes="nao-existe")
             assert r["erro"]
         finally:
             await fim()
@@ -57,7 +58,7 @@ def test_checar_sem_desenho_reprova_e_devolve_vista_explodida(ambiente, tmp_path
     async def corpo():
         ctx, ase, chamar, fim = await _ambiente(ambiente)
         try:
-            await chamar("horys_asset_novo", estilo="exemplo", nome="ferreiro", quadro=64,
+            await chamar("horys_asset_novo", referencia=REF_PIXEL, angulo="3/4 top-down", estilo="exemplo", nome="ferreiro", quadro=64,
                          preset_partes="humanoide-ferreiro", pasta=str(tmp_path / "fer"))
             r = await chamar("horys_partes_checar", salvar=str(tmp_path / "saida"))
             assert not r["erro"], _txt(r)
@@ -79,7 +80,7 @@ def test_camada_faltando_em_asset_modular_e_erro_explicito(ambiente, tmp_path):
     async def corpo():
         ctx, ase, chamar, fim = await _ambiente(ambiente)
         try:
-            await chamar("horys_asset_novo", estilo="exemplo", nome="ferreiro", quadro=64,
+            await chamar("horys_asset_novo", referencia=REF_PIXEL, angulo="3/4 top-down", estilo="exemplo", nome="ferreiro", quadro=64,
                          preset_partes="humanoide-ferreiro", pasta=str(tmp_path / "fer"))
             await chamar("horys_camada", acao="remover", nome="oculos")
             for ferramenta in ("horys_partes_checar", "horys_contorno", "horys_portao"):
