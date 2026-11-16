@@ -10,7 +10,13 @@ registro.carregar_todas()
 GRUPOS = {"desenho": "Desenho (ponte com o Aseprite)", "conversa": "Conversa (painel do Aseprite)",
           "estilo": "Estilo", "partes": "Partes (fatiamento modular)", "pedidos": "Pedidos", "gosto": "Memória de gosto", "treino": "Treino",
           "kiln": "SpriteKiln (base 3D animada)",
-          "sequencia": "Sequência (animação de qualquer fonte)", "entrega": "Entrega e retoque"}
+          "sequencia": "Sequência (animação de qualquer fonte)", "entrega": "Entrega e retoque",
+          "oficio": "Ofício (base de pixel art)", "pele": "Base + Pele (master, partes, vestir, animar, travas)",
+          "vfx": "Efeitos (pixelfx)", "aiartist": "Tileset, paleta e guarda de correção (portado do ai-artist)",
+          "guia_kiln": "Guia de pose do SpriteKiln (cor por parte)",
+          "blender": "Pipeline Blender (paleta, render 3D para pixel, recolor)",
+          "estudio": "Horys Estúdio (interface)", "boas_praticas": "Boas práticas (checagem)",
+          "base_eldiran": "Corpo-base Eldiran"}
 por_grupo = {}
 for f in registro.REGISTRO.values():
     por_grupo.setdefault(f.funcao.__module__.rsplit(".", 1)[-1], []).append(f)

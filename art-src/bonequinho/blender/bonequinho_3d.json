@@ -1,0 +1,35 @@
+{
+ "acoes": {
+  "idle": {
+   "arquivo": "C:\\Users\\artur\\workspace\\repos\\horys\\horys-generator-pixel\\art-src\\bonequinho\\blender\\bonequinho_idle.glb",
+   "quadros": 8,
+   "fps": 6
+  },
+  "andar": {
+   "arquivo": "C:\\Users\\artur\\workspace\\repos\\horys\\horys-generator-pixel\\art-src\\bonequinho\\blender\\bonequinho_andar.glb",
+   "quadros": 8,
+   "fps": 8
+  },
+  "correr": {
+   "arquivo": "C:\\Users\\artur\\workspace\\repos\\horys\\horys-generator-pixel\\art-src\\bonequinho\\blender\\bonequinho_correr.glb",
+   "quadros": 8,
+   "fps": 12
+  },
+  "soco": {
+   "arquivo": "C:\\Users\\artur\\workspace\\repos\\horys\\horys-generator-pixel\\art-src\\bonequinho\\blender\\bonequinho_soco.glb",
+   "quadros": 8,
+   "fps": 12
+  },
+  "dano": {
+   "arquivo": "C:\\Users\\artur\\workspace\\repos\\horys\\horys-generator-pixel\\art-src\\bonequinho\\blender\\bonequinho_dano.glb",
+   "quadros": 6,
+   "fps": 10
+  },
+  "morte": {
+   "arquivo": "C:\\Users\\artur\\workspace\\repos\\horys\\horys-generator-pixel\\art-src\\bonequinho\\blender\\bonequinho_morte.glb",
+   "quadros": 8,
+   "fps": 10
+  }
+ },
+ "avisos": []
+}

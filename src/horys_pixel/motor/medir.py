@@ -12,7 +12,7 @@ uso:
 
 Saída: <saida>/medidas.json e <saida>/overlay_<estado>.png.
 Código de saída: 0 = nenhuma falha; 1 = há falhas (ver medidas.json); 2 = erro de uso.
-As metas vêm de KB/revisao/metricas.md (calibradas no Tiny Swords).
+As metas vêm de KB/revisao/metricas.md (perfil 32 calibrado no corpus de teste Eldiran; o 64 é herdado, sem régua).
 Config: comum.config() (HORYS_MOTOR_CONFIG -> ~/.horys-pixel/motor.json -> config_padrao.json).
 """
 import argparse
@@ -67,13 +67,39 @@ SEVERIDADE = {  # id da métrica -> (critério da rubrica, severidade)
     "A04": ("D10", "grave"), "A05": ("D6", "grave"), "A08": ("D8", "grave"), "A09": ("A5", "bloqueio"),
     "T01": ("F1", "bloqueio"), "T02": ("A5", "bloqueio"), "E01": ("G2", "grave"), "E02": ("G2", "grave"),
     "E04": ("G5", "grave"), "E05": ("G2", "grave"), "E06": ("G2", "grave"), "E07": ("G2", "grave"),
-    "M17": ("B1", "grave")}
+    "M17": ("B1", "grave"), "D01": ("C1", "grave"), "D02": ("C1", "grave"), "D03": ("C1", "grave"),
+    "D05": ("A1", "grave"), "G01": ("C1", "grave")}
 # M17 (2026-11-05): fração da borda da silhueta em trechos retos (horizontais ou verticais) de >= RETA_MIN px.
 # Pega figura montada com primitivas (retângulo, elipse cortada, caixa). Régua: Tiny 0,00–0,19 (guerreiro idle 0,19);
 # gorila de pedra v01–v08 (reprovado no olho) 0,32–0,40; médico v16 (aprovado pelo Artur) 0,23.
 RETA_MIN = 8
 RETAS_MAX = 0.25
 TIPOS_RETAS = {"personagem", "inimigo", "boss", "criatura", "npc", "animal"}
+# Perfis por tamanho (FASE 2, 2026-11-12; pesquisa-16-32.md). O "64" usa as metas de cima, herdadas da antiga régua
+# (o Tiny Swords saiu da skill em 2026-11-12): sem régua e sem calibração atual, não lê esta tabela. Nos perfis pequenos, órfão vira CONTAGEM por quadro de pixels isolados na vizinhança 8
+# e de baixo contraste (comum.isolados8): olho e brilho de 1 px são acento. As medidas de área (mancha) escalam com
+# (h/64)^2 e as de comprimento (retas, raio do redesenho, faixas em px) com h/64; a calibração do perfil fixa os números.
+PERFIS = {
+    # calibrado em 2026-11-12 na régua Eldiran 32x32 (CC0; 58 folhas s/n/e; o Artur escolheu o estilo para o Hunvix):
+    # andar de 32 px muda só 16–28% por quadro (só as pernas); 8–20 cores; ruído de 1 px de sombreado até 19/quadro;
+    # mancha média 2,5–41 px; bordas retas até 0,67 (estilo de caixa); roupa escura deixa até 51% do miolo escuro.
+    "32": {"reta_min": 5, "retas_max": 0.70, "raio": 3, "cluster_fator": 0.05, "orf_media": 20.0, "orf_max": 24,
+           "degraus_aviso": 14, "pe_banda": 6, "salto_pe": 1, "selout_min": 0.55, "fino_min": 0.60,
+           "limite_cores": {"personagem": 20, "inimigo": 20, "npc": 20, "boss": 24, "criatura": 16},
+           "escuro_max": None, "costura": (0.35, 1.8), "boil": 0.015,
+           "metas_anim": {"idle": (0.04, 0.04), "andar": (0.15, 0.15), "correr": (0.15, 0.15)},
+           "quique": {"idle": (0.0, 2.5), "andar": (0.25, 3.5), "correr": (0.5, 5.0)}},
+    # 16: valores iniciais escalados (sem régua calibrada ainda)
+    "16": {"reta_min": 0, "retas_max": 1.0, "raio": 2, "cluster_fator": 0.04, "orf_media": 6.0, "orf_max": 8,
+           "degraus_aviso": 8, "pe_banda": 3, "salto_pe": 1, "selout_min": 0.50, "fino_min": 0.60,
+           "limite_cores": {"personagem": 10, "inimigo": 10, "npc": 10, "boss": 12, "criatura": 8},
+           "escuro_max": None, "costura": (0.35, 1.8), "boil": 0.02,
+           "metas_anim": {"idle": (0.04, 0.04), "andar": (0.15, 0.15), "correr": (0.15, 0.15)},
+           "quique": {"idle": (0.0, 1.5), "andar": (0.25, 2.0), "correr": (0.5, 3.0)}},
+}
+# Coerência entre direções (D01–D05) e guia (G01): folhas "<estado>_<dir>" (s, n, e, w, se, sw, ne, nw).
+DIRECOES = ("s", "n", "e", "w", "se", "sw", "ne", "nw")
+G01_MIN = {"64": 0.75, "32": 0.75, "16": 0.70}
 
 
 def aneis(op, n=3):
@@ -95,7 +121,7 @@ def iguais_vizinho(f):
     return r
 
 
-def retas_silhueta(op):
+def retas_silhueta(op, reta_min=RETA_MIN):
     """Pixels da borda da silhueta que estão em trechos retos (mesma linha ou coluna, com o mesmo lado vazio) de
     pelo menos RETA_MIN px. Devolve (fração da borda, máscara)."""
     borda = op & ~ndimage.binary_erosion(op, structure=CRUZ)
@@ -109,7 +135,7 @@ def retas_silhueta(op):
                 if not n:
                     continue
                 tam = np.bincount(lab)
-                longos = np.nonzero(tam >= RETA_MIN)[0]
+                longos = np.nonzero(tam >= reta_min)[0]
                 longos = longos[longos > 0]
                 if len(longos):
                     R[i] |= np.isin(lab, longos)
@@ -141,6 +167,13 @@ def medir_quadro(f, ctx):
         sozinho = e_oc & (tam8[lab8] == 1)
         orf = (orf & ~e_oc) | sozinho
     res["orfaos_pct"] = float(orf.sum() / op.sum())
+    if ctx.get("perfil", "64") != "64":
+        # perfil pequeno: a marca vermelha mostra só o ruído (isolado 8 e de baixo contraste), que é o que reprova
+        excl = e_brilho | (e_oc if fino else np.zeros_like(op))
+        ruido, iso8 = C.isolados8(f, excluir=excl)
+        res["orfaos8"] = int(iso8.sum())
+        res["ruido8"] = int(ruido.sum())
+        orf = ruido
     for y, x in zip(*np.nonzero(orf)):
         marcas.append((int(x), int(y), (255, 40, 40)))
     # clusters (4-conexo; todas as cores opacas, ou só o preenchimento com contorno fino)
@@ -165,7 +198,11 @@ def medir_quadro(f, ctx):
     for x, y in pts:
         marcas.append((x, y, (255, 230, 40)))
     # borda em trechos retos (forma geométrica)
-    res["retas"], reto = retas_silhueta(op)
+    rmin = ctx.get("reta_min", RETA_MIN)
+    if rmin:
+        res["retas"], reto = retas_silhueta(op, rmin)
+    else:
+        res["retas"], reto = 0.0, np.zeros_like(op)
     for y, x in zip(*np.nonzero(reto)):
         marcas.append((int(x), int(y), (255, 140, 0)))
     # luz: correlação de L com x (frente) e y (cima) no preenchimento
@@ -184,13 +221,14 @@ def medir_quadro(f, ctx):
     res["area"] = int(op.sum())
     res["centro_y"] = float(ys.mean())
     cx = f.shape[1] // 2
-    banda = op[:, max(0, cx - 12):cx + 13]
+    pb = ctx.get("pe_banda", 12)
+    banda = op[:, max(0, cx - pb):cx + pb + 1]
     linhas = np.nonzero(banda.any(1))[0]
     pe = int(linhas.max()) if len(linhas) else int(ys.max())
     # banda central no vão entre os pés (boss frontal): ela para acima da linha mais baixa → usa a figura toda
     if pe < int(ys.max()) - 2:
         baixo = xs[ys >= ys.max() - 2]
-        if (baixo < cx - 12).any() and (baixo > cx + 12).any():   # dois pés, um de cada lado da banda
+        if (baixo < cx - pb).any() and (baixo > cx + pb).any():   # dois pés, um de cada lado da banda
             pe = int(ys.max())
     res["pe"] = pe
     # borda do quadro
@@ -264,6 +302,88 @@ def emenda_tile(t):
                                          "costura_v": round(sv, 3), "limite_v": round(float(lim_v), 3)}
 
 
+def direcoes_e_guia(args, saida, falha, aviso):
+    """D01–D05 entre as direções de um mesmo estado (folhas '<estado>_<dir>', 1º quadro) e G01 contra a guia."""
+    grupos = {}
+    for item in args.folha:
+        estado, _, caminho = item.partition("=")
+        base, _, d = estado.rpartition("_")
+        if base and d in DIRECOES:
+            grupos.setdefault(base, {})[d] = caminho
+    for base, dirs in grupos.items():
+        if len(dirs) < 2:
+            continue
+        dados = {}
+        for d, caminho in dirs.items():
+            f = C.carregar_folha(caminho, args.quadro, args.altura_quadro)[0]
+            op = f[..., 3] == 255
+            ys = np.nonzero(op.any(1))[0]
+            cores, cont = np.unique(f[..., :3][op].reshape(-1, 3), axis=0, return_counts=True)
+            dados[d] = {"topo": int(ys.min()), "pe": int(ys.max()), "altura": int(ys.max() - ys.min() + 1),
+                        "area": int(op.sum()), "cores": {tuple(c): int(k) for c, k in zip(cores.tolist(), cont)}}
+        saida.setdefault("direcoes", {})[base] = {d: {k: v for k, v in x.items() if k != "cores"} for d, x in dados.items()}
+        lista = lambda k: ", ".join("%s %s" % (d, x[k]) for d, x in dados.items())
+        alts = [x["altura"] for x in dados.values()]
+        if max(alts) - min(alts) > 2:
+            falha("D01", base, "%d–%d" % (min(alts), max(alts)), "±2 px",
+                  "altura muda entre direções (%s px): a figura cresce ou encolhe ao girar" % lista("altura"))
+        pes = [x["pe"] for x in dados.values()]
+        if max(pes) - min(pes) > 1:
+            falha("D02", base, "%d–%d" % (min(pes), max(pes)), "±1 px",
+                  "linha do pé muda entre direções (%s): pula ao girar" % lista("pe"))
+        # área: frente (s) e costas (n) mostram a mesma largura (±10%); o lado (e/w) é mais estreito: 60–90% da frente
+        # (régua Eldiran: 65–85%); diagonais ficam entre o lado e a frente (60–105%)
+        frontais = [dados[d]["area"] for d in ("s", "n") if d in dados]
+        if frontais:
+            ref = float(np.mean(frontais))
+            fora = {}
+            if len(frontais) == 2 and abs(frontais[0] - frontais[1]) / ref > 0.10:
+                fora["s/n"] = "%d/%d" % tuple(frontais)
+            for d, x in dados.items():
+                faixa = (0.60, 0.90) if d in ("e", "w") else ((0.60, 1.05) if len(d) == 2 else None)
+                if faixa and not faixa[0] <= x["area"] / ref <= faixa[1]:
+                    fora[d] = "%.0f%% da frente" % (100 * x["area"] / ref)
+            if fora:
+                falha("D03", base, fora, "s/n ±10%; lado 60–90% da frente", "área entre direções incoerente: %s — "
+                      "membro ou corpo mudou de tamanho ao girar" % ", ".join("%s %s" % kv for kv in fora.items()))
+        todas = set().union(*(x["cores"] for x in dados.values()))
+        so_em = {}
+        for c in todas:
+            tem = [d for d, x in dados.items() if c in x["cores"]]
+            if len(tem) < len(dados) and max(dados[d]["cores"][c] / dados[d]["area"] for d in tem) >= 0.08:
+                so_em[C.rgb2hex(c)] = tem
+        if so_em:
+            aviso("D04", base, "material grande só em algumas direções: "
+                  + "; ".join("%s só em %s" % (c, ",".join(t)) for c, t in so_em.items())
+                  + " (ok se a vista esconde a parte, como o rosto nas costas)")
+        # paleta: uma direção não pode trazer cores que nenhuma outra tem (o lado pode ter menos: esconde partes)
+        novas = {}
+        for d, x in dados.items():
+            outras = set().union(*(y["cores"] for k, y in dados.items() if k != d))
+            n = [c for c in x["cores"] if c not in outras]
+            if len(n) > 2:
+                novas[d] = len(n)
+        if novas:
+            falha("D05", base, novas, "<= 2 cores exclusivas", "direção com cores que as outras não têm: %s (paleta "
+                  "mudou ao girar)" % ", ".join("%s +%d" % kv for kv in novas.items()))
+    for item in args.guia:
+        estado, _, gpng = item.partition("=")
+        caminho = next((x.partition("=")[2] for x in args.folha if x.partition("=")[0] == estado), None)
+        if not caminho or not os.path.exists(gpng):
+            aviso("G01", estado, "guia ou folha não encontrada (%s)" % gpng)
+            continue
+        f = C.carregar_folha(caminho, args.quadro, args.altura_quadro)[0]
+        g = np.array(Image.open(gpng).convert("RGBA"))
+        if args.quadro and g.shape[1] > args.quadro and g.shape[1] % args.quadro == 0:
+            g = g[:, :args.quadro]
+        iou = C.iou_silhueta(f[..., 3] == 255, g[..., 3] > 0)
+        meta = G01_MIN.get(args.perfil, 0.75)
+        saida.setdefault("guia", {})[estado] = {"iou": round(iou, 3), "meta": meta, "guia": os.path.abspath(gpng)}
+        if iou < meta:
+            falha("G01", estado, round(iou, 3), ">= %s" % meta, "silhueta bate só %.0f%% com a guia (IoU no pivô): vista "
+                  "ou proporção diferentes da referência (desenhou de perfil? membro maior?)" % (iou * 100))
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--tipo", required=True, choices=sorted(LIMITE_CORES))
@@ -284,24 +404,35 @@ def main():
     ap.add_argument("--contorno-cor", default="", help="cor do contorno, se não for a da paleta (ex.: #3f3c56)")
     ap.add_argument("--limite-cores", type=int, default=0, help="limite pedido pelo usuário (vem da ficha/grade)")
     ap.add_argument("--paleta", default="", help="paleta JSON alternativa, absoluta ou relativa à KB (sem KB: relativa à pasta atual)")
+    ap.add_argument("--perfil", choices=["16", "32", "64"], default="32",
+                    help="perfil de tamanho (32 = régua Eldiran, padrão); 16 e 64 sem régua calibrada")
+    ap.add_argument("--selout", action="store_true",
+                    help="contorno selout: o anel 1 é o tom escuro de cada material (M06 mede anel escuro; sem M07)")
+    ap.add_argument("--guia", action="append", default=[],
+                    help="estado=guia.png: silhueta de referência (guia 3D ou referência) para o G01 (IoU no pivô)")
     args = ap.parse_args()
 
-    cfg = C.config()
+    cfg = C.config_perfil(C.config(), args.perfil)
     pal = C.carregar_paleta(cfg, args.paleta or None)
     regua = args.modo == "regua"
+    P = PERFIS.get(args.perfil)
     ctx = {"contorno": C.hex2rgb(cfg["contorno_regua"]) if regua else pal["contorno"],
            "brilho": [C.hex2rgb(h) for h in cfg["brilho_regua"]] if regua else pal["brilho"],
            "chao_L": {k: float(C.oklab(np.array(C.hex2rgb(v)))[0]) for k, v in cfg["chao"].items()},
-           "contorno_px": 2 if regua else args.contorno_px, "contorno_paleta": pal["contorno"]}
+           "contorno_px": cfg.get("contorno_px_regua", 2) if regua else args.contorno_px,
+           "contorno_paleta": pal["contorno"], "perfil": args.perfil}
+    if P:
+        ctx.update(reta_min=P["reta_min"], pe_banda=P["pe_banda"])
     if args.contorno_cor and not regua:
         ctx["contorno"] = C.hex2rgb(args.contorno_cor)
     os.makedirs(args.saida, exist_ok=True)
     loops = set(x for x in args.loop.split(",") if x)
     sem_loops = set(x for x in args.sem_loop.split(",") if x)
-    limite_cores = args.limite_cores or (LIMITE_CORES[args.tipo] + (3 if args.com_equipamento else 0)
+    base_cores = P["limite_cores"].get(args.tipo, LIMITE_CORES[args.tipo]) if P else LIMITE_CORES[args.tipo]
+    limite_cores = args.limite_cores or (base_cores + (3 if args.com_equipamento else 0)
                                          + (3 if args.com_efeito else 0))
 
-    saida = {"asset": args.asset, "tipo": args.tipo, "modo": args.modo, "contorno": C.rgb2hex(ctx["contorno"]),
+    saida = {"asset": args.asset, "tipo": args.tipo, "modo": args.modo, "perfil": args.perfil, "contorno": C.rgb2hex(ctx["contorno"]),
              "limite_cores": limite_cores, "contorno_px": ctx["contorno_px"], "folhas": {}, "falhas": [], "avisos": []}
 
     def falha(mid, estado, valor, meta, texto):
@@ -358,7 +489,7 @@ def main():
         if n_ruim:
             falha("M02", estado, n_ruim, 0, f"{n_ruim} px semitransparentes que não são a sombra no chão")
         pretos = int((op_all & np.all(rgb_all == 0, axis=-1)).sum())
-        if pretos:
+        if pretos and not (regua and tuple(ctx["contorno"]) == (0, 0, 0)):  # régua de contorno preto (Eldiran)
             falha("A11", estado, pretos, 0, f"{pretos} px de preto puro")
         # ---- por quadro
         pq, marcas = [], []
@@ -394,16 +525,33 @@ def main():
         info["resumo"] = res
         # metas de imagem
         om, ox = ORFAOS_TIPO.get(args.tipo, (ORFAOS_MEDIA, ORFAOS_MAX))
-        if res["M04_orfaos_media"] > om or res["M04_orfaos_max"] > ox:
+        if P:
+            res["M04_ruido8_media"] = float(np.mean([r["ruido8"] for r in validos]))
+            res["M04_ruido8_max"] = int(np.max([r["ruido8"] for r in validos]))
+            res["M04_orfaos8_media"] = float(np.mean([r["orfaos8"] for r in validos]))
+            if res["M04_ruido8_media"] > P["orf_media"] or res["M04_ruido8_max"] > P["orf_max"]:
+                falha("M04", estado, round(res["M04_ruido8_media"], 2), f"<= {P['orf_media']} px/quadro (pior {P['orf_max']})",
+                      f"ruído: {res['M04_ruido8_media']:.1f} px/quadro isolados (vizinhança 8) e de baixo contraste "
+                      f"(pior quadro {res['M04_ruido8_max']}); olho e brilho de alto contraste não contam")
+        elif res["M04_orfaos_media"] > om or res["M04_orfaos_max"] > ox:
             falha("M04", estado, round(res["M04_orfaos_media"] * 100, 3), f"<= {om:.1%} (pior quadro {ox:.1%})",
                   f"órfãos {res['M04_orfaos_media'] * 100:.2f}% (pior quadro {res['M04_orfaos_max'] * 100:.2f}%)")
         cmin = CLUSTER_MIN_PREENCHIMENTO.get(args.tipo, CLUSTER_MIN[args.tipo]) if ctx["contorno_px"] < 2 else CLUSTER_MIN[args.tipo]
+        if P and cmin:
+            cmin = round(cmin * P["cluster_fator"], 1)
         if cmin and res["M05_cluster_medio"] < cmin:
             falha("M05", estado, round(res["M05_cluster_medio"], 1), f">= {cmin}", f"cluster médio {res['M05_cluster_medio']:.0f} px")
-        if ctx["contorno_px"] == 0:
+        if args.selout and P and (args.tipo in GRUPO_FIGURA or args.tipo == "criatura"):
+            m1 = P["selout_min"] - (0.05 if (args.com_equipamento or args.com_efeito) else 0)
+            if res["M06_anel1_escuro_mediana"] < m1:
+                falha("M06", estado, round(res["M06_anel1_escuro_mediana"], 3), f">= {m1:.2f}",
+                      f"selout: só {res['M06_anel1_escuro_mediana']:.0%} do anel 1 é escuro (L < 0,56)")
+        elif ctx["contorno_px"] == 0:
             pass  # sem borda escura: o anel externo é preenchimento, não há meta de contorno
         elif ctx["contorno_px"] == 1 and (args.tipo in GRUPO_FIGURA or args.tipo == "criatura"):
             m1 = 0.60 if (args.com_equipamento or args.com_efeito) else 0.70
+            if P:
+                m1 = min(m1, P["fino_min"])
             if res["M06_anel1_mediana"] < m1:
                 falha("M06", estado, round(res["M06_anel1_mediana"], 3), f">= {m1}", f"anel 1 do contorno fino {res['M06_anel1_mediana']:.0%}")
         elif args.tipo in GRUPO_FIGURA or args.tipo == "criatura":
@@ -421,15 +569,16 @@ def main():
             if res["M06_anel1_mediana"] < bc or res["M06_anel1_escuro_mediana"] < be:
                 falha("M06", estado, round(res["M06_anel1_mediana"], 3), f">= {bc:.2f} no contorno e >= {be:.2f} escuro",
                       f"borda: {res['M06_anel1_mediana']:.0%} contorno, {res['M06_anel1_escuro_mediana']:.0%} escura")
-        if args.tipo != "efeito" and res["M08_escuro_max"] > 0.01:
+        if args.tipo != "efeito" and not (P and P["escuro_max"] is None) and res["M08_escuro_max"] > 0.01:
             falha("M08", estado, round(res["M08_escuro_max"], 4), "<= 1%", f"{res['M08_escuro_max']:.1%} do preenchimento escuro (L < 0,36)")
         por_q = res["M10_degraus_total"] / len(validos)
         res["M10_degraus_por_quadro"] = round(por_q, 1)
-        if por_q > 15 and (args.tipo in GRUPO_FIGURA or args.tipo == "criatura"):  # só figuras (2026-11-05); a régua (peão do Tiny) fica em ~11 por quadro: tufos de cabelo contam como "degrau"
+        if por_q > (P["degraus_aviso"] if P else 15) and (args.tipo in GRUPO_FIGURA or args.tipo == "criatura"):  # só figuras (2026-11-05); a régua (peão do Tiny) fica em ~11 por quadro: tufos de cabelo contam como "degrau"
             aviso("M10", estado, f"{por_q:.0f} degraus irregulares por quadro na silhueta (régua ~11; amarelo no overlay)")
-        if args.tipo in TIPOS_RETAS and res["M17_retas_media"] > RETAS_MAX:
-            falha("M17", estado, round(res["M17_retas_media"], 3), f"<= {RETAS_MAX}",
-                  f"{res['M17_retas_media']:.0%} da borda da silhueta em trechos retos de {RETA_MIN}+ px: forma de primitiva "
+        rmax = P["retas_max"] if P else RETAS_MAX
+        if args.tipo in TIPOS_RETAS and res["M17_retas_media"] > rmax:
+            falha("M17", estado, round(res["M17_retas_media"], 3), f"<= {rmax}",
+                  f"{res['M17_retas_media']:.0%} da borda da silhueta em trechos retos de {ctx.get('reta_min', RETA_MIN)}+ px: forma de primitiva "
                   f"(caixa, retângulo, elipse cortada). Quebre as quinas e use curvas com degraus (laranja no overlay)")
         if args.tipo in GRUPO_FIGURA and "M15_luz_x" in res and not (res["M15_luz_x"] >= 0.10 or res["M15_luz_y"] <= -0.20):
             aviso("M15", estado, f"luz: x {res['M15_luz_x']:+.2f}, y {res['M15_luz_y']:+.2f} (esperado x ≥ +0,10 ou y ≤ −0,20)")
@@ -458,7 +607,8 @@ def main():
                     aviso("A12", estado, f"{len(flash)} quadros de flash ({flash}): o flash é 1 quadro (segure pela duração)")
                 pares = [i for i in pares if i not in flash and (i + 1) % n not in flash]
             d = [diferenca(quadros[i], quadros[(i + 1) % n]) for i in pares]
-            rd = [redesenho(quadros[i], quadros[(i + 1) % n]) for i in pares]
+            raio = P["raio"] if P else 6
+            rd = [redesenho(quadros[i], quadros[(i + 1) % n], raio) for i in pares]
             anim["A01_muda"] = float(np.mean(d)) if d else 1.0
             anim["A02_redesenho"] = float(np.mean(rd)) if rd else 1.0
             anim["A03_iguais"] = int(sum(1 for i in pares if np.array_equal(quadros[i], quadros[(i + 1) % n])))
@@ -480,7 +630,7 @@ def main():
             try:
                 from horys_pixel.sequencia.anticintilacao import pisca_rgba
                 anim["A13_pisca_cor"] = round(pisca_rgba(quadros, bool(loop)), 4)
-                if anim["A13_pisca_cor"] > 0.03:   # meta provisória: calibrar no Tiny (new-task 2.7)
+                if anim["A13_pisca_cor"] > 0.03:   # meta provisória, sem calibração (new-task 2.7)
                     aviso("A13", estado, f"{anim['A13_pisca_cor']:.1%} dos pixels piscam (mudam e voltam em 2 quadros)")
             except ImportError:
                 pass
@@ -488,6 +638,8 @@ def main():
             anim["loop"] = loop
             info["animacao"] = anim
             mmin, rmin = METAS_ANIM.get(cat, METAS_ANIM["idle"])
+            if P and cat in P["metas_anim"]:
+                mmin, rmin = P["metas_anim"][cat]
             if cat == "idle" and args.ritmo == "calmo":
                 mmin, rmin = IDLE_CALMO
             if cat == "idle" and args.ritmo != "calmo" and anim["A02_redesenho"] < METAS_ANIM["idle"][1] and anim["A02_redesenho"] >= IDLE_CALMO[1]:
@@ -501,24 +653,26 @@ def main():
                     aviso("A03", estado, f"{anim['A03_iguais']} par(es) de quadros idênticos: para segurar a pose, prefira a duração do quadro")
                 else:
                     falha("A03", estado, anim["A03_iguais"], 0, f"{anim['A03_iguais']} par(es) de quadros idênticos (quadro parado)")
-            if "A04_costura" in anim and not (0.4 <= anim["A04_costura"] <= 1.8):
+            c0, c1 = P["costura"] if P else (0.4, 1.8)
+            if "A04_costura" in anim and not (c0 <= anim["A04_costura"] <= c1):
                 texto = f"costura do loop {anim['A04_costura']:.2f}× a média: o último quadro não encaixa no primeiro"
                 if cat == "ambiente":
                     aviso("A04", estado, texto)
                 else:
-                    falha("A04", estado, round(anim["A04_costura"], 2), "0,4 a 1,8", texto)
+                    falha("A04", estado, round(anim["A04_costura"], 2), f"{c0} a {c1}", texto)
             if cat in ("idle", "ambiente") and args.tipo not in TIPOS_CENARIO_ANIM and args.tipo != "efeito":
                 pes = [r["pe"] for r in validos]
                 saltos = [abs(pes[(i + 1) % len(pes)] - pes[i]) for i in range(len(pes) if loop else len(pes) - 1)]
                 anim["A05_salto_max"] = int(max(saltos)) if saltos else 0
-                if anim["A05_salto_max"] > 2:
+                lim_salto = P["salto_pe"] + 1 if P else 2
+                if anim["A05_salto_max"] > lim_salto:
                     falha("A05", estado, anim["A05_salto_max"], "<= 2", f"a linha do pé salta {anim['A05_salto_max']} px de um quadro para o outro (pés pulando)")
                 elif anim["A05_linha_pe"] > 2:
                     aviso("A05", estado, f"a linha do pé desce/sobe {anim['A05_linha_pe']} px ao longo do idle (suave; confira se é intencional)")
-            lim_boil = 0.02 if args.com_efeito else 0.01
+            lim_boil = 0.02 if args.com_efeito else (P["boil"] if P else 0.01)
             if anim["A08_boil_max"] > lim_boil:
                 falha("A08", estado, round(anim["A08_boil_max"], 4), f"<= {lim_boil:.0%}", f"boil {anim['A08_boil_max']:.1%} (pixels piscando)")
-            faixa = {"idle": (0.5, 5.0), "andar": (1.0, 7.0), "correr": (2.0, 10.0)}.get(cat)
+            faixa = (P["quique"] if P else {"idle": (0.5, 5.0), "andar": (1.0, 7.0), "correr": (2.0, 10.0)}).get(cat)
             if faixa and not (faixa[0] <= anim["A06_quique"] <= faixa[1]):
                 aviso("A06", estado, f"quique {anim['A06_quique']:.1f} px (faixa {faixa[0]}–{faixa[1]})")
             if cat in ("idle", "andar", "correr") and anim["A07_massa"] > 0.12:
@@ -596,6 +750,7 @@ def main():
                               titulo=f"overlay {estado}: vermelho=órfão amarelo=degrau magenta=borda ciano=boil")
         img.save(os.path.join(args.saida, f"overlay_{estado}.png"))
 
+    direcoes_e_guia(args, saida, falha, aviso)
     with open(os.path.join(args.saida, "medidas.json"), "w", encoding="utf-8") as f:
         json.dump(saida, f, ensure_ascii=False, indent=1)
     print(f"{len(saida['falhas'])} falha(s), {len(saida['avisos'])} aviso(s) -> {os.path.join(args.saida, 'medidas.json')}")

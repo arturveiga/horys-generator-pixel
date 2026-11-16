@@ -5,6 +5,8 @@ description: Planeja, produz e revisa animação de sprites Horys Pixel Liso a p
 
 # Horys Pixel Liso — Animação
 
+> **Personagem, monstro ou robô novo: use `skills/horys-base-e-pele/SKILL.md`** (fluxo único, 2026-11-14, perfeicao.md). Esta skill fica como consulta.
+
 Transforme a intenção do movimento em poses e evidências. Mais quadros, mais cores ou um arquivo Aseprite não comprovam qualidade. Preserve o personagem escolhido pelo usuário.
 
 ## Aseprite MCP no Hunvix

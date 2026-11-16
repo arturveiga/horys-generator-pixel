@@ -1,6 +1,6 @@
 """2.7 · Anti-cintilação: um pixel só muda de cor entre quadros se a FORMA mudou ali (máscara de movimento por
 diferença de silhueta); se a forma não mudou, ele herda a cor do quadro anterior. Mais a métrica: % de pixels que
-piscam (mudam e voltam em 2 quadros), com meta calibrada no Tiny."""
+piscam (mudam e voltam em 2 quadros), com meta a calibrar nos aprovados do Artur."""
 from __future__ import annotations
 
 import numpy as np

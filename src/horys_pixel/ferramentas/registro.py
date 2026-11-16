@@ -51,7 +51,7 @@ def carregar_todas():
     global _carregadas
     if _carregadas:
         return
-    from . import desenho, conversa, estilo, partes, pedidos, gosto, treino, kiln, sequencia, entrega, oficio  # noqa: F401  (registram ao importar)
+    from . import desenho, conversa, estilo, partes, pedidos, gosto, treino, kiln, sequencia, entrega, oficio, pele, vfx, aiartist, guia_kiln, blender, estudio, base_eldiran, boas_praticas  # noqa: F401  (registram ao importar)
     _carregadas = True
 
 

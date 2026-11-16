@@ -5,6 +5,8 @@ description: Gera pixel art de qualidade no estilo Horys Pixel Liso do Artur, co
 
 # Horys Pixel Liso (v4.5: referência fiel limpa por cima, Aseprite ao vivo pelo horys, base de ofício, A/B cego)
 
+> **Personagem, monstro ou robô novo: use `skills/horys-base-e-pele/SKILL.md`** (fluxo único, 2026-11-14, perfeicao.md). Esta skill fica como consulta.
+
 **Animação de um design já escolhido:** use também `skills/horys-pixel-liso-animacao/SKILL.md` (no repo horys-generator-pixel).
 Ela detalha plano temporal, fidelidade, franja/overlap e evidências de reprodução. O pedido atual e a ficha aprovada
 prevalecem sobre limites genéricos de cores, fps e proporções abaixo. Não repita perguntas já respondidas nem

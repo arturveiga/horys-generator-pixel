@@ -1,0 +1,141 @@
+00:02.094  blend            | Read blend: "C:\Users\artur\workspace\repos\horys\horys-generator-pixel\art-src\bonequinho\blender\bonequinho.blend"
+[horys] rig: {'tronco': 2, 'cabeca': 1, 'ombro_e': 1, 'ombro_d': 1, 'coxa_e': 1, 'pe_e': 1, 'canela_e': 0, 'coxa_d': 1, 'pe_d': 1, 'canela_d': 0}
+INFO Draco is available, use library at C:\Program Files\Blender Foundation\Blender 5.2\5.2\scripts\addons_core\io_scene_gltf2\bf_intern_draco_bridge.dll
+INFO MeshOptimizer is available, use library at C:\Program Files\Blender Foundation\Blender 5.2\5.2\scripts\addons_core\io_scene_gltf2\bf_intern_meshopt_bridge.dll
+18:00:40 | INFO: Starting glTF 2.0 export
+18:00:40 | INFO: Extracting primitive: Coxa.001
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Coxa
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Pé.001
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Pé
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Cabeça
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Braço.001
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Braço
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Pescoço
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Tronco
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Finished glTF 2.0 export in 0.07364940643310547 s
+
+[horys] 3d: C:\Users\artur\workspace\repos\horys\horys-generator-pixel\art-src\bonequinho\blender\bonequinho_idle.glb
+18:00:40 | INFO: Starting glTF 2.0 export
+18:00:40 | INFO: Extracting primitive: Coxa.001
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Coxa
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Pé.001
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Pé
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Cabeça
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Braço.001
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Braço
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Pescoço
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Tronco
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Finished glTF 2.0 export in 0.024288654327392578 s
+
+[horys] 3d: C:\Users\artur\workspace\repos\horys\horys-generator-pixel\art-src\bonequinho\blender\bonequinho_andar.glb
+18:00:40 | INFO: Starting glTF 2.0 export
+18:00:40 | INFO: Extracting primitive: Coxa.001
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Coxa
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Pé.001
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Pé
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Cabeça
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Braço.001
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Braço
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Pescoço
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Tronco
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Finished glTF 2.0 export in 0.023965120315551758 s
+
+[horys] 3d: C:\Users\artur\workspace\repos\horys\horys-generator-pixel\art-src\bonequinho\blender\bonequinho_correr.glb
+18:00:40 | INFO: Starting glTF 2.0 export
+18:00:40 | INFO: Extracting primitive: Coxa.001
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Coxa
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Pé.001
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Pé
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Cabeça
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Braço.001
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Braço
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Pescoço
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Tronco
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Finished glTF 2.0 export in 0.02433633804321289 s
+
+[horys] 3d: C:\Users\artur\workspace\repos\horys\horys-generator-pixel\art-src\bonequinho\blender\bonequinho_soco.glb
+18:00:40 | INFO: Starting glTF 2.0 export
+18:00:40 | INFO: Extracting primitive: Coxa.001
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Coxa
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Pé.001
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Pé
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Cabeça
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Braço.001
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Braço
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Pescoço
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Tronco
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Finished glTF 2.0 export in 0.02277684211730957 s
+
+[horys] 3d: C:\Users\artur\workspace\repos\horys\horys-generator-pixel\art-src\bonequinho\blender\bonequinho_dano.glb
+18:00:40 | INFO: Starting glTF 2.0 export
+18:00:40 | INFO: Extracting primitive: Coxa.001
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Coxa
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Pé.001
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Pé
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Cabeça
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Braço.001
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Braço
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Pescoço
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Extracting primitive: Tronco
+18:00:40 | INFO: Primitives created: 1
+18:00:40 | INFO: Finished glTF 2.0 export in 0.02452993392944336 s
+
+[horys] 3d: C:\Users\artur\workspace\repos\horys\horys-generator-pixel\art-src\bonequinho\blender\bonequinho_morte.glb
+[horys] ok
+Blender 5.2.3 LTS (hash e13b728c6880 built 2026-10-22 01:37:16)
+
+Blender quit
+

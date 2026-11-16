@@ -15,9 +15,16 @@ estrutural E aceitação >= 'limite' (padrão 80). Os defeitos de ACABAMENTO vir
 coordenadas que o revisor deu em 'onde') e uma lista guardada na ficha (acabamento_pendente) para o usuário
 finalizar no Aseprite. Se estiver pronto, a lista também abre no painel (botão 'Terminei o retoque') e a resposta traz
 um id: horys_aguardar(id) devolve o que o usuário marcou como feito; depois rode horys_gosto_do_retoque.
-'marcar': false só avalia.""",
-            {"resultado": {"type": "object"}, "limite": INT, "quadro": INT, "marcar": BOOL}, ["resultado"])
+'marcar': false só avalia. TRAVA: 'pasta' (a pasta da versão) precisa ter o A/B do revisor registrado
+(horys_ab_registrar); sem ele a entrega é recusada.""",
+            {"resultado": {"type": "object"}, "limite": INT, "quadro": INT, "marcar": BOOL, "pasta": STR},
+            ["resultado", "pasta"])
 async def entrega_ferramenta(ctx, a):
+    from .. import travas
+    try:
+        travas.exigir_ab(a.get("pasta") or "")
+    except (travas.Travado, ValueError) as e:
+        raise ErroFerramenta("TRAVADO: " + str(e))
     av = entrega.avaliar(a["resultado"], int(a.get("limite") or entrega.LIMITE_PADRAO))
     linhas = [("PRONTO PARA ENTREGA" if av["pronto"] else "AINDA NÃO ESTÁ PRONTO") + f": {av['motivo']} "
               f"(aceitação {av.get('aceitacao')}, limite {av.get('limite')})"]

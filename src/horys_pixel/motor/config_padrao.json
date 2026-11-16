@@ -3,13 +3,24 @@
  "regua": null,
  "regua_nome": "régua",
  "regua_por_categoria": {},
+ "aprovados": null,
+ "corpus_teste": null,
+ "quadro_teste": 36,
  "trabalho": null,
  "paleta_json": null,
  "contorno_regua": "#1c1828",
+ "contorno_px_regua": 2,
  "brilho_regua": ["#ffffff"],
  "chao": {"claro": "#78a05e", "escuro": "#5a5870"},
  "fundo_prancha": "#8a9290",
  "limite_imagem": 1500,
  "aseprite": null,
- "pasta_calibracao": null
+ "pasta_calibracao": null,
+ "perfis": {
+  "32": {"nota": "figuras de 21 a 40 px; métricas calibradas no corpus de teste (72/72 e 15/15)",
+         "contorno_padrao": "selout", "quadro_padrao": 48, "altura": [24, 36]},
+  "16": {"nota": "figuras de até 20 px; sem calibração ainda", "contorno_padrao": "selout", "quadro_padrao": 24,
+         "altura": [12, 20]},
+  "64": {"nota": "figuras acima de 40 px; métricas herdadas, sem calibração"}
+ }
 }

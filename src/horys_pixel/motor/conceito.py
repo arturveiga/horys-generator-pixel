@@ -22,7 +22,7 @@ Subcomandos:
   afinar -> limpar --min 3 -> rosto à mão por cima. Os três são limpeza mecânica: não criam forma.
 
 Regras (KB/pipeline/conceito.md):
-  - não anexe sprites do Tiny Swords nem de outra obra ao Codex: a régua entra no prompt como princípios escritos;
+  - não anexe sprites de outra obra ao Codex: a régua entra no prompt como princípios escritos;
   - anexos permitidos: assets do próprio Artur (escala e acabamento) e a paleta Horys.
 """
 import argparse
@@ -164,11 +164,25 @@ def grade_nativa(rgb, quadrado=True, fase="sobel"):
         d = np.abs(np.diff(rgb.astype(int), axis=eixo)).sum(-1) > 60
         pos = np.nonzero(d)[eixo] + 1
         melhor = (0.0, 1.0, 0.0)
-        for s in np.arange(4.0, 24.0, 0.01):
+        for s in np.arange(4.0, 48.0, 0.01):  # o Codex chega a blocos de ~26 px (pose ampliada 12x, 14/11)
             z = np.mean(np.exp(2j * np.pi * (pos % s) / s))
             r = abs(z) * (1 + 0.002 * s)  # leve preferência pelo bloco maior (evita submúltiplos)
             if r > melhor[0]:
                 melhor = (r, s, (np.angle(z) % (2 * np.pi)) / (2 * np.pi) * s)
+        # submúltiplo: se TODAS as bordas caem num múltiplo k·s, o bloco s e o k·s têm a mesma coerência e a
+        # leitura sai k vezes maior (pose do robô, 14/11: 114 linhas em vez de 57). Fica o maior k·s que
+        # mantém >= 90% da coerência.
+        for k in (4, 3, 2):
+            sk0 = melhor[1] * k
+            if sk0 >= 48.0:
+                continue
+            cand = max(((abs(np.mean(np.exp(2j * np.pi * (pos % s) / s))), s)
+                        for s in np.arange(sk0 * 0.99, sk0 * 1.01, 0.01)), key=lambda t: t[0])
+            if cand[0] >= 0.9 * melhor[0] / (1 + 0.002 * melhor[1]):
+                z = np.mean(np.exp(2j * np.pi * (pos % cand[1]) / cand[1]))
+                melhor = (cand[0] * (1 + 0.002 * cand[1]), cand[1],
+                          (np.angle(z) % (2 * np.pi)) / (2 * np.pi) * cand[1])
+                break
         res.append(melhor)
     if quadrado:
         bloco = max(res, key=lambda t: t[0])[1]

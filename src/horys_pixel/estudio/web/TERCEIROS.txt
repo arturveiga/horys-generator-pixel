@@ -1,0 +1,2 @@
+model-viewer.min.js: @google/model-viewer 3.5.0 (Google LLC, licenças Apache-2.0/BSD-3-Clause no cabeçalho do arquivo),
+copiado de ajax.googleapis.com para o visualizador 3D do Horys Estúdio funcionar sem internet.

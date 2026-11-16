@@ -446,6 +446,23 @@ teste("salvar cópia, salvar como, abrir e selecionar_sprite", function()
   verdade(app.fs.isFile(png), "png gravado")
 end)
 
+teste("salvar png com camadas e quadros: sem alerta preso, sequência e preferências restauradas", function()
+  local antes = {}
+  for i, a in ipairs(H.ALERTAS_AO_SALVAR) do antes[i] = app.preferences[a[1]][a[2]] end
+  cmd("sprite_novo", { largura = 4, altura = 4 })
+  app.sprite:newLayer()
+  app.sprite:newFrame()
+  local png = app.fs.joinPath(tmp, "anim.png")
+  local r = cmd("salvar", { arquivo = png, copia = true })
+  igual(r.arquivo, png)
+  verdade(r.sequencia and #r.sequencia == 2, "sequência de 2 arquivos")
+  igual(app.fs.fileName(r.sequencia[1]), "anim1.png")
+  verdade(app.fs.isFile(r.sequencia[2]), "segundo quadro gravado")
+  for i, a in ipairs(H.ALERTAS_AO_SALVAR) do
+    igual(app.preferences[a[1]][a[2]], antes[i], a[1] .. "." .. a[2] .. " restaurada")
+  end
+end)
+
 teste("selecao", function()
   cmd("sprite_novo", { largura = 8, altura = 8 })
   local r = cmd("selecao")

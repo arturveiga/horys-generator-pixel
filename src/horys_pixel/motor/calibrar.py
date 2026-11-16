@@ -1,16 +1,18 @@
-"""Calibração do revisor (KB/revisao/calibracao.md): a régua tem que passar e as versões estragadas, reprovar.
+"""Calibração do portão (KB/revisao/calibracao.md): o corpus de teste tem que passar e as versões estragadas, reprovar.
+
+Perfis (FASE 2, 2026-11-12): --perfil 32 usa o corpus de teste (config "corpus_teste", hoje a Eldiran 32x32, CC0;
+não é régua de estilo: a régua é o Artur) e mutações refeitas no tamanho, incluindo as de direção (D01–D05) e de
+guia (G01). Só o perfil 32 tem calibração.
+
+Config: comum.config() (HORYS_MOTOR_CONFIG -> ~/.horys-pixel/motor.json -> config_padrao.json). Saída em
+"pasta_calibracao" da config, senão <trabalho>/_calibracao32, senão ~/.horys-pixel/calibracao (nunca dentro do repo
+nem da skill).
 
 subcomandos:
-  mutacoes  -> gera as versões estragadas da régua (Tiny) em <pasta_calibracao>/casos (uso local; não redistribuir)
+  mutacoes  -> gera as versões estragadas do corpus de teste em <pasta de calibração>/casos
   metricas  -> roda medir.py em todos os casos (modo régua) e confere o esperado; grava relatorio_metricas.md
   pacotes --casos a,b,c  -> prepara pacotes de revisão (revisar.py preparar) para o teste do revisor
   resumo    -> lê os veredito.json dos pacotes e calcula o acerto nos bons e nos ruins
-
-Config: comum.config() (HORYS_MOTOR_CONFIG -> ~/.horys-pixel/motor.json -> config_padrao.json). Precisa da chave
-"regua" (pasta com os sprites da régua; os nomes de arquivo abaixo são os do Tiny Swords). As saídas vão para
-"pasta_calibracao" da config ou ~/.horys-pixel/calibracao (nunca dentro do repo nem da skill). O caso "ia_codex" usa a
-imagem de "calibracao_ia" da config (sem a chave: a imagem histórica em ~/.codex/generated_images; sem o arquivo, o caso
-fica de fora).
 """
 import argparse
 import json
@@ -30,78 +32,25 @@ except ImportError:
 AQUI = os.path.dirname(os.path.abspath(__file__))
 CRUZ = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]], bool)
 
-# (nome, arquivo da régua, tipo, quadro, estado, flags)
-POSITIVOS = [
-    ("peao_idle", "pawn_idle.png", "personagem", 192, "idle", []),
-    ("peao_correr", "pawn_run.png", "personagem", 192, "correr", []),
-    ("guerreiro_idle", "warrior_idle.png", "personagem", 192, "idle", ["--com-equipamento"]),
-    ("guerreiro_correr", "warrior_run.png", "personagem", 192, "correr", ["--com-equipamento"]),
-    ("guerreiro_ataque", "warrior_attack.png", "personagem", 192, "ataque", ["--com-equipamento", "--com-efeito"]),
-    ("arqueiro_idle", "archer_idle.png", "personagem", 192, "idle", ["--com-equipamento", "--ritmo", "calmo"]),
-    ("arqueiro_correr", "archer_run.png", "personagem", 192, "correr", ["--com-equipamento"]),
-    ("arqueiro_tiro", "archer_shoot.png", "personagem", 192, "tiro", ["--com-equipamento", "--com-efeito"]),
-    ("monge_idle", "monk_idle.png", "personagem", 192, "idle", []),
-    ("monge_correr", "monk_run.png", "personagem", 192, "correr", []),
-    ("monge_cura", "monk_heal.png", "personagem", 192, "magia", ["--com-efeito"]),
-    ("peao_martelo_idle", "pawn_idle_hammer.png", "personagem", 192, "idle", ["--com-equipamento"]),
-    ("peao_martelar", "pawn_interact_hammer.png", "personagem", 192, "trabalhar", ["--com-equipamento", "--com-efeito"]),
-    ("ovelha", "sheep_idle.png", "criatura", 128, "ambiente", []),
-    ("arvore", "tree1.png", "arvore", 192, "ambiente", []),  # 8 quadros de 192x256 (corrigido em 2026-11-05)
-    # ---- ampliação de 2026-11-05: todo o cenário da cópia local, recursos, água e os efeitos do pacote grátis
-    ("arvore2", "tree2.png", "arvore", 192, "ambiente", []),
-    ("arvore3", "tree3.png", "arvore", 192, "ambiente", []),
-    ("arvore4", "tree4.png", "arvore", 192, "ambiente", []),
-    ("arbusto2", "bush2.png", "prop", 128, "ambiente", []),
-    ("pedra2", "rock2.png", "prop", 0, "base", []),
-    ("pedra3", "rock3.png", "prop", 0, "base", []),
-    ("casa2", "house2.png", "predio", 0, "base", []),
-    ("casa3", "house3.png", "predio", 0, "base", []),
-    ("quartel", "barracks.png", "predio", 0, "base", []),
-    ("arqueria", "archery.png", "predio", 0, "base", ["--com-equipamento"]),  # prédio com props agregados: +3 cores
-    ("mosteiro", "monastery.png", "predio", 0, "base", []),
-    ("ouro", "resource_gold.png", "recurso", 0, "base", []),
-    ("carne", "resource_meat.png", "recurso", 0, "base", []),
-    ("madeira", "resource_wood.png", "recurso", 0, "base", []),
-    ("espuma", "water_foam.png", "agua", 192, "ambiente", []),
-    ("fx_poeira1", "fx/Dust_01.png", "efeito", 64, "poeira", []),
-    ("fx_poeira2", "fx/Dust_02.png", "efeito", 64, "poeira", []),
-    ("fx_explosao1", "fx/Explosion_01.png", "efeito", 192, "explosao", []),
-    ("fx_explosao2", "fx/Explosion_02.png", "efeito", 192, "explosao", []),
-    ("fx_fogo1", "fx/Fire_01.png", "efeito", 64, "fogo", []),
-    ("fx_fogo2", "fx/Fire_02.png", "efeito", 64, "fogo", []),
-    ("fx_fogo3", "fx/Fire_03.png", "efeito", 64, "fogo", []),
-    ("fx_respingo", "fx/Water_Splash.png", "efeito", 192, "respingo", []),
-    ("fx_cura", "fx/Heal_Effect.png", "efeito", 192, "cura", []),
-    ("arbusto", "bush1.png", "prop", 128, "ambiente", []),
-    ("pedra", "rock1.png", "prop", 0, "base", []),
-    ("casa", "house1.png", "predio", 0, "base", []),
-    ("castelo", "castle.png", "predio", 0, "base", []),
-    ("grama_tile", "terrain_grass.png", "tile", 0, "base", ["--centro-tile", "1,1"]),
-    ("icone", "icon_01.png", "icone", 0, "base", []),
-    ("retrato", "avatar_01.png", "retrato", 0, "base", []),
-]
-# mutações do peão idle (e do tile) -> métricas que devem reprovar ([] = só o olho do revisor pega)
-NEGATIVOS = {
-    "m_orfaos": ["M04"], "m_contorno_1px": ["M07"], "m_contorno_preto": ["A11"], "m_blur_aa": ["M02", "M03"],
-    "m_cores_extra": ["M03"], "m_quadro_congelado": ["A03"], "m_so_desliza": ["A02"], "m_pillow": [],
-    "m_banding": [], "m_corte_borda": ["A09"], "m_semitransparente": ["M02"], "m_dither": ["M04", "M05"],
-    "m_escala_15": [], "m_pe_deslizando": ["A05"], "m_tile_emenda": ["T01"], "ia_codex": ["M03"],
-    # efeitos estragados (2026-11-05): explosão de trás para a frente, explosão cortada e poeira que não esfria
-    "m_fx_reverso": ["E05", "E07"], "m_fx_cortado": ["E06"], "m_fx_sem_esfriar": ["E05"],
+# Calibração do portão no CORPUS DE TESTE (config 'corpus_teste', hoje a Eldiran 32x32, CC0). Não é régua de
+# estilo: a régua é o Artur. Os bons têm que passar e as mutações têm que reprovar.
+
+PERFIL = "32"
+NEGATIVOS32 = {
+    "m_orfaos": ["M04"], "m_sem_contorno": ["M06"], "m_blur_aa": ["M02", "M03"], "m_cores_extra": ["M03"],
+    "m_quadro_congelado": ["A03"], "m_so_desliza": ["A02"], "m_corte_borda": ["A09"], "m_semitransparente": ["M02"],
+    "m_dither": ["M04", "M05"], "m_escala_15": [], "m_pe_deslizando": ["A05"], "m_dir_altura": ["D01", "D03"],
+    "m_dir_pe": ["D02"], "m_dir_paleta": ["D05"], "m_guia_perfil": ["G01"],
 }
-
-
-# imagem gerada por IA usada no caso negativo "ia_codex" (só existe na máquina de quem a gerou)
-IA_PADRAO = os.path.join(os.path.expanduser("~"), ".codex", "generated_images", "01a19d29-72a5-79e2-abef-c04091e8bff3",
-                         "exec-89b326d3-25de-4e59-9578-a5e0fb57a3d2.png")
 
 
 def pasta_cal():
     cfg = C.config()
-    if not C.regua_ok(cfg):
-        raise SystemExit("calibrar: configure \"regua\" (pasta com os sprites da régua) na config do motor "
-                         "(HORYS_MOTOR_CONFIG ou ~/.horys-pixel/motor.json)")
-    p = C.pasta_calibracao(cfg)
+    if not cfg.get("corpus_teste") or not os.path.isdir(cfg["corpus_teste"]):
+        raise SystemExit("calibrar: configure \"corpus_teste\" (pasta com as folhas do corpus de teste, ex.: Eldiran "
+                         "32x32 fatiada; não é régua de estilo) na config do motor (HORYS_MOTOR_CONFIG ou "
+                         "~/.horys-pixel/motor.json)")
+    p = C.pasta_calibracao(cfg, PERFIL)
     os.makedirs(os.path.join(p, "casos"), exist_ok=True)
     return cfg, p
 
@@ -119,135 +68,155 @@ def aneis(op, n):
     return out, rem
 
 
-def mutacoes(_a):
+def mutacoes32(_a):
+    """Mutações do perfil 32 a partir do corpus de teste: órfãos, contorno, blur, cores, quadro parado, deslize..."""
     cfg, p = pasta_cal()
-    R = cfg["regua"]
-    oc = np.array(C.hex2rgb(cfg["contorno_regua"]), np.uint8)
-    base = C.carregar_folha(os.path.join(R, "pawn_idle.png"), 192)
+    cp = C.config_perfil(cfg, PERFIL)
+    R, Q = cp["corpus_teste"], cp["quadro_teste"]
     rng = np.random.default_rng(7)
     casos = {}
+    carregar = lambda n: C.carregar_folha(os.path.join(R, n + ".png"), Q)
 
-    def novo(nome, quadros, tipo="personagem", quadro=192, estado="idle", flags=None):
+    def novo(nome, quadros, estado="andar", flags=None, extra=None):
         caminho = os.path.join(p, "casos", nome + ".png")
         salvar_folha(quadros, caminho)
-        casos[nome] = {"arquivo": caminho, "tipo": tipo, "quadro": quadro, "estado": estado, "flags": flags or [],
-                       "esperado": "NAO_PASSA", "metricas": NEGATIVOS.get(nome, [])}
+        casos[nome] = {"arquivo": caminho, "tipo": "personagem", "quadro": Q, "estado": estado, "flags": flags or [],
+                       "esperado": "NAO_PASSA", "metricas": NEGATIVOS32.get(nome, []), **(extra or {})}
+        return caminho
 
+    base = carregar("p05_s")
+    preto = np.array((0, 0, 0), np.uint8)
     q = []
-    for f in base:  # órfãos: 1,5% do interior vira pixel isolado de outra cor
+    for f in base:  # ruído: 8% do miolo vira o tom vizinho (baixo contraste), espalhado
         g = f.copy()
         op = g[..., 3] == 255
-        _, miolo = aneis(op, 3)
-        ys, xs = np.nonzero(miolo)
-        sel = rng.choice(len(xs), size=max(1, int(0.015 * op.sum())), replace=False)
-        for i in sel:
-            g[ys[i], xs[i], :3] = (239, 225, 171) if tuple(g[ys[i], xs[i], :3]) != (239, 225, 171) else (151, 123, 107)
+        _, miolo = aneis(op, 2)
+        ys, xs = np.nonzero(miolo & ~np.all(g[..., :3] == preto, axis=-1))
+        for i in rng.choice(len(xs), size=max(1, int(0.08 * op.sum())), replace=False):
+            g[ys[i], xs[i], :3] = np.clip(g[ys[i], xs[i], :3].astype(int) + 28, 0, 255)
         q.append(g)
     novo("m_orfaos", q)
     q = []
-    for f in base:  # contorno de 1 px: o 2º anel vira a cor de dentro
+    for f in base:  # sem contorno: o anel preto vira a cor de dentro
         g = f.copy()
         op = g[..., 3] == 255
-        (r1, r2, r3), _ = aneis(op, 3)
-        e_oc = np.all(g[..., :3] == oc, axis=-1)
-        alvo = r2 & e_oc
-        dentro = ~(r1 | r2) & op & ~e_oc
+        (r1, r2), _ = aneis(op, 2)
+        e_oc = np.all(g[..., :3] == preto, axis=-1) & r1
+        dentro = op & ~r1
         idx = ndimage.distance_transform_edt(~dentro, return_distances=False, return_indices=True)
-        g[alvo] = g[idx[0][alvo], idx[1][alvo]]
+        g[e_oc] = g[idx[0][e_oc], idx[1][e_oc]]
         q.append(g)
-    novo("m_contorno_1px", q)
+    novo("m_sem_contorno", q)
+    novo("m_blur_aa", [np.array(Image.fromarray(f).filter(ImageFilter.GaussianBlur(0.6))) for f in base])
     q = []
     for f in base:
-        g = f.copy()
-        g[np.all(g[..., :3] == oc, axis=-1) & (g[..., 3] == 255), :3] = 0
-        q.append(g)
-    novo("m_contorno_preto", q)
-    novo("m_blur_aa", [np.array(Image.fromarray(f).filter(ImageFilter.GaussianBlur(0.8))) for f in base])
-    q = []
-    for f in base:  # cores quase iguais espalhadas
         g = f.copy().astype(np.int16)
-        yy, xx = np.mgrid[0:192, 0:192]
-        m = (g[..., 3] == 255) & ((xx + yy) % 5 == 0) & ~np.all(g[..., :3] == oc, axis=-1)
+        yy, xx = np.mgrid[0:Q, 0:Q]
+        m = (g[..., 3] == 255) & ((xx + yy) % 3 == 0) & ~np.all(g[..., :3] == 0, axis=-1)
         g[m, 0] = np.clip(g[m, 0] + 6, 0, 255)
         q.append(g.astype(np.uint8))
     novo("m_cores_extra", q)
     q = [f.copy() for f in base]
-    q[4] = q[3].copy()
+    q[2] = q[1].copy()
     novo("m_quadro_congelado", q)
-    desloc = [0, 1, 1, 2, 2, 1, 1, 0]
-    novo("m_so_desliza", [np.roll(base[0], d, axis=0) for d in desloc])
-    escuro = np.array((71, 65, 68), np.uint8)  # o tom mais escuro de preenchimento do peão
-    q = []
-    for f in base:  # pillow: anel escuro logo dentro do contorno
-        g = f.copy()
-        op = g[..., 3] == 255
-        (r1, r2, r3, r4), _ = aneis(op, 4)
-        g[(r3 | r4) & ~np.all(g[..., :3] == oc, axis=-1), :3] = escuro
-        q.append(g)
-    novo("m_pillow", q)
-    q = []
-    for f in base:  # banding: faixas paralelas ao contorno
-        g = f.copy()
-        op = g[..., 3] == 255
-        rs, _ = aneis(op, 8)
-        m = (rs[4] | rs[6]) & ~np.all(g[..., :3] == oc, axis=-1)
-        g[m, :3] = (173, 160, 129)
-        q.append(g)
-    novo("m_banding", q)
-    q = []
-    for f in base:
-        g = np.zeros_like(f)
-        g[:, :192 - 75] = f[:, 75:]
-        q.append(g)
-    novo("m_corte_borda", q)
+    novo("m_so_desliza", [np.roll(base[0], d, axis=0) for d in (0, 1, 0, 1)])
+    novo("m_corte_borda", [np.pad(f[:, 12:], ((0, 0), (0, 12), (0, 0))) for f in base])
     q = []
     for f in base:
         g = f.copy()
         op = g[..., 3] == 255
-        _, miolo = aneis(op, 3)
+        _, miolo = aneis(op, 2)
         g[miolo, 3] = 150
         q.append(g)
     novo("m_semitransparente", q)
     q = []
-    for f in base:  # dither em xadrez no cabelo
+    for f in base:  # dither em xadrez no maior material (não preto, não pele)
         g = f.copy()
-        yy, xx = np.mgrid[0:192, 0:192]
-        m = np.all(g[..., :3] == (151, 123, 107), axis=-1) & ((xx + yy) % 2 == 0)
-        g[m, :3] = (94, 84, 85)
+        op = g[..., 3] == 255
+        cs, ct = np.unique(g[..., :3][op].reshape(-1, 3), axis=0, return_counts=True)
+        ordem = [c for c in cs[np.argsort(-ct)] if tuple(c) not in ((0, 0, 0), (255, 229, 229))]
+        a, b = ordem[0], ordem[1]
+        yy, xx = np.mgrid[0:Q, 0:Q]
+        m = np.all(g[..., :3] == a, axis=-1) & ((xx + yy) % 2 == 0)
+        g[m, :3] = b
         q.append(g)
     novo("m_dither", q)
     q = []
-    for f in base:  # escala 1,5x (pixels de tamanhos misturados)
-        big = np.array(Image.fromarray(f).resize((288, 288), Image.NEAREST))
-        q.append(big[48:240, 48:240])
+    for f in base:
+        big = np.array(Image.fromarray(f).resize((Q * 3 // 2, Q * 3 // 2), Image.NEAREST))
+        o = Q // 4
+        q.append(big[o:o + Q, o:o + Q])
     novo("m_escala_15", q)
-    novo("m_pe_deslizando", [np.roll(f, 3 if i % 2 else 0, axis=0) for i, f in enumerate(base)])
-    tile = np.array(Image.open(os.path.join(R, "terrain_grass.png")).convert("RGBA"))
-    t = tile.copy()
-    t[64:128, 124:128] = np.roll(t[64:128, 124:128], 7, axis=0)
-    caminho = os.path.join(p, "casos", "m_tile_emenda.png")
-    Image.fromarray(t).save(caminho)
-    casos["m_tile_emenda"] = {"arquivo": caminho, "tipo": "tile", "quadro": 0, "estado": "base",
-                              "flags": ["--centro-tile", "1,1"], "esperado": "NAO_PASSA", "metricas": ["T01"]}
-    ia = cfg["calibracao_ia"] if "calibracao_ia" in cfg else IA_PADRAO
-    if ia and os.path.exists(ia):
-        im = Image.open(ia).convert("RGBA").resize((192, 192), Image.LANCZOS)
-        caminho = os.path.join(p, "casos", "ia_codex.png")
-        im.save(caminho)
-        casos["ia_codex"] = {"arquivo": caminho, "tipo": "personagem", "quadro": 0, "estado": "base", "flags": [],
-                             "esperado": "NAO_PASSA", "metricas": ["M03"]}
-    exp = C.carregar_folha(os.path.join(R, "fx", "Explosion_01.png"), 192)
-    novo("m_fx_reverso", exp[::-1], tipo="efeito", estado="explosao")
-    novo("m_fx_cortado", exp[:max(3, len(exp) // 2)], tipo="efeito", estado="explosao")
-    po = C.carregar_folha(os.path.join(R, "fx", "Dust_01.png"), 64)
-    novo("m_fx_sem_esfriar", [po[0]] * 2 + [po[0]] * (len(po) - 2), tipo="efeito", quadro=64, estado="poeira")
-    for nome, arq, tipo, quadro, estado, flags in POSITIVOS:
-        casos[nome] = {"arquivo": os.path.join(R, arq), "tipo": tipo, "quadro": quadro, "estado": estado,
-                       "flags": flags, "esperado": "PASSA", "metricas": []}
+    novo("m_pe_deslizando", [np.roll(f, -3 if i % 2 else 0, axis=0) for i, f in enumerate(base)], estado="idle")
+    # direções: s, n, e da mesma figura com uma estragada
+    s_, n_, e_ = carregar("p05_s"), carregar("p05_n"), carregar("p05_e")
+
+    def escala_vert(fs, k):
+        out = []
+        for f in fs:
+            op = f[..., 3] > 0
+            ys = np.nonzero(op.any(1))[0]
+            h = ys.max() - ys.min() + 1
+            im = Image.fromarray(f[ys.min():ys.max() + 1]).resize((f.shape[1], int(h * k)), Image.NEAREST)
+            g = np.zeros_like(f)
+            a = np.array(im)
+            a = a[-(ys.max() + 1):]
+            g[ys.max() + 1 - a.shape[0]:ys.max() + 1] = a
+            out.append(g)
+        return out
+
+    def dir_caso(nome, ns, flags_extra=None):
+        caminhos = {}
+        for d, fs in (("s", s_), ("n", ns), ("e", e_)):
+            caminhos[d] = os.path.join(p, "casos", f"{nome}_{d}.png")
+            salvar_folha(fs, caminhos[d])
+        casos[nome] = {"arquivo": caminhos["s"], "tipo": "personagem", "quadro": Q, "estado": "andar_s",
+                       "flags": ["--folha", f"andar_n={caminhos['n']}", "--folha", f"andar_e={caminhos['e']}"] + (flags_extra or []),
+                       "esperado": "NAO_PASSA", "metricas": NEGATIVOS32[nome]}
+
+    dir_caso("m_dir_altura", escala_vert(n_, 1.25))
+    dir_caso("m_dir_pe", [np.roll(f, -3, axis=0) for f in n_])
+    q = []
+    for f in n_:  # costas com a paleta trocada (5 tons a mais, em degradê)
+        g = f.copy()
+        op = g[..., 3] == 255
+        ys = np.nonzero(op)[0]
+        for k, y in enumerate(range(ys.min(), ys.max() + 1)):
+            m = op[y] & ~np.all(g[y, :, :3] == 0, axis=-1)
+            g[y, m, 2] = np.clip(g[y, m, 2].astype(int) + (k % 6) * 9, 0, 255)
+        q.append(g)
+    dir_caso("m_dir_paleta", q)
+    # guia: a vista de lado contra a guia de frente (desenhou de perfil quando a guia pedia frente)
+    guia = os.path.join(p, "casos", "guia_frente.png")
+    salvar_folha(s_[:1], guia)
+    cam = novo("m_guia_perfil", e_)
+    casos["m_guia_perfil"]["flags"] = ["--guia", f"andar={guia}"]
+    # positivos: a régua inteira, e cada figura com as 3 direções juntas (D01–D05 têm que passar) e com a guia de si mesma
+    import glob
+    figs = {}
+    for arq in sorted(glob.glob(os.path.join(R, "p*.png"))):
+        nome = os.path.basename(arq)[:-4]
+        flags = ["--com-equipamento"] if nome == "p18_e" else []  # segura um item (21 cores)
+        casos["r_" + nome] = {"arquivo": arq, "tipo": "personagem", "quadro": Q, "estado": "andar", "flags": flags,
+                              "esperado": "PASSA", "metricas": []}
+        figs.setdefault(nome[:3], {})[nome[4:]] = arq
+    for fig, ds in figs.items():
+        if len(ds) == 3:
+            casos["d_" + fig] = {"arquivo": ds["s"], "tipo": "personagem", "quadro": Q, "estado": "andar_s",
+                                 "flags": ["--folha", f"andar_n={ds['n']}", "--folha", f"andar_e={ds['e']}",
+                                           "--com-equipamento", "--guia", f"andar_s={ds['s']}"],
+                                 "esperado": "PASSA", "metricas": []}
     with open(os.path.join(p, "casos.json"), "w", encoding="utf-8") as f:
         json.dump(casos, f, ensure_ascii=False, indent=1)
     print(len(casos), "casos em", os.path.join(p, "casos.json"))
     return 0
+
+
+def mutacoes(_a):
+    if PERFIL != "32":
+        print(f"perfil {PERFIL} sem corpus de teste: só o perfil 32 tem calibração", file=sys.stderr)
+        return 2
+    return mutacoes32(_a)
 
 
 def metricas(_a):
@@ -258,7 +227,8 @@ def metricas(_a):
     for nome, c in casos.items():
         saida = os.path.join(p, "medidas", nome)
         cmd = [sys.executable, os.path.join(AQUI, "medir.py"), "--tipo", c["tipo"], "--quadro", str(c["quadro"]),
-               "--folha", f"{c['estado']}={c['arquivo']}", "--saida", saida, "--modo", "regua", "--asset", nome] + c["flags"]
+               "--folha", f"{c['estado']}={c['arquivo']}", "--saida", saida, "--modo", "regua", "--asset", nome,
+               "--perfil", PERFIL] + c["flags"]
         subprocess.run(cmd, capture_output=True, text=True)
         med = json.load(open(os.path.join(saida, "medidas.json"), encoding="utf-8"))
         ids = sorted({x["id"] for x in med["falhas"]})
@@ -323,12 +293,15 @@ def resumo(_a):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
+    ap.add_argument("--perfil", choices=["16", "32", "64"], default="32")
     sub.add_parser("mutacoes")
     sub.add_parser("metricas")
     pp = sub.add_parser("pacotes")
     pp.add_argument("--casos", required=True)
     sub.add_parser("resumo")
     a = ap.parse_args()
+    global PERFIL
+    PERFIL = a.perfil
     return {"mutacoes": mutacoes, "metricas": metricas, "pacotes": pacotes, "resumo": resumo}[a.cmd](a)
 
 

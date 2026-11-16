@@ -47,7 +47,8 @@ class Contexto:
         self.pend.ouvintes.append(self._ao_resolver)
 
     # ------------------------------------------------------------ Aseprite
-    async def aseprite(self, cmd: str, args: dict | None = None, timeout: float = 60.0) -> dict:
+    async def aseprite(self, cmd: str, args: dict | None = None, timeout: float | None = None) -> dict:
+        """Pede um comando à extensão. Sem 'timeout', usa o prazo do comando (ponte.PRAZOS)."""
         return await self.ponte.pedir(cmd, args, timeout)
 
     async def ui(self, cmd: str, args: dict) -> bool:
@@ -55,7 +56,7 @@ class Contexto:
         if not self.ponte.conectado:
             return False
         try:
-            await self.ponte.pedir(cmd, args, timeout=10)
+            await self.ponte.pedir(cmd, args, timeout=10, espera_conexao=0)
             return True
         except Exception as e:  # painel é opcional: nunca derruba a ferramenta
             log.info("ui %s falhou: %s", cmd, e)

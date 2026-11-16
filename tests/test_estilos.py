@@ -147,7 +147,8 @@ def test_grade_com_estilo_exemplo(home, tmp_path):
                        capture_output=True, text=True, encoding="utf-8", env=env, cwd=str(R))
     assert r.returncode in (0, 1), r.stdout + r.stderr
     chec = (tmp_path / "s" / "boneco_boneco_checagem.txt").read_text(encoding="utf-8")
-    assert "fora da paleta" not in chec and "régua não configurada" in chec
+    assert "fora da paleta" not in chec and "prancha boas práticas" in chec   # sem régua externa
+    assert (tmp_path / "s" / "boneco_boneco_regua.png").exists()
     im = np.array(Image.open(tmp_path / "s" / "boneco_boneco.png").convert("RGBA"))
     assert (np.all(im[..., :3] == C.hex2rgb("#1c1828"), axis=-1) & (im[..., 3] == 255)).any()
 
@@ -166,7 +167,7 @@ def test_estilo_do_artur_reproduz_config_da_skill(home):
             assert os.path.samefile(c[k], os.path.join(s["kb"], v))
         else:
             assert c[k] == v, k
-    assert c["regua_nome"] == "Tiny"
+    assert c["regua_nome"] == "aprovados do Artur"
     assert all(p.exists() for p in e.leitura)
     modelo = json.loads((R / "estilos" / "horys-pixel-liso.exemplo.json").read_text(encoding="utf-8"))
     assert modelo == e.dados

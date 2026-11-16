@@ -143,6 +143,10 @@ async def salvar(ctx, a):
         p.parent.mkdir(parents=True, exist_ok=True)
         arq = str(p)
     d = await ctx.aseprite("salvar", {"arquivo": arq, "copia": bool(a.get("copia"))})
+    seq = d.get("sequencia") or []
+    if seq:
+        return [texto(f"salvo como sequência ({len(seq)} arquivos, um por quadro; o formato não guarda animação): "
+                      f"{seq[0]} … {seq[-1]}. Para um arquivo só, salve .aseprite ou use horys_exportar")]
     return [texto(f"salvo: {d.get('arquivo')}")]
 
 

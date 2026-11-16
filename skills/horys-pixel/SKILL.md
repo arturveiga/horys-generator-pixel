@@ -1,9 +1,11 @@
 ---
 name: horys-pixel
-description: Gera pixel art de qualidade desenhando AO VIVO no Aseprite do usuário, no estilo dele (pacote de estilo; no Hunvix, o Horys Pixel Liso com régua Tiny Swords). Faz personagens, NPCs, inimigos, bosses, criaturas, tiles, prédios, props, ícones, UI e efeitos, com animação. Pergunta no painel do Aseprite até o pedido ficar claro, pede uma imagem de referência (de qualquer origem) ou gera uma, converte por moda, limpa à mão na tela, passa no portão de medidas e no revisor exigente, e entrega .aseprite fatiado, PNG, GIF e .grade. Funciona com Claude (Codex é opcional), com terminal ou sem (botão Gerar do Aseprite). Use sempre que pedirem para criar, animar, refazer ou ajustar arte em pixel para os jogos do usuário, mesmo sem citar a skill.
+description: Gera pixel art de qualidade desenhando AO VIVO no Aseprite do usuário, no estilo dele (pacote de estilo; sem régua externa: a régua são os aprovados do Artur). Faz personagens, NPCs, inimigos, bosses, criaturas, tiles, prédios, props, ícones, UI e efeitos, com animação. Pergunta no painel do Aseprite até o pedido ficar claro, pede uma imagem de referência (de qualquer origem) ou gera uma, converte por moda, limpa à mão na tela, passa no portão de medidas e no revisor exigente, e entrega .aseprite fatiado, PNG, GIF e .grade. Funciona com Claude (Codex é opcional), com terminal ou sem (botão Gerar do Aseprite). Use sempre que pedirem para criar, animar, refazer ou ajustar arte em pixel para os jogos do usuário, mesmo sem citar a skill.
 ---
 
 # horys-pixel (gerar)
+
+> **Personagem, monstro ou robô novo: use `skills/horys-base-e-pele/SKILL.md`** (fluxo único, 2026-11-14, perfeicao.md). Esta skill fica como consulta.
 
 Tudo passa pelas ferramentas MCP `horys_*` (servidor `horys`). Não rode scripts soltos para desenhar: o desenho
 vive no Aseprite; o motor de medidas roda dentro das ferramentas.

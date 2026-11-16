@@ -592,8 +592,10 @@ async def gerar_versao(ctx, a) -> dict:
 
 
 @ferramenta("horys_portao", """PORTÃO DE MEDIDAS do sprite aberto: exporta as partes de cada estado (tag) para .grade
-em <pasta>/vNN, roda o motor (grade.py gerar: folha, _8x, silhueta, _regua, _regua_anim, gif, _checagem.txt,
-medidas/ e o .aseprite fatiado) e devolve APROVADO/REPROVADO com as falhas. Reprovado: corrija e rode de novo; não
+em <pasta>/vNN, roda o motor (horys_pixel.motor.grade gerar, o mesmo da skill horys-pixel-liso: perfis 16/32/64
+pela altura, contorno selout, D01–D05 entre direções, G01 contra a guia; folha, _8x, silhueta, _regua = prancha boas
+práticas + aprovados do Artur, gif, _checagem.txt, medidas/ e o .aseprite fatiado) e devolve APROVADO/REPROVADO com
+as falhas. Reprovado: corrija e rode de novo; não
 chame o revisor com o portão reprovado.""",
             {"estados": LISTA_STR, "pasta": STR, "versao": STR})
 async def portao(ctx, a):
@@ -912,13 +914,17 @@ async def estilo_novo(ctx, a):
     return [texto(f"pacote criado em {pasta}\nRevise {Path(pasta) / 'estilo.md'} com a pessoa.\nanálise: {resumo}")]
 
 
-@ferramenta("horys_estilo_calibrar", """Confere se o portão de medidas está calibrado na régua do estilo: gera as
-mutações (versões estragadas da régua) e mede bons e estragados. Os bons têm que passar todos e os estragados têm que
-reprovar todos. Leva alguns minutos.""", {"estilo": STR})
+@ferramenta("horys_estilo_calibrar", """Confere se o portão de medidas (perfil 32) está calibrado no corpus de teste
+da config do motor ("corpus_teste"; não é régua de estilo): gera as mutações (versões estragadas do corpus) e mede bons
+e estragados. Os bons têm que passar todos e os estragados têm que reprovar todos. Leva alguns minutos.""",
+            {"estilo": STR})
 async def estilo_calibrar(ctx, a):
+    from .. import estilos
     est = _estilo(a.get("estilo"))
-    if not est.regua_disponivel:
-        raise ErroFerramenta("o estilo não tem régua: escolha os sprites-régua primeiro (regua.pasta no estilo.json)")
+    corpus = estilos.config_motor(est).get("corpus_teste")
+    if not corpus or not Path(corpus).is_dir():
+        raise ErroFerramenta("sem corpus de teste: ponha \"corpus_teste\" (pasta com as folhas do corpus) em "
+                             "~/.horys-pixel/motor.json ou em \"motor\" do estilo.json")
     c1, o1 = await _rodar_motor("calibrar", ["mutacoes"], est, 1800)
     c2, o2 = await _rodar_motor("calibrar", ["metricas"], est, 1800)
     return [texto(f"mutacoes (código {c1}):\n{o1[-1500:]}\n\nmetricas (código {c2}):\n{o2[-3000:]}")]

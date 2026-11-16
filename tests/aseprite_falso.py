@@ -56,6 +56,7 @@ class AsepriteFalso:
         self.ui = []          # mensagens de UI recebidas
         self.ws = None
         self.tarefa = None
+        self.atrasos: dict[str, float] = {}   # cmd -> segundos antes de responder (simula alerta modal/gravação lenta)
 
     async def conectar(self):
         self.ws = await connect(f"ws://127.0.0.1:{self.porta}/", max_size=64 * 2 ** 20)
@@ -82,6 +83,8 @@ class AsepriteFalso:
             m = json.loads(bruto)
             if m.get("t") != "req":
                 continue
+            if m["cmd"] in self.atrasos:
+                await asyncio.sleep(self.atrasos[m["cmd"]])
             try:
                 data = self.tratar(m["cmd"], m.get("args") or {})
                 r = {"t": "res", "id": m["id"], "ok": True, "data": data}

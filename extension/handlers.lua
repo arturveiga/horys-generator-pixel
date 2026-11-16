@@ -334,22 +334,52 @@ function H.selecionar_sprite(a)
   return H.status()
 end
 
--- Formatos em que o Aseprite mostra uma janela de opções antes de salvar (travaria o editor)
-local FORMATOS_COM_JANELA = { "gif", "jpeg", "webp", "tga", "svg", "css" }
+-- Janelas que o Aseprite abre ao salvar e que esperam um clique. Um alerta modal processa eventos enquanto
+-- espera: os outros comandos continuam respondendo e só o 'salvar' fica preso (o horysd desiste em 60 s).
+--   <formato>.show_alert: janela de opções do formato (gif, jpeg...)
+--   save_file.show_file_format_doesnt_support_alert: "PNG não suporta camadas/quadros... continuar?"
+--   save_file.show_export_animation_in_sequence_alert: "salvar a animação como sequência de arquivos?"
+local ALERTAS_AO_SALVAR = {
+  { "gif", "show_alert" }, { "jpeg", "show_alert" }, { "webp", "show_alert" }, { "tga", "show_alert" },
+  { "svg", "show_alert" }, { "css", "show_alert" },
+  { "save_file", "show_file_format_doesnt_support_alert" },
+  { "save_file", "show_export_animation_in_sequence_alert" },
+}
+H.ALERTAS_AO_SALVAR = ALERTAS_AO_SALVAR
 
 local function semJanelasDeOpcoes(fn)
   local antes = {}
-  for _, f in ipairs(FORMATOS_COM_JANELA) do
+  for i, a in ipairs(ALERTAS_AO_SALVAR) do
     pcall(function()
-      antes[f] = app.preferences[f].show_alert
-      app.preferences[f].show_alert = false
+      local v = app.preferences[a[1]][a[2]]
+      app.preferences[a[1]][a[2]] = false
+      antes[i] = v
     end)
   end
   local ok, erro = pcall(fn)
-  for f, v in pairs(antes) do
-    pcall(function() app.preferences[f].show_alert = v end)
+  for i, v in pairs(antes) do
+    local a = ALERTAS_AO_SALVAR[i]
+    pcall(function() app.preferences[a[1]][a[2]] = v end)
   end
   if not ok then error(erro, 0) end
+end
+
+-- Formato sem animação (png, jpg...) com vários quadros: o Aseprite grava um arquivo por quadro
+-- (folha.png -> folha1.png, folha2.png...). Devolve a lista ordenada ou nil.
+local function sequenciaGravada(destino)
+  local pasta, titulo, ext = app.fs.filePath(destino), app.fs.fileTitle(destino), app.fs.fileExtension(destino)
+  if ext == "" then return nil end
+  local achados = {}
+  local padrao = "^" .. titulo:gsub("%p", "%%%0") .. "(%d+)%." .. ext:gsub("%p", "%%%0") .. "$"
+  for _, nome in ipairs(app.fs.listFiles(pasta ~= "" and pasta or ".")) do
+    local n = nome:match(padrao)
+    if n then achados[#achados + 1] = { tonumber(n), app.fs.joinPath(pasta, nome) } end
+  end
+  if #achados == 0 then return nil end
+  table.sort(achados, function(a, b) return a[1] < b[1] end)
+  local lista = J.lista({})
+  for i, it in ipairs(achados) do lista[i] = it[2] end
+  return lista
 end
 
 function H.salvar(a)
@@ -374,7 +404,11 @@ function H.salvar(a)
       app.command.SaveFileAs{ ui = false, filename = destino }
     end
   end)
-  if not app.fs.isFile(destino) then falha("o Aseprite não gravou " .. destino) end
+  if not app.fs.isFile(destino) then
+    local seq = (#s.frames > 1) and sequenciaGravada(destino) or nil
+    if seq then return { arquivo = destino, sequencia = seq } end
+    falha("o Aseprite não gravou " .. destino)
+  end
   return { arquivo = destino }
 end
 

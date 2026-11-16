@@ -170,11 +170,12 @@ def test_grade_minima_gera_folha_sem_regua(amb):
     assert ((im[..., 3] > 0) & (im[..., 3] < 255)).any()   # sombra no chão
     for suf in ("_8x.png", "_silhueta.png", ".gif", "_quadros_4x.png", "_checagem.txt"):
         assert (saida / ("boneco_boneco" + suf)).exists(), suf
-    assert not (saida / "boneco_boneco_regua.png").exists()
+    # sem régua externa: _regua.png é a prancha "boas práticas" (1×–8× nos chãos da config); sem _regua_anim
+    assert (saida / "boneco_boneco_regua.png").exists()
     assert not (saida / "boneco_boneco_regua_anim.png").exists()
     chec = (saida / "boneco_boneco_checagem.txt").read_text(encoding="utf-8")
     assert "PORTÃO DE MEDIDAS" in chec
-    assert "régua não configurada" in chec
+    assert "prancha boas práticas" in chec
     assert ".aseprite não gerado" in chec
     assert "fora da paleta" not in chec
     med = json.loads((saida / "medidas" / "boneco" / "medidas.json").read_text(encoding="utf-8"))
@@ -261,9 +262,9 @@ def test_pixel_review_cli_json(amb):
 
 # ------------------------------------------------------------------ calibrar e conceito
 
-def test_calibrar_sem_regua_avisa(amb):
+def test_calibrar_sem_corpus_avisa(amb):
     r = rodar(["-m", "horys_pixel.motor.calibrar", "mutacoes"], amb["env"])
-    assert r.returncode != 0 and "regua" in (r.stdout + r.stderr)
+    assert r.returncode != 0 and "corpus_teste" in (r.stdout + r.stderr)
 
 
 def test_conceito_limpar(amb):

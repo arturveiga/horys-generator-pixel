@@ -2,6 +2,7 @@
 
   horys daemon                    sobe o horysd (normalmente a ponte MCP já sobe sozinha)
   horys status                    horysd, Aseprite e sprite ativo
+  horys teste-vivo                teste rápido com o Aseprite aberto: conectar, criar, desenhar, ler, salvar
   horys token [--novo]            mostra (ou troca) o token de pareamento — não cole em chat
   horys instalar [--tudo] [--simular] [--extensao] [--confiar] [--claude] [--codex] [--skills] [--inicializacao]
   horys estilos [nome]            pacotes de estilo
@@ -52,6 +53,9 @@ def main(argv=None):
     if argv[:1] == ["colagem"]:
         from .sequencia.colagem import main as colagem_main
         return colagem_main(argv[1:])
+    if argv[:1] == ["estudio"]:
+        from .estudio import servidor
+        return servidor.main(argv[1:])
     if argv[:1] == ["treino"]:
         return subprocess.call([sys.executable, "-m", "horys_pixel.treino", *argv[1:]])
     ap = argparse.ArgumentParser(prog="horys", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -59,6 +63,8 @@ def main(argv=None):
     p = sub.add_parser("daemon")
     p.add_argument("--porta", type=int, default=0)
     sub.add_parser("status")
+    sub.add_parser("teste-vivo")
+    sub.add_parser("reiniciar", help="para o horysd no ar e sobe um novo (depois de mudar o código)")
     p = sub.add_parser("token")
     p.add_argument("--novo", action="store_true")
     p = sub.add_parser("instalar")
@@ -98,6 +104,12 @@ def main(argv=None):
         except Exception as e:
             print(f"horysd fora do ar ou recusou: {e}")
             return 2
+    if a.cmd == "reiniciar":
+        from . import reiniciar
+        return reiniciar.main()
+    if a.cmd == "teste-vivo":
+        from . import teste_vivo
+        return teste_vivo.main()
     if a.cmd == "instalar":
         from . import instalar as I
         base = Path(a.pasta_aseprite) if a.pasta_aseprite else None

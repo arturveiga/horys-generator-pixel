@@ -60,8 +60,11 @@ Desenha pixels exatos: 'paleta' {letra: '#rrggbb'} + 'linhas' (uma string por li
 '.' e espaço não mexem; uma letra mapeada para '#00000000' apaga. x/y deslocam o bloco. Carimbos: 'stamps'
 {nome:{rows:[...], palette?}} + 'place' [[nome, x, y, 'h'|'v'|'hv'?], ...]. Dado grande: 'arquivo' = um .json com
 esses mesmos campos. 'camada' (criada se faltar) e 'quadro' (0-based) usam os ativos se omitidos.
+'trava': lista de '#hex' (a paleta do asset) ou 'oficio:<nome>' (paleta da base): cada cor é puxada para a mais
+próxima (CIELAB) e a resposta diz o que mudou; ΔE > 12 = a paleta não tem esse tom. Vale para o sprite até
+'trava': [] desligar.
 
-Parâmetros: `paleta`, `linhas`, `x`, `y`, `camada`, `quadro`, `stamps`, `place`, `arquivo` (`*` = obrigatório)
+Parâmetros: `paleta`, `linhas`, `x`, `y`, `camada`, `quadro`, `stamps`, `place`, `arquivo`, `trava` (`*` = obrigatório)
 
 ### `horys_set_pixels`
 
@@ -77,9 +80,9 @@ Parâmetros: `camada`, `quadro`, `rect`, `paleta`, `composto` (`*` = obrigatóri
 
 ### `horys_ver`
 
-Mostra o sprite como imagem. 'critica': true = cor | cinza (valores) | silhueta | 1× e 2× numa imagem pequena (o melhor jeito de julgar). 'rect' amplia um detalhe. Sem camada = composto.
+Mostra o sprite como imagem. Sem 'modo': 'critica' true = cor | cinza (valores) | silhueta | 1× e 2× numa imagem pequena (o melhor jeito de julgar); 'rect' amplia um detalhe. 'modo': 'comparar' (camada de referência à esquerda, arte sem ela à direita; 'referencia' = nome da camada, padrão a que começa com refer/guia), 'filmstrip' (todos os quadros numa imagem: o jeito certo de revisar animação), 'onion' (quadro opaco sobre vizinhos fantasmas; 'antes', 'depois', 'opacidade'), 'diff' (texto do que mudou entre 'de' e 'ate'). Sem camada = composto.
 
-Parâmetros: `quadro`, `camada`, `rect`, `critica`, `escala` (`*` = obrigatório)
+Parâmetros: `quadro`, `camada`, `rect`, `critica`, `escala`, `modo`, `referencia`, `antes`, `depois`, `opacidade`, `de`, `ate` (`*` = obrigatório)
 
 ### `horys_mudancas`
 
@@ -175,11 +178,13 @@ Parâmetros: `nome` (`*` = obrigatório)
 
 Lê ou ajusta a ficha do sprite ativo (estilo, tipo, partes de baixo para cima, contorno auto|suave|nenhum, cor_contorno, sombra, sem_contorno [hex], sem_borda [hex], limite_cores, ritmo, pasta de saída; asset modular: modular, preset_partes, juncoes [{nome, inferior, superior, movel}], partes_oculto). Sem campos, só mostra.
 
-Parâmetros: `estilo`, `nome`, `tipo`, `partes`, `contorno`, `cor_contorno`, `sombra`, `sem_contorno`, `sem_borda`, `limite_cores`, `ritmo`, `pasta`, `estado`, `pedido`, `descricao`, `modular`, `preset_partes`, `juncoes`, `partes_oculto`, `componentes_max`, `espessura_fina`, `motivo` (`*` = obrigatório)
+Parâmetros: `estilo`, `nome`, `tipo`, `partes`, `contorno`, `cor_contorno`, `sombra`, `sem_contorno`, `sem_borda`, `limite_cores`, `ritmo`, `pasta`, `estado`, `pedido`, `descricao`, `modular`, `preset_partes`, `juncoes`, `partes_oculto`, `componentes_max`, `espessura_fina`, `motivo`, `referencia`, `angulo` (`*` = obrigatório)
 
 ### `horys_asset_novo`
 
-Cria o sprite de um asset pela ficha, de uma vez: quadro QxQ (padrão 192; pé no
+OBRIGATÓRIOS: 'referencia' = caminho de uma imagem de referência EM PIXEL ART (nativa
+ou ampliada; ilustração lisa, foto ou render são recusados) e 'angulo' = top-down | 3/4 top-down | lateral | frontal |
+3/4 frontal | isometrico. Sem os dois, pergunte ao usuário. Cria o sprite de um asset pela ficha, de uma vez: quadro QxQ (padrão 192; pé no
 pivô (Q/2, Q·127/192) = (96,127)), camadas 'sombra' (opacidade 77) e 'contorno' embaixo, uma camada por PARTE de baixo
 para cima (padrão ['desenho']) e 'revisao' (oculta) em cima, quadros e tags por estado
 (estados [{nome, quadros, ms}]), paleta do estilo travada. Desenhe só nas partes: contorno e sombra são gerados por
@@ -187,7 +192,7 @@ horys_contorno, como o portão espera. Com 'preset_partes' (ex.: 'humanoide-ferr
 do preset, a camada 'referencia' (oculta, para o desenho completo) e a ficha com modular, preset_partes, juncoes
 (contratos de junção) e partes_oculto; o portão passa a exigir as partes sem erro (horys_partes_checar).
 
-Parâmetros: `estilo`, `nome`, `tipo`, `partes`, `contorno`, `cor_contorno`, `sombra`, `sem_contorno`, `sem_borda`, `limite_cores`, `ritmo`, `pasta`, `estado`, `pedido`, `descricao`, `modular`, `preset_partes`, `juncoes`, `partes_oculto`, `componentes_max`, `espessura_fina`, `motivo`, `quadro`, `estados` (`*` = obrigatório)
+Parâmetros: `estilo`, `nome`, `tipo`, `partes`, `contorno`, `cor_contorno`, `sombra`, `sem_contorno`, `sem_borda`, `limite_cores`, `ritmo`, `pasta`, `estado`, `pedido`, `descricao`, `modular`, `preset_partes`, `juncoes`, `partes_oculto`, `componentes_max`, `espessura_fina`, `motivo`, `referencia`*, `angulo`*, `quadro`, `estados` (`*` = obrigatório)
 
 ### `horys_paleta_estilo`
 
@@ -239,8 +244,10 @@ Parâmetros: `imagem`*, `altura`*, `grade`, `margem_min` (`*` = obrigatório)
 ### `horys_portao`
 
 PORTÃO DE MEDIDAS do sprite aberto: exporta as partes de cada estado (tag) para .grade
-em <pasta>/vNN, roda o motor (grade.py gerar: folha, _8x, silhueta, _regua, _regua_anim, gif, _checagem.txt,
-medidas/ e o .aseprite fatiado) e devolve APROVADO/REPROVADO com as falhas. Reprovado: corrija e rode de novo; não
+em <pasta>/vNN, roda o motor (horys_pixel.motor.grade gerar, o mesmo da skill horys-pixel-liso: perfis 16/32/64
+pela altura, contorno selout, D01–D05 entre direções, G01 contra a guia; folha, _8x, silhueta, _regua = prancha boas
+práticas + aprovados do Artur, gif, _checagem.txt, medidas/ e o .aseprite fatiado) e devolve APROVADO/REPROVADO com
+as falhas. Reprovado: corrija e rode de novo; não
 chame o revisor com o portão reprovado.
 
 Parâmetros: `estados`, `pasta`, `versao` (`*` = obrigatório)
@@ -318,9 +325,9 @@ Parâmetros: `nome`*, `imagens`*, `autor`, `licenca` (`*` = obrigatório)
 
 ### `horys_estilo_calibrar`
 
-Confere se o portão de medidas está calibrado na régua do estilo: gera as
-mutações (versões estragadas da régua) e mede bons e estragados. Os bons têm que passar todos e os estragados têm que
-reprovar todos. Leva alguns minutos.
+Confere se o portão de medidas (perfil 32) está calibrado no corpus de teste
+da config do motor ("corpus_teste"; não é régua de estilo): gera as mutações (versões estragadas do corpus) e mede bons
+e estragados. Os bons têm que passar todos e os estragados têm que reprovar todos. Leva alguns minutos.
 
 Parâmetros: `estilo` (`*` = obrigatório)
 
@@ -459,12 +466,13 @@ fixa = uma transformação para a sequência inteira, preserva quique e agachame
 trava de identidade ('base' = PNG da base aprovada no tamanho final e 'decalques' [{nome, rect [x,y,w,h], busca}]) →
 limpeza (órfãos e borda) → validação objetiva (canvas, alpha, paleta, proporção, deriva, cintilação, quadros
 repetidos, loop, identidade). 'proteger' = cores (#hex) que podem mudar sem a forma mudar (brilho do olho).
-'saida_folha' = pasta onde gravar a folha PNG + JSON (Aseprite hash, lido pela Godot 4) + GIF. Uma grade (imagem) só entra com o portão de entrada APROVADO, salvo 'forcar' + 'motivo'.
+'prancha' = PNG com poses soltas sem grade (achadas por componentes, em ordem de leitura); 'franja' (padrão true)
+tira o anel quase-fundo colado no contorno. 'saida_folha' = pasta onde gravar a folha PNG + JSON (Aseprite hash, lido pela Godot 4) + GIF. Uma grade (imagem) só entra com o portão de entrada APROVADO, salvo 'forcar' + 'motivo'.
 Escreve na camada (padrão: a de cima da ficha) a partir do quadro 'quadro_inicial', cria a
 tag 'estado' e devolve o relatório (deriva, % de pixels que piscam antes e depois). Depois: horys_contorno →
 horys_portao.
 
-Parâmetros: `fonte`*, `altura`*, `linhas`, `colunas`, `fps`, `estado`, `camada`, `quadro_inicial`, `ms`, `plano`, `n`, `escala`, `fator`, `base`, `decalques`, `limpar_min`, `regularizar`, `cor_fundo`, `proteger`, `forcar`, `motivo`, `preset`, `loop`, `saida_folha` (`*` = obrigatório)
+Parâmetros: `fonte`*, `altura`*, `linhas`, `colunas`, `fps`, `estado`, `camada`, `quadro_inicial`, `ms`, `plano`, `n`, `escala`, `fator`, `base`, `decalques`, `limpar_min`, `regularizar`, `cor_fundo`, `proteger`, `prancha`, `franja`, `forcar`, `motivo`, `preset`, `loop`, `saida_folha` (`*` = obrigatório)
 
 ### `horys_guia_poses`
 
@@ -487,16 +495,18 @@ Parâmetros: `fonte`*, `linhas`, `colunas`, `paleta`, `estilo`, `pivo`, `loop` (
 
 ### `horys_colagem`
 
-COLAGEM GUIADA: o gerador só diz ONDE cada peça vai; os pixels vêm da arte-mestra. 'mestre' = conceito aprovado em
-pixel art ampliada (lido na grade dele: pixel quadrado, fase pelo Sobel). 'guia' = os quadros da animação gerados a
-partir desse conceito (prancha de poses soltas, grade com 'linhas' e 'colunas', ou pasta). Os guias vão para a grade
-do mestre (escala única, moda na paleta) e cada peça de 'pecas' [{nome, rect [x,y,w,h], apagar faixa|caixa|nada,
-busca, espelho, erro_max}] é achada em cada quadro e colada exata por cima. Sem 'pecas', devolve só o mestre com
-régua. Grava quadros, mestre, folha PNG + JSON + GIF em 'saida'. Não precisa do Aseprite. No terminal:
-`horys colagem MESTRE GUIA --saida PASTA --peca cabeca:0,0,60,47:faixa --peca tronco:14,47,32,25`.
+COLAGEM GUIADA: o gerador só diz ONDE cada peça vai; os pixels vêm da arte-mestra.
+'mestre' = conceito aprovado em pixel art ampliada (lido na grade dele: pixel quadrado, fase pelo Sobel). 'guia' = os
+quadros da animação gerados a partir desse conceito (PNG em prancha de poses soltas, ou grade com 'linhas' e
+'colunas', ou pasta). Os guias vão para a grade do mestre (escala única, moda na paleta) e cada peça de 'pecas'
+[{nome, rect [x,y,w,h] no mestre recortado, apagar: faixa|caixa|nada, busca, espelho, erro_max}] é achada em cada
+quadro e colada exata por cima, na ordem dada. Cabeça/cabelo acima dos ombros: apagar 'faixa'. Deixe de fora o que
+se mexe (braço, perna): fica como o guia desenhou e é o que se limpa à mão. Paleta: 'paleta' #hex, a do 'estilo',
+ou 'cores' tiradas do conceito (padrão 16). Sem 'pecas', só devolve o mestre com régua de linhas/colunas para
+escolher os rects. Grava em 'saida' os quadros, o mestre, a folha PNG + JSON + GIF e devolve a estabilidade (px de
+cada peça diferentes do quadro 0). Não precisa do Aseprite. Depois: horys_validar_sequencia → horys_revisar.
 
-Parâmetros: `mestre`*, `guia`, `pecas`, `saida`*, `linhas`, `colunas`, `paleta`, `estilo`, `cores`, `cor_fundo`,
-`busca`, `ms`, `estado`, `loop` (`*` = obrigatório)
+Parâmetros: `mestre`*, `guia`, `pecas`, `saida`*, `linhas`, `colunas`, `paleta`, `estilo`, `cores`, `cor_fundo`, `busca`, `ms`, `estado`, `loop` (`*` = obrigatório)
 
 ## Entrega e retoque
 
@@ -507,9 +517,10 @@ estrutural E aceitação >= 'limite' (padrão 80). Os defeitos de ACABAMENTO vir
 coordenadas que o revisor deu em 'onde') e uma lista guardada na ficha (acabamento_pendente) para o usuário
 finalizar no Aseprite. Se estiver pronto, a lista também abre no painel (botão 'Terminei o retoque') e a resposta traz
 um id: horys_aguardar(id) devolve o que o usuário marcou como feito; depois rode horys_gosto_do_retoque.
-'marcar': false só avalia.
+'marcar': false só avalia. TRAVA: 'pasta' (a pasta da versão) precisa ter o A/B do revisor registrado
+(horys_ab_registrar); sem ele a entrega é recusada.
 
-Parâmetros: `resultado`*, `limite`, `quadro`, `marcar` (`*` = obrigatório)
+Parâmetros: `resultado`*, `limite`, `quadro`, `marcar`, `pasta`* (`*` = obrigatório)
 
 ### `horys_gosto_do_retoque`
 
@@ -519,3 +530,305 @@ Grava o resumo na memória de gosto do estilo (horys_gosto_registrar) com as cat
 as que se repetem viram candidatas a regra da praticas.md do projeto (proponha ao usuário).
 
 Parâmetros: `antes`*, `camada`, `quadro`, `estilo`, `etapa`, `tipo`, `registrar` (`*` = obrigatório)
+
+## Ofício (base de pixel art)
+
+### `horys_oficio`
+
+Base de ofício de pixel art (62 regras, ~400 modelos de grade, 2006 paletas com autor). É ofício, não
+régua de estilo: a régua é o Artur (ficha e aprovados). Ações:
+• 'indice' — lista as regras (00 núcleo, 1x técnica, 2x cor/material, 3x personagem, 4x animação, 5x criaturas,
+  6x cenário, 7x objetos/3D, 8x efeitos/UI, 9x estilo).
+• 'regra' {regra:'34' ou 'hands-and-feet', secao?:'Rules'|'Mistakes'|'Review'..., sem_modelos?} — lê uma regra.
+• 'buscar' {termo} — linhas das regras com todas as palavras (ex.: 'hand 32', 'walk contact').
+• 'modelos' {filtro?} — lista modelos de grade (nome, regra, tamanho).
+• 'modelo' {nome, cores?:{papel ou letra:'#hex'}, desenhar?:true, x, y, camada, quadro} — mostra o modelo
+  (prévia + paleta e linhas prontas para horys_pixel_map). Troque as cores pela paleta do asset com 'cores'.
+  'desenhar': true carimba no Aseprite (pontos '.' não mexem). Modelo é ponto de partida: adapte à pose.
+• 'paletas' {termo?, tamanho?} — busca paletas (nome, autor, notas).
+• 'paleta' {nome} — cores de uma paleta, com autor e fonte.
+
+Parâmetros: `acao`*, `regra`, `secao`, `sem_modelos`, `termo`, `filtro`, `nome`, `cores`, `desenhar`, `x`, `y`, `camada`, `quadro`, `tamanho`, `limite` (`*` = obrigatório)
+
+## Base + Pele (master, partes, vestir, animar, travas)
+
+### `horys_base_ler`
+
+Lê a imagem do Codex de um corpo-base (pixel art ampliada sobre cor-chave, vistas lado a lado) na grade nativa
+dela e grava a folha 1x da base: base.png (vistas na mesma linha de chão, margem transparente para chapéu/capa),
+vista_N.png, base_8x.png (prévia) e base.json (bloco, cores, alturas, avisos). Não cria forma.
+Leitura pela GRADE PRÓPRIA (cortes irregulares ajustados às bordas + voto da maioria no miolo de cada célula; a
+franja da chave não vira cor). 'paleta': encaixa na paleta da ficha; sem ela, 'cores' cores reais da imagem
+(16 é bom para master; 4 para corpo-base liso). 'metodo': propria (padrão) | centro (o antigo).
+
+Parâmetros: `imagem`*, `saida`*, `chave`, `cores`, `margem`, `paleta`, `metodo` (`*` = obrigatório)
+
+### `horys_vestir`
+
+Separa a pele de um personagem: relê a imagem do Codex (a base vestida, pedida com "A ÚNICA MUDANÇA: vista esta
+figura como <ficha>") NA GRADE DA BASE e grava só as células que mudaram. Saída: pele.png (camada de pele),
+vestido.png (base + pele), vestido_8x.png e pele.json (grade achada, % da base mantida, cores, avisos).
+Aviso de grade fraca = gere de novo no Codex; não conserte à mão. TRAVA: a base precisa estar aprovada pelo Artur
+(horys_aprovar_arquivo).
+
+Parâmetros: `base`*, `imagem`*, `saida`*, `chave`, `paleta`, `max_cores`, `manter_isolados` (`*` = obrigatório)
+
+### `horys_propagar_pele`
+
+Leva a pele para cada quadro da animação da base. Recebe a pele (PNG, mesmo tamanho dos mapas), o mapa de partes
+do quadro de referência e os mapas dos quadros alvo (PNG em que cada cor opaca é uma parte; a mesma cor = a mesma
+parte em todos os quadros). Opcional: as bases de cada quadro, para gravar o composto. Saída: pele_NN.png,
+composto_NN.png e propagar.json (deslocamento e IoU por parte; aviso = limpar à mão aquela parte).
+
+Parâmetros: `pele`*, `partes_ref`*, `partes`*, `bases`, `saida`*, `raio` (`*` = obrigatório)
+
+### `horys_partes_mapa`
+
+MAPA DE PARTES de uma vista (cor por parte, contrato de art-src/motion-rigs: cabeça ciano, tronco laranja, braço
+esq. verde, braço dir. roxo, perna esq. amarela, perna dir. vermelha, arma rosa, enfeite branco). Sem 'mapa': faz o
+RASCUNHO automático (pescoço pelo perfil de largura, virilha pelo vão das pernas, braços fora do quadril) e grava
+<saida>/partes.png para corrigir no Aseprite. Com 'mapa': só checa. Sempre checa a FORMA FECHADA por parte
+(cobertura exata, 1 pedaço, sem buraco, junções encostadas) e grava partes.json + partes_8x.png.
+'lado': vista de perfil (uma perna só). 'enfeite_topo': linhas do topo que são chifre/cabelo/antena.
+
+Parâmetros: `vista`*, `saida`*, `mapa`, `lado`, `cabeca_frac`, `enfeite_topo` (`*` = obrigatório)
+
+### `horys_animar_tabela`
+
+ANIMA uma vista aprovada deslocando partes por uma TABELA (dx, dy por parte por quadro): 'tabela' = idle |
+andar-frente | andar-lado, ou um objeto {n, ms, partes: {parte: [[dx,dy],...] | "atraso:cabeca"}}. Precisa do mapa de
+partes checado (horys_partes_mapa ok). O que não mexe fica idêntico; a emenda de 1 px numa junção é fechada
+esticando o vizinho; vão maior vira aviso (limpar à mão). Grava quadro_NN.png, folha PNG+JSON+GIF em 'saida'.
+
+Parâmetros: `vista`*, `mapa`*, `tabela`*, `saida`*, `estado`, `espelhar` (`*` = obrigatório)
+
+### `horys_pedido_codex`
+
+PEDIDO PRONTO AO CODEX (image_gen), do jeito que funcionou: pixel art no tamanho final, simples, paleta fixa, fundo
+chapado de cor-chave, todas as vistas numa imagem. 'modo': master (conceito -> folha de vistas; 'imagem' = conceito,
+'ficha', 'altura', 'paleta', 'vistas', 'extras'), vestir (base 1x ampliada + "A ÚNICA MUDANÇA: vista como <ficha>"),
+vista (a vista que falta ao lado do master) ou pose ("A ÚNICA MUDANÇA: <pose>"). Gera 'n' tentativas (padrão 3) em
+<saida>/tentativa_NN.png; tentativa ruim se descarta, não se conserta. Com 'so_prompt' só grava prompt.md e o anexo.
+Depois: master -> horys_base_ler; vestir -> horys_vestir; pose/vista -> horys_vestir com a imagem aprovada como base.
+Leva minutos por tentativa (devolve um id; use horys_aguardar).
+
+Parâmetros: `modo`*, `saida`*, `imagem`, `ficha`, `altura`, `paleta`, `chave`, `vistas`, `extras`, `vista`, `pose`, `n`, `escala`, `so_prompt` (`*` = obrigatório)
+
+### `horys_aprovar_arquivo`
+
+Registra a APROVAÇÃO de um arquivo (master, base, vista, quadro): grava <arquivo>.aprovado.json com o sha256 do
+arquivo. Se o arquivo mudar, a aprovação cai. Use SÓ depois do sim do Artur: passe 'id' de um horys_aprovar já
+respondido (confere que foi Aprovar e não automático) ou 'chat': true quando ele disse sim no chat (cite as palavras
+dele em 'comentario'). 'quem': artur (padrão) | revisor. Vestir e animar recusam o que não foi aprovado pelo Artur.
+
+Parâmetros: `arquivo`*, `id`, `chat`, `comentario`, `quem` (`*` = obrigatório)
+
+### `horys_ab_registrar`
+
+Registra uma rodada A/B CEGA do revisor em <pasta>/ab.json: 'a' = antes, 'b' = depois da correção, 'vencedor'
+A | B | EMPATE e o 'motivo'. A correção só fica se B vencer (senão volte ao A). horys_entrega recusa pasta sem A/B.
+
+Parâmetros: `pasta`*, `a`*, `b`*, `vencedor`*, `motivo`, `revisor` (`*` = obrigatório)
+
+### `horys_pose_ler`
+
+Lê uma POSE ou VISTA do Codex (horys_pedido_codex modo pose/vista) NA GRADE DO MASTER: bloco pela altura do master,
+voto da maioria na 'paleta' (padrão: as cores do master), sem o halo claro de fora do contorno e com a CABEÇA
+TRAVADA (as 'cabeca' linhas do topo do master coladas por cima, no melhor encaixe). Grava <saida>/<nome>.png e
+<nome>_bruto.png. Aviso de altura ou de cabeça = descarte a tentativa e gere de novo.
+
+Parâmetros: `imagem`*, `master`*, `saida`*, `nome`, `cabeca`, `paleta`, `chave` (`*` = obrigatório)
+
+## Efeitos (pixelfx)
+
+### `horys_vfx_listar`
+
+Lista os efeitos do pixelfx (patch-gg, MIT; ~244 efeitos de pixel art em código: fogo, explosões, gelo, raio,
+arcano, sagrado, sombra, status, natureza, clima, UI, coleta, transições, bichos). filtro: palavras que precisam
+aparecer no id ou na descrição (ex.: "fire", "heal", "explosion"). Cada linha: id, loop/once, duração, tamanho
+nativo e [boneco] quando o efeito desenha o boneco cinza do pixelfx junto (prefira os sem boneco para VFX solto).
+
+Parâmetros: `filtro`, `categoria`, `sem_boneco` (`*` = obrigatório)
+
+### `horys_vfx_gerar`
+
+Gera um VFX do pixelfx recolorido pela rampa do personagem. efeito: id de horys_vfx_listar (ex.: fire/campfire).
+rampa: lista de hex do escuro ao claro (a do personagem); o pixelfx recebe a rampa e depois cada pixel vira a cor
+da rampa pela luminância (só cores da rampa, alfa binário: abaixo de alfa_minimo some). quadros: quantos quadros
+(amostrados por igual; a duração total se mantém; vazio = todos). tamanho: lado do quadrado final em px (recorta na
+caixa visível e centraliza; se não couber, reduz e avisa). Grava em saida: <nome>.png (tira horizontal),
+<nome>.json (formato do Aseprite, durações em ms, pivô, crédito MIT) e <nome>_previa.png.
+
+Parâmetros: `efeito`*, `rampa`*, `saida`*, `tamanho`, `quadros`, `seed`, `alfa_minimo`, `paleta_nativa`, `nome` (`*` = obrigatório)
+
+## Tileset, paleta e guarda de correção (portado do ai-artist)
+
+### `horys_tileset`
+
+TileSet do Godot 4 (.tres, format=3) a partir de uma folha de tiles PNG. Não precisa do Aseprite.
+• layout 'grid' (padrão): um tile por slot com pixel.
+• layout 'blob47': 47 tiles de autotile em ordem canônica (máscaras de 8 vizinhos reduzidas, em ordem crescente,
+  linha a linha) a partir do slot 'pular'; o .tres sai com terrain_set 0 (cantos e lados) e os peering bits.
+  'mascaras' (47 inteiros) troca a ordem se a folha foi desenhada em outra.
+• acao 'guia' {saida:.png, tile?, colunas?}: grava a prancha-guia do blob47 (molde para desenhar à mão na ordem
+  que o 'blob47' espera).
+'res' é o caminho da textura no projeto Godot (padrão res://<nome da folha>). Grava também <saida>.json.
+
+Parâmetros: `acao`, `folha`, `saida`*, `tile`, `tile_w`, `tile_h`, `layout`, `res`, `margem`, `espaco`, `pular`, `mascaras`, `nome_terreno`, `cor_terreno`, `incluir_vazios`, `colunas` (`*` = obrigatório)
+
+### `horys_paleta_rampa`
+
+Rampa com giro de matiz, do escuro ao claro, com a base no meio: a sombra gira para o azul e perde um pouco de
+saturação, a luz gira para o amarelo e satura (rampa que só muda o brilho é a marca de pixel art de máquina).
+'passos' (5), 'abertura' (0,55: quanto vai à sombra e à luz), 'giro' (25 graus no extremo).
+'adicionar': true acrescenta a rampa à paleta do sprite aberto no Aseprite.
+
+Parâmetros: `base`*, `passos`, `abertura`, `giro`, `adicionar` (`*` = obrigatório)
+
+### `horys_paleta_analisar`
+
+Analisa uma paleta: pares quase iguais (ΔE76 < 'limiar', padrão 3), rampas achadas (matiz/croma OKLCH, escuro ->
+claro) com o giro de matiz de cada uma, contraste (extremos e o par usado de menor contraste) e, com imagem, uso por
+cor, cores da arte fora da paleta e entradas sem uso. Fonte: 'cores' e/ou 'imagem' (PNG); sem nenhuma das duas
+(ou com 'ao_vivo': true) lê a paleta e o quadro 'quadro' do sprite aberto no Aseprite.
+
+Parâmetros: `cores`, `imagem`, `limiar`, `ao_vivo`, `quadro` (`*` = obrigatório)
+
+### `horys_guarda_correcao`
+
+Guarda do loop de correção (fix, não redesenho). Por camada e quadro:
+• 'marcar' — tira a foto da camada (recomeça a contagem de rodadas).
+• 'aplicar' {passos:[{ferramenta,args}]} — tira a foto se não houver, roda os passos (ex.: horys_pixel_map) e
+  confere: se mexeu em mais de 'limite' (1/4) dos pixels opacos, DESFAZ (repõe a foto) e recusa.
+• 'conferir' — confere o que mudou desde a foto (correção feita por outras chamadas); recusada = repõe a foto.
+• 'restaurar' — repõe a foto. • 'estado' — rodadas e limite.
+No máximo 3 rodadas aceitas; depois disso toda correção é desfeita: mostre ao Artur e pergunte.
+
+Parâmetros: `acao`*, `camada`*, `quadro`, `passos`, `limite`, `max_rodadas` (`*` = obrigatório)
+
+### `horys_cel_tween`
+
+Move uma camada ao longo dos quadros 'de'..'ate' (0-based), a partir do quadro 'de':
+• modo 'tween' {dx, dy, curva: linear|ease_in|ease_out|ease_in_out|smoothstep} — chega em (dx,dy) no 'ate'.
+• modo 'oscilar' {amp_x, amp_y, periodo?, fase?} — seno por quadro (balanço, flutuar, respirar).
+• modo 'copiar' — repete o quadro 'de' nos outros (no lugar de "linkar": edição posterior NÃO se propaga).
+A ponte não move célula: o tween é deslocamento de pixels, quadro a quadro; o que sai da tela se perde nos quadros
+deslocados. Não faz tween de opacidade. Cria os quadros que faltarem.
+
+Parâmetros: `camada`*, `de`*, `ate`*, `modo`, `dx`, `dy`, `curva`, `amp_x`, `amp_y`, `periodo`, `fase` (`*` = obrigatório)
+
+## Guia de pose do SpriteKiln (cor por parte)
+
+### `horys_guia_kiln`
+
+Guia de pose de uma spec do SpriteKiln: renderiza cada ação × direção no tamanho final com UMA COR CHAPADA POR
+PARTE (sem sombreado, contorno, linha interna, dither, brilho nem sombra) nas cores do contrato de partes
+(cabeca ciano, tronco laranja, braco-esq verde, braco-dir roxo, perna-esq amarelo, perna-dir vermelho, arma rosa,
+enfeite branco). Grava <saida>/<anim>_<dir>_NN.png e <saida>/guia.json (parte -> cor, motivos, durações, avisos).
+Lados: esquerda/direita da IMAGEM na vista de frente (s): parte _L do spec = braco-dir/perna-dir; _R = -esq; a cor
+fica presa à parte em todas as direções. Todas as direções são renderizadas de verdade (mirror desligado).
+'mapeamento' ({parte: categoria}) corrige a classificação automática (mapeie a parte _L; a gêmea _R segue).
+anims/dirs: listas (["idle", "walk"], ["s", "e"]); size: tamanho do quadro (padrão o da spec).
+A spec original não é editada.
+
+Parâmetros: `spec`*, `saida`*, `anims`, `dirs`, `size`, `mapeamento` (`*` = obrigatório)
+
+## Pipeline Blender (paleta, render 3D para pixel, recolor)
+
+### `horys_blender_paleta`
+
+PASSO 0 do pipeline Blender: a PALETA da arte. Sem 'familias': propõe as cores-base do 'conceito' (k-médias OKLab
+sem o fundo, 'n' cores, padrão 8) para você dar nome às famílias. Com 'familias' [{nome, base #hex, tons 2|3,
+tipo toon|emissivo, rampa (opcional, pronta)}]: monta as rampas com giro de matiz (a base fica no meio; sombra
+para o azul, luz para o amarelo), a 'tinta' do contorno, confere ≤ 20 cores e quase-iguais, grava
+<saida>/paleta.json e paleta.png. Depois mostre ao Artur e registre o sim com horys_aprovar_arquivo(paleta.json):
+o render final recusa paleta não aprovada.
+
+Parâmetros: `saida`*, `conceito`, `n`, `familias`, `tinta` (`*` = obrigatório)
+
+### `horys_blender_inspecionar`
+
+Lista coleções (com as peças), empties, armatures, actions e materiais de um .blend, para montar a config do
+personagem (rig por pivôs, regras de material). Roda o Blender headless; não altera o arquivo.
+
+Parâmetros: `blend`* (`*` = obrigatório)
+
+### `horys_blender_render`
+
+RENDER do personagem pelo pipeline Blender do horys: 'config' = JSON do personagem (blend, paleta, rig por pivôs,
+papeis, materiais, camera {quadro, altura_px, angulo}, luz, acoes {nome: {tipo andar|idle|timeline, quadros, fps,
+amplitude}}, direcoes, contorno fora|dentro|nenhum, partes). No Blender: rig de empties, andar/idle procedural (pé
+de apoio parado, IK de 2 segmentos), toon com a paleta e limiares calibrados pela área (a base domina), câmera do
+jogo enquadrada por todas as poses, lote ações × direções e o passe de partes. No pós: paleta travada, pixel solto,
+contorno 1 px, folha/JSON/GIF por ação_direção, prancha.png, personagem.aseprite (tags) e partes/. 'previa': 4
+quadros por direção (não exige paleta aprovada). Leva de segundos a minutos (devolve id; horys_aguardar).
+
+Parâmetros: `config`*, `saida`*, `previa` (`*` = obrigatório)
+
+### `horys_blender_recolor`
+
+RECOLOR depois do render (B7), sem rodar o Blender de novo: 'paleta' = o paleta.json novo (mesmas famílias, tons
+trocados); cada cor antiga vira a nova da mesma família e posição na rampa. Refaz o pós (folhas, GIFs, prancha,
+.aseprite) em 'saida'.
+
+Parâmetros: `saida`*, `paleta`*, `config` (`*` = obrigatório)
+
+## Horys Estúdio (interface)
+
+### `horys_estudio_abrir`
+
+Abre o HORYS ESTÚDIO (interface local estilo Noct): pastas agrupadas, grade, inspetor com zoom de pixel, player de
+folha com onion, riscar na imagem e mandar o pedido ao chat, aprovar/reprovar (vira régua), paleta com recolor, boas
+práticas e render do Blender. Sobe o servidor em 127.0.0.1 (uma vez) e devolve a URL com o token; 'navegador' abre
+a janela ('app': janela sem barra, Edge/Chrome).
+
+Parâmetros: `navegador`, `app`, `porta` (`*` = obrigatório)
+
+### `horys_estudio_pedidos`
+
+Lê os PEDIDOS que o Artur fez no Horys Estúdio (riscos + texto sobre uma imagem). Padrão: os pendentes, com a
+imagem anotada de cada um, o arquivo do asset, o quadro e as marcas em pixels do sprite. Depois de atender, chame
+horys_estudio_responder (o Artur vê a resposta na interface). 'estado': pendente | em_andamento | feito | todos.
+
+Parâmetros: `estado`, `max` (`*` = obrigatório)
+
+### `horys_estudio_responder`
+
+Responde a um pedido do Horys Estúdio: 'texto' (o que foi feito), 'estado' (feito | em_andamento | pendente |
+descartado) e opcional 'imagem' (caminho da versão nova, para o Artur comparar na interface).
+
+Parâmetros: `id`*, `texto`*, `estado`, `imagem` (`*` = obrigatório)
+
+## Boas práticas (checagem)
+
+### `horys_boas_praticas`
+
+Mede as BOAS PRÁTICAS automáticas (ids BP de docs/boas-praticas.md) de um sprite: 'arquivo' = PNG de um quadro,
+pasta de quadros PNG, ou folha PNG+JSON (Aseprite/SpriteKiln; uma sequência por tag, ação pelo nome da tag).
+Grava <x>_praticas.json (resultado por regra: passa, medida, limite, onde) e <x>_praticas.png (overlay ampliado:
+vermelho = grave, amarelo = leve). Contexto opcional: 'protegidas' (cores de 1 px permitidas: olho, brilho,
+emissivo), 'contorno', 'paleta', 'chao', 'acao' (idle|andar|correr|ataque|dano|morte), 'loop', 'render3d' (BP40/BP41
+só informam), 'altura_alvo', 'perfil' (16|32|64), 'limites' {"BP12": 24}. As regras de olho ficam para o revisor.
+
+Parâmetros: `arquivo`*, `saida`, `protegidas`, `contorno`, `paleta`, `chao`, `acao`, `loop`, `render3d`, `altura_alvo`, `perfil`, `limites`, `escala` (`*` = obrigatório)
+
+## Corpo-base Eldiran
+
+### `horys_base_eldiran`
+
+Fatia o CORPO-BASE da Eldiran 32x32 (CC0; decisão do Artur 14/11: "usa a base do eldiran", só esqueleto, não régua)
+em 'saida' (padrão art-src/base32/eldiran): quadros/<acao>_<dir>_NN.png (idle 1 + andar 4; s, n, e; w = e espelhado;
+canvas 40x40, pés na mesma linha), base.png (3 vistas de descanso lado a lado, para horys_vestir), base.json
+(layout, durações, origem, licença) e partes/<acao>_<dir>_NN.png (mapa de partes checado). As costas (n) são
+derivadas da frente com o rosto apagado: a linha nua da folha não tem costas. 'folha': outra cópia da folha.
+
+Parâmetros: `saida`, `folha` (`*` = obrigatório)
+
+### `horys_pele_animar`
+
+Anima uma PELE sobre a base Eldiran: 'pele' = pele.png de horys_vestir feita sobre <base_dir>/base.png. A pele é
+cortada por vista, levada a cada quadro de cada ação/direção pelos mapas de partes (pele.propagar), composta sobre
+o quadro da base e gravada em 'saida' como <acao>_<dir>.png/.json/.gif (w = e espelhado) + animar.json. Aviso =
+parte que muda de forma no quadro: limpar à mão.
+
+Parâmetros: `base_dir`*, `pele`*, `saida`*, `raio` (`*` = obrigatório)

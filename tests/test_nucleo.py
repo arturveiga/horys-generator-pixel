@@ -233,7 +233,7 @@ def test_novas_imagens_ignora_as_antigas(tmp_path):
     assert [p.name for p in novas_imagens(tmp_path, antes)] == ["b.webp"]
 
 
-def test_entrega_mostra_acabamento_no_painel(ambiente):
+def test_entrega_mostra_acabamento_no_painel(ambiente, tmp_path):
     async def corpo():
         ctx, ase, chamar, fim = await _ambiente(ambiente)
         try:
@@ -242,7 +242,11 @@ def test_entrega_mostra_acabamento_no_painel(ambiente):
                 {"id": "L5", "resultado": "falha", "severidade": "leve", "classe": "acabamento", "onde": "3,4",
                  "correcao": "pelo do ombro em degraus"},
                 {"id": "L2", "resultado": "passa", "severidade": "grave"}]}
-            r = await chamar("horys_entrega", resultado=res)
+            r = await chamar("horys_entrega", resultado=res, pasta=str(tmp_path))
+            assert r["erro"] and "TRAVADO" in _txt(r)          # sem A/B do revisor, recusa
+            from horys_pixel import travas
+            travas.registrar_ab(tmp_path, "v01.png", "v02.png", "B", "contorno mais limpo")
+            r = await chamar("horys_entrega", resultado=res, pasta=str(tmp_path))
             assert not r["erro"], r
             t = _txt(r)
             assert "PRONTO PARA ENTREGA" in t
@@ -255,7 +259,7 @@ def test_entrega_mostra_acabamento_no_painel(ambiente):
             # não pronto: sem lista no painel
             n = sum(1 for c, _ in ase.ui if c == "ui_acabamento")
             res["aceitacao"] = 60
-            await chamar("horys_entrega", resultado=res)
+            await chamar("horys_entrega", resultado=res, pasta=str(tmp_path))
             assert sum(1 for c, _ in ase.ui if c == "ui_acabamento") == n
         finally:
             await fim()

@@ -6,9 +6,14 @@ Configuração (função única `config()`, usada por todos os scripts do motor)
   2. ~/.horys-pixel/motor.json  (a pasta ~/.horys-pixel pode ser trocada por HORYS_HOME, como no resto do projeto);
   3. config_padrao.json, ao lado deste arquivo (genérico: sem KB, sem régua, paleta padrão do motor).
 O JSON escolhido é aplicado POR CIMA do config_padrao.json (chave que faltar vem do padrão).
-Chaves: kb (pasta ou null), regua (pasta ou null), regua_por_categoria, regua_nome, trabalho, paleta_json
-(absoluto, relativo à kb, ou, sem kb, relativo à pasta do JSON), contorno_regua, brilho_regua, chao, fundo_prancha,
-limite_imagem, aseprite (exe ou null), pasta_calibracao (padrão ~/.horys-pixel/calibracao), calibracao_ia.
+Chaves: kb (pasta ou null), regua (pasta ou null; não há régua externa no estilo do Artur), regua_png, quadro_regua,
+regua_por_categoria, regua_nome, aprovados (pasta com os PNG que o Artur aprovou: a régua é ele), corpus_teste e
+quadro_teste (só para calibrar o portão), perfis (16/32/64), trabalho, paleta_json (absoluto, relativo à kb, ou, sem
+kb, relativo à pasta do JSON), contorno_regua, contorno_px_regua, brilho_regua, chao, fundo_prancha, limite_imagem,
+aseprite (exe ou null), pasta_calibracao (padrão <trabalho>/_calibracao32 ou ~/.horys-pixel/calibracao).
+
+Este pacote é a fonte única do motor: os scripts da skill horys-pixel-liso (skills/horys-pixel-liso/scripts) só
+chamam estes módulos, com o config.json da skill em HORYS_MOTOR_CONFIG.
 """
 import hashlib
 import json
@@ -65,7 +70,7 @@ def config():
     if origem:
         c.update(_ler_json(origem))
         pasta_json = os.path.dirname(origem)
-    for k in ("kb", "regua", "trabalho", "aseprite", "pasta_calibracao"):
+    for k in ("kb", "regua", "trabalho", "aseprite", "pasta_calibracao", "aprovados", "corpus_teste"):
         if c.get(k):
             c[k] = os.path.normpath(os.path.expanduser(c[k]))
         else:
@@ -98,9 +103,14 @@ def regua_ok(cfg):
     return bool(cfg.get("regua")) and os.path.isdir(cfg["regua"])
 
 
-def pasta_calibracao(cfg):
-    """Onde a calibração grava os casos e medidas (nunca dentro do repo nem da skill)."""
-    return cfg.get("pasta_calibracao") or os.path.join(home(), "calibracao")
+def pasta_calibracao(cfg, perfil="32"):
+    """Onde a calibração grava os casos e medidas (nunca dentro do repo nem da skill): 'pasta_calibracao' da config,
+    senão <trabalho>/_calibracao<perfil>, senão ~/.horys-pixel/calibracao."""
+    if cfg.get("pasta_calibracao"):
+        return cfg["pasta_calibracao"]
+    if cfg.get("trabalho"):
+        return os.path.join(cfg["trabalho"], "_calibracao" + str(perfil))
+    return os.path.join(home(), "calibracao")
 
 
 def cor_fundo_previa(cfg):
@@ -343,3 +353,83 @@ def degraus_irregulares(mascara):
         for (x, y, _k) in _perfil_degraus(cols, yt):
             pts.append((x, y))
     return sorted(set(pts))
+
+
+# ---------------------------------------------------------------- perfis por tamanho (FASE 2, 2026-11-12)
+
+def perfil_por_altura(h):
+    """Perfil de tamanho pela altura da figura (com contorno): até 20 -> '16'; 21 a 40 -> '32'; acima -> '64'."""
+    return "16" if h <= 20 else ("32" if h <= 40 else "64")
+
+
+def config_perfil(cfg, perfil):
+    """Config do perfil: as chaves de fora valem para todos; o bloco 'perfis' sobrepõe as do perfil."""
+    p = dict(cfg.get("perfis", {}).get(str(perfil), {}))
+    out = dict(cfg)
+    out.update(p)
+    out["perfil"] = str(perfil)
+    return out
+
+
+def isolados8(f, excluir=None, contraste=0.10):
+    """Órfão de ruído (ideia do pxl/spritebox, reimplementada): pixel opaco sem nenhum vizinho da mesma cor nos 8
+    vizinhos E de baixo contraste (|L - L médio dos vizinhos opacos| < contraste, em OKLab). Pixel único de alto
+    contraste (olho, brilho, botão) é acento, não sujeira. Também conta o pixel totalmente sozinho (sem vizinho
+    opaco). Devolve (máscara do ruído, máscara de todos os isolados 8)."""
+    rgba = f.astype(np.int32)
+    op = f[..., 3] == 255
+    h, w = op.shape
+    p = np.pad(rgba, ((1, 1), (1, 1), (0, 0)))
+    po = np.pad(op, 1)
+    L = oklab(f[..., :3])[0]
+    pL = np.pad(L, 1)
+    igual = np.zeros((h, w), bool)
+    soma = np.zeros((h, w))
+    n = np.zeros((h, w))
+    for dy in (-1, 0, 1):
+        for dx in (-1, 0, 1):
+            if dy == dx == 0:
+                continue
+            viz = p[1 + dy:h + 1 + dy, 1 + dx:w + 1 + dx]
+            vo = po[1 + dy:h + 1 + dy, 1 + dx:w + 1 + dx]
+            igual |= vo & np.all(viz == rgba, axis=-1)
+            soma += np.where(vo, pL[1 + dy:h + 1 + dy, 1 + dx:w + 1 + dx], 0)
+            n += vo
+    iso = op & ~igual
+    if excluir is not None:
+        iso &= ~excluir
+    media = np.divide(soma, n, out=np.zeros_like(soma), where=n > 0)
+    ruido = iso & ((n == 0) | (np.abs(L - media) < contraste))
+    return ruido, iso
+
+
+def pe_centro(op):
+    """(x, y) do ponto do pé: linha mais baixa opaca e o centro das colunas opacas nessa faixa (3 linhas)."""
+    ys, xs = np.nonzero(op)
+    if not len(ys):
+        return 0, 0
+    yb = ys.max()
+    faixa = xs[ys >= yb - 2]
+    return int(round(faixa.mean())), int(yb)
+
+
+def iou_silhueta(a, b, folga=3):
+    """IoU entre duas máscaras, alinhadas pelo ponto do pé (pivô) e afinadas em ±folga px (um prop na mão, como um
+    machado, desloca o 'pé' calculado; o melhor encaixe perto do pivô é o que vale)."""
+    ax, ay = pe_centro(a)
+    bx, by = pe_centro(b)
+    H, W = max(a.shape[0], b.shape[0]) + 64, max(a.shape[1], b.shape[1]) + 64
+    B = np.zeros((H, W), bool)
+    oy, ox = H - 24, W // 2
+    yb_, xb = np.nonzero(b)
+    B[yb_ - by + oy, xb - bx + ox] = True
+    ya, xa = np.nonzero(a)
+    melhor = 0.0
+    for dy in range(-folga, folga + 1):
+        for dx in range(-folga, folga + 1):
+            A = np.zeros((H, W), bool)
+            A[ya - ay + oy + dy, xa - ax + ox + dx] = True
+            u = (A | B).sum()
+            if u:
+                melhor = max(melhor, float((A & B).sum() / u))
+    return melhor

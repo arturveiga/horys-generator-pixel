@@ -29,7 +29,7 @@ horys-mcp = "horys_pixel.mcp_ponte:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-horys_pixel = ["**/*.json", "**/*.md", "**/*.lua", "**/*.txt"]
+horys_pixel = ["**/*.json", "**/*.md", "**/*.lua", "**/*.txt", "**/*.html", "**/*.js", "**/*.css"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

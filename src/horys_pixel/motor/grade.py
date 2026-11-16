@@ -1,11 +1,22 @@
 """Grade de texto -> PNG. Este script NÃO desenha nada: só traduz a grade que você escreveu,
 aplica as regras mecânicas do estilo (contorno externo 2 px e sombra no chão, se pedidos),
-gera as prévias para você e para o revisor e roda o PORTÃO DE MEDIDAS (medir.py, metas calibradas no Tiny).
+gera as prévias para você e para o revisor e roda o PORTÃO DE MEDIDAS (medir.py; perfil 32 calibrado no corpus Eldiran).
 Portão reprovado = código de saída 1 = corrija antes de chamar o revisor.
 
 Uso:
   python grade.py gerar <arquivo.grade> [<outro.grade> ...] --saida <pasta>
-  python grade.py numerar <arquivo.grade> [--quadro N]     (mostra a grade com régua de colunas e linhas)
+  python grade.py numerar <arquivo.grade> [--quadro N] [--guia]  (grade com régua; --guia mostra a guia por baixo)
+  python grade.py diff <arquivo.grade> qA qB              (o que mudou de um quadro para o outro, com coordenadas)
+  python grade.py anim <arquivo.grade>                    (deslocamento e px mudados por quadro, como o pxart)
+
+TAMANHO PEQUENO (perfis 16/32, FASE 2 de 2026-11-12; pesquisa-16-32.md):
+  perfil 32                  # 16, 32 ou 64 (padrão: pela altura da figura: até 20 -> 16; até 40 -> 32)
+  contorno selout            # 1 px por fora no tom mais escuro da rampa do material vizinho (padrão dos perfis 16/32)
+  direcao s                  # s (frente), n (costas), e (lado), se/ne/...: o estado vira "<estado>_<dir>"
+  espelho w                  # (no arquivo da direção e) gera também a direção w, espelhada
+  guia <png> [dx dy]         # silhueta de referência (guia 3D do SpriteKiln ou a referência): G01 e numerar --guia
+  Desenhe por direção, nesta ordem: frente (s), costas (n), lado (e), diagonais. Passe todos os arquivos de um estado
+  no mesmo 'gerar': o portão confere a coerência entre direções (D01–D05) e sai a prancha _direcoes.png.
 
 Formato do arquivo .grade (texto UTF-8):
   # comentário
@@ -23,11 +34,10 @@ Formato do arquivo .grade (texto UTF-8):
   sombra sim                 # elipse no chão, cor do contorno com alfa ~30%
   sem_contorno g G           # opcional: letras de efeito que não ganham contorno nem entram na silhueta
   sem_borda e w              # opcional: "borda perdida" — letras que entram na silhueta mas não ganham contorno
-                             # por fora (lado da luz, como no topo do elmo do guerreiro do Tiny)
+                             # por fora (lado da luz, como o topo de um elmo)
   limite_cores 12            # opcional: exceção pedida pelo usuário (registre na ficha)
-  ritmo calmo                # opcional: idle quase parado de propósito (como o arqueiro do Tiny); vai na ficha
-  paleta <arquivo.json>      # opcional: outra paleta travada (mesmo formato; caminho absoluto ou relativo à KB;
-                             # sem KB na config, relativo à pasta atual)
+  ritmo calmo                # opcional: idle quase parado de propósito ; vai na ficha
+  paleta <arquivo.json>      # opcional: outra paleta travada (mesmo formato; caminho absoluto ou relativo à KB)
   cores
     o #18122c
     p #bc8361
@@ -52,13 +62,16 @@ CAMADAS (para entregar o .aseprite fatiado, pronto para animar):
   Com o Aseprite configurado (chave "aseprite" da config do motor), o gerar também grava <nome>_<estado>.aseprite (uma camada
   por parte, tag do estado, paleta da legenda) e confere o arquivo reabrindo-o e comparando pixel a pixel com a folha.
 
-CONFIG: comum.config() (HORYS_MOTOR_CONFIG -> ~/.horys-pixel/motor.json -> config_padrao.json). Sem régua configurada,
-as prévias _regua e _regua_anim são puladas com aviso; o resto (folha, _8x, silhueta, gif, checagem, portão) roda.
+CONFIG: comum.config() (HORYS_MOTOR_CONFIG -> ~/.horys-pixel/motor.json -> config_padrao.json). Não há régua externa:
+_regua.png é a prancha "boas práticas" (1×, 2×, 4×, 8× sobre os chãos da config) com os aprovados do Artur (chave
+"aprovados") embaixo. Com "regua" + "regua_png" (ou "regua_por_categoria") na config, _regua.png e _regua_anim.png
+mostram essa régua ao lado. Este módulo é a fonte única: skills/horys-pixel-liso/scripts/grade.py só o chama.
 """
 import argparse
 import io
 import json
 import os
+import re
 import sys
 
 import numpy as np
@@ -82,6 +95,15 @@ _PAL_CFG = _paleta_json()
 CONTORNO = _PAL_CFG["contorno"].lower()
 # contorno "suave": 'contorno_suave' da config ou da paleta; no Horys, #3f3c56 (sombra da rampa masmorra)
 CONTORNO_SUAVE = (CFG.get("contorno_suave") or _PAL_CFG.get("contorno_suave") or "#3f3c56").lower()
+LIMITES_PERFIL = {"32": {"personagem": 20, "inimigo": 20, "npc": 20, "boss": 24, "criatura": 16},
+                  "16": {"personagem": 10, "inimigo": 10, "npc": 10, "boss": 12, "criatura": 8}}
+
+
+def limite_cores(meta):
+    """Limite da grade (exceção) ou o do perfil (calibrado na régua do tamanho) ou o do tipo (perfil 64)."""
+    return meta.get("limite") or LIMITES_PERFIL.get(meta.get("perfil", "64"), {}).get(meta["tipo"]) or LIMITES.get(meta["tipo"], 10)
+
+
 LIMITES = {"personagem": 10, "inimigo": 10, "npc": 10, "criatura": 8, "animal": 8, "prop": 8, "arvore": 8,
            "tile": 12, "predio": 18, "boss": 16, "icone": 8, "retrato": 14, "efeito": 6, "recurso": 10, "agua": 6}
 
@@ -159,6 +181,16 @@ def ler(caminho):
             meta["limite"] = int(partes[1])
         elif chave == "paleta":
             meta["paleta"] = linha.split(None, 1)[1].strip()
+        elif chave == "perfil":
+            meta["perfil"] = partes[1]
+        elif chave == "direcao":
+            meta["direcao"] = partes[1]
+        elif chave == "espelho":
+            meta["espelho"] = partes[1]
+        elif chave == "guia":
+            g = linha.split(None, 1)[1].strip().split()
+            meta["guia"] = os.path.join(os.path.dirname(os.path.abspath(caminho)), g[0])
+            meta["guia_d"] = (int(g[1]), int(g[2])) if len(g) >= 3 else (0, 0)
         elif chave == "cor_contorno":
             meta["cor_contorno"] = partes[1].lower()
         elif chave in ("nome", "estado", "tipo", "contorno", "sombra", "ritmo"):
@@ -170,6 +202,11 @@ def ler(caminho):
         else:
             erros.append(f"linha {n}: não entendi '{linha.strip()}'")
     meta["estado"] = meta["estado"] or os.path.splitext(os.path.basename(caminho))[0]
+    if meta.get("direcao") and not meta["estado"].endswith("_" + meta["direcao"]):
+        meta["estado_base"] = meta["estado"]
+        meta["estado"] = f"{meta['estado']}_{meta['direcao']}"
+    else:
+        meta["estado_base"] = meta["estado"].rsplit("_", 1)[0] if meta.get("direcao") else meta["estado"]
     if any("camadas" in q for q in quadros):
         meta["camadas"] = compor_camadas(quadros, erros)
     if not quadros:
@@ -245,6 +282,15 @@ def dilatar_cruz(m):
     d[:, 1:] |= m[:, :-1]
     d[:, :-1] |= m[:, 1:]
     return d
+
+
+def tom_escuro():
+    """cor -> tom mais escuro da rampa dela (para o selout)."""
+    out = {}
+    for r in rampas().values():
+        for c in r:
+            out.setdefault(c, r[0])
+    return out
 
 
 def cor_contorno(meta):
@@ -327,7 +373,21 @@ def montar(meta, cores, q):
                 sb[y, x] = True
     efeito = (img[..., 3] > 0) & ~mask
     partes = img[..., 3] > 0
-    if meta["contorno"] in ("auto", "suave"):
+    if meta["contorno"] == "selout":
+        # 1 px por fora, no tom mais escuro da rampa do material vizinho (o de cima, senão o do lado, senão o de baixo)
+        escuro = tom_escuro()
+        firme = mask & ~sb
+        r1 = dilatar_cruz(mask) & ~mask & ~efeito
+        r1 &= ~(dilatar_cruz(sb) & ~dilatar_cruz(firme))
+        for y, x in zip(*np.nonzero(r1)):
+            for dy, dx in ((1, 0), (0, 1), (0, -1), (-1, 0)):
+                yy, xx = y + dy, x + dx
+                if 0 <= yy < Q and 0 <= xx < Q and mask[yy, xx]:
+                    c = "#%02x%02x%02x" % tuple(img[yy, xx, :3])
+                    img[y, x] = (*hex_rgb("#" + escuro.get(c, cor_contorno(meta).lstrip("#")).lstrip("#")), 255)
+                    break
+        mask = mask | r1
+    elif meta["contorno"] in ("auto", "suave"):
         firme = mask & ~sb
         r1 = dilatar_cruz(mask) & ~mask & ~efeito
         r1 &= ~(dilatar_cruz(sb) & ~dilatar_cruz(firme))   # borda perdida: sem contorno junto de sem_borda
@@ -340,8 +400,8 @@ def montar(meta, cores, q):
     if meta["sombra"] == "sim" and mask.any():
         fundo = np.where(mask[max(0, py - 8):py + 3].any(axis=0))[0]
         larg = (fundo.max() - fundo.min() + 1) * 0.85 if fundo.size else 20
-        # a régua mede a sombra contra a largura da figura inteira (0,75–1,0); boss com punhos mais largos que os pés
-        # ficava abaixo de 0,75 com só 0,85 dos pés. Só no boss: humanoides seguem a calibração do Tiny.
+        # a sombra é medida contra a largura da figura inteira (0,75–1,0); boss com punhos mais largos que os pés
+        # ficava abaixo de 0,75 com só 0,85 dos pés. Só no boss.
         if meta.get("tipo") == "boss":
             cols = np.where(mask.any(axis=0))[0]
             larg = max(larg, (cols.max() - cols.min() + 1) * 0.78)
@@ -491,15 +551,21 @@ def checar(meta, cores, quadros, pal, imgs, masks):
     usadas |= {cores[c] for q in quadros for cam in q.get("camadas", []) for l in cam["grade"] for c in l if c != "."}
     if meta["contorno"] in ("auto", "suave"):
         usadas.add(cor_contorno(meta))
+    if meta["contorno"] == "selout":
+        usadas |= {"#%02x%02x%02x" % tuple(c) for im in imgs for c in im[..., :3][im[..., 3] == 255].reshape(-1, 3)}
     fora = sorted(c for c in usadas if c not in pal)
     if fora:
         erros.append(f"cores fora da paleta travada: {', '.join(fora)}")
-    lim = meta.get("limite") or LIMITES.get(meta["tipo"], 10)
+    lim = limite_cores(meta)
     (erros if len(usadas) > lim else ok).append(f"cores usadas: {len(usadas)} (limite {meta['tipo']} = {lim})")
     ys = np.where(masks[0].any(axis=1))[0]
     alt = int(ys.max() - ys.min() + 1)
     msg = f"altura do sprite com contorno: {alt} px"
-    if meta["tipo"] in ("personagem", "npc", "inimigo") and not 60 <= alt <= 90:
+    perfil = meta.get("perfil", "64")
+    faixa = CFG.get("perfis", {}).get(perfil, {}).get("altura") if perfil != "64" else None
+    if meta["tipo"] in ("personagem", "npc", "inimigo") and faixa and not faixa[0] <= alt <= faixa[1] + 4:
+        avisos.append(msg + f" (perfil {perfil}: {faixa[0]}–{faixa[1]} px, um pouco mais com arma ou penacho)")
+    elif meta["tipo"] in ("personagem", "npc", "inimigo") and not faixa and not 60 <= alt <= 90:
         avisos.append(msg + " (humanoide: 64–72, até ~90 com penacho ou arma)")
     else:
         ok.append(msg)
@@ -535,6 +601,11 @@ def gerar(caminho, saida, pal):
     if erros:
         print(f"[ERRO] {caminho}:\n  " + "\n  ".join(erros))
         return 1
+    if not meta.get("perfil"):
+        alt = max(len(q["linhas"]) for q in quadros) + (2 if meta["contorno"] in ("auto", "selout", "suave") else 0)
+        meta["perfil"] = perfil_por_altura(alt)
+    if meta["perfil"] != "64" and meta["contorno"] == "auto" and not meta.get("_contorno_explicito"):
+        print(f"[aviso] perfil {meta['perfil']}: o anil de 2 px come o sprite; use 'contorno selout' (ou suave)")
     imgs, masks = zip(*(montar(meta, cores, q) for q in quadros))
     os.makedirs(saida, exist_ok=True)
     base = f"{meta['nome']}_{meta['estado']}"
@@ -556,15 +627,18 @@ def gerar(caminho, saida, pal):
     prancha.paste(s1.resize((s1.width * 4, s1.height * 4), Image.NEAREST).convert("RGB"), (0, 0))
     prancha.paste(s05.resize((s05.width * 4, s05.height * 4), Image.NEAREST).convert("RGB"), (s1.width * 4 + 16, 0))
     prancha.save(os.path.join(saida, base + "_silhueta.png"))
-    # régua: o sprite "idle" da régua (no Horys, o peão do Tiny Swords) ao lado, mesma escala (só olhar; nunca copiar)
-    sem_regua = not C.regua_ok(CFG)
-    arq_idle, q_idle = CFG["regua_por_categoria"].get("idle") or ("pawn_idle.png", 192)
-    regua_png = None if sem_regua else os.path.join(CFG["regua"], arq_idle)
+    # sem régua externa (o Artur é a régua): prancha "boas práticas" + o que o Artur já aprovou, na mesma escala
+    cp = dict(CFG)
+    cp.update(CFG.get("perfis", {}).get(meta["perfil"], {}))
+    regua_png, rq = regua_da_direcao(cp, meta)
+    if not regua_png:
+        boas_praticas(imgs[0][y0:y1, x0:x1], os.path.join(saida, base + "_regua.png"), meta)
     if regua_png and os.path.exists(regua_png):
         r = np.array(Image.open(regua_png).convert("RGBA"))
-        r = r[:, :q_idle] if q_idle else r
+        r = r[:, :rq] if rq else r
         ry0, ry1, rx0, rx1 = recorte([r])
-        lado = [sobre(imgs[0][y0:y1, x0:x1], grama, 4), sobre(r[ry0:ry1, rx0:rx1], grama, 4)]
+        esc = 4 if meta["perfil"] == "64" else (8 if meta["perfil"] == "32" else 12)
+        lado = [sobre(imgs[0][y0:y1, x0:x1], grama, esc), sobre(r[ry0:ry1, rx0:rx1], grama, esc)]
         hmax = max(i.height for i in lado)
         comp = Image.new("RGB", (sum(i.width for i in lado) + 24, hmax), hex_rgb(grama))
         comp.paste(lado[0], (0, hmax - lado[0].height))
@@ -591,62 +665,192 @@ def gerar(caminho, saida, pal):
         meta["camadas"] = ["desenho"]
         for q in quadros:
             q["camadas"] = [{"nome": "desenho", "grade": q["linhas"]}]
+    if meta.get("guia"):
+        prancha_guia(meta, imgs, os.path.join(saida, base + "_guia.png"))
+    if meta.get("espelho") and meta.get("direcao"):
+        ew = Image.open(os.path.join(saida, base + ".png")).transpose(Image.FLIP_LEFT_RIGHT)
+        n = len(imgs)
+        parts = [ew.crop(((n - 1 - k) * Q, 0, (n - k) * Q, Q)) for k in range(n)]
+        fw = Image.new("RGBA", (Q * n, Q))
+        for k, pq in enumerate(parts):
+            fw.paste(pq, (k * Q, 0))
+        nome_w = f"{meta['nome']}_{meta['estado_base']}_{meta['espelho']}.png"
+        fw.save(os.path.join(saida, nome_w))
+        ok.append(f"direção {meta['espelho']} espelhada de {meta['direcao']}: {nome_w}")
     ok_ase, txt_ase = exportar_aseprite(meta, cores, quadros, imgs, saida, base)
     (ok if ok_ase else (avisos if txt_ase.startswith("AVISO") else erros)).append(txt_ase.split(None, 1)[1])
-    if sem_regua:
-        ref = None
-        avisos.append("régua não configurada (chave \"regua\" da config do motor vazia ou pasta inexistente): "
-                      "_regua e _regua_anim não foram gerados")
-    else:
-        ref = regua_anim(meta, imgs, y0, y1, x0, x1, os.path.join(saida, base + "_regua_anim.png"))
+    ref = regua_anim(meta, imgs, y0, y1, x0, x1, os.path.join(saida, base + "_regua_anim.png"), regua_png, rq)
     cod_portao, txt_portao = portao(meta, os.path.join(saida, base + ".png"), saida)
     veredito = "APROVADO" if cod_portao == 0 else "REPROVADO — corrija antes de chamar o revisor"
     linhas = [f"# checagem {base}", "", f"PORTÃO DE MEDIDAS: {veredito}", txt_portao,
-              (f"(detalhes e overlay em medidas/{meta['estado']}/; régua animada: {base}_regua_anim.png vs "
-               f"{CFG.get('regua_nome') or 'régua'} {ref})" if not sem_regua else
-               f"(detalhes e overlay em medidas/{meta['estado']}/; sem régua configurada)"),
+              f"(detalhes e overlay em medidas/{meta['estado']}/; prancha boas práticas e aprovados do Artur: {base}_regua.png)",
               ""] + [f"ERRO   {e}" for e in erros] + [f"AVISO  {a}" for a in avisos] + [f"ok     {o}" for o in ok]
     open(os.path.join(saida, base + "_checagem.txt"), "w", encoding="utf-8").write("\n".join(linhas) + "\n")
     print("\n".join(linhas))
-    print(f"\narquivos em {saida}: {base}.png, _8x, _silhueta" + ("" if sem_regua else ", _regua, _regua_anim")
-          + (", .gif" if len(imgs) > 1 else ""))
+    print(f"\narquivos em {saida}: {base}.png, _8x, _silhueta, _regua, _regua_anim" + (", .gif" if len(imgs) > 1 else ""))
     return 1 if (erros or cod_portao) else 0
 
 
-TIPO_MEDIR = {"npc": "personagem", "animal": "criatura"}
-CONTORNO_PX = {"auto": 2, "manual": 2, "suave": 1, "nenhum": 0}
+def perfil_por_altura(h):
+    return "16" if h <= 20 else ("32" if h <= 40 else "64")
 
 
-def regua_anim(meta, imgs, y0, y1, x0, x1, destino):
-    """Os quadros do asset em cima e a animação equivalente da régua embaixo, na mesma escala (só olhar; nunca copiar)."""
-    comum = C
+def aprovados(meta, n=4):
+    """Os assets que o Artur aprovou (config 'aprovados'): os mais recentes, do mesmo tipo primeiro."""
+    pasta = CFG.get("aprovados", "")
+    if not pasta or not os.path.isdir(pasta):
+        return []
+    arqs = [os.path.join(pasta, f) for f in os.listdir(pasta) if f.lower().endswith(".png")]
+    arqs.sort(key=lambda f: (meta.get("tipo", "") not in os.path.basename(f), -os.path.getmtime(f)))
+    return arqs[:n]
+
+
+def boas_praticas(rec, destino, meta=None):
+    """O sprite em 1×, 2×, 4× e 8× sobre grama e masmorra (lê no tamanho real?) e, embaixo, o que o Artur já
+    aprovou, na mesma escala de 4× (a régua é ele)."""
+    linhas = []
+    for cor in list((CFG.get("chao") or {"claro": "#8a9290"}).values())[:2]:
+        cel = [sobre(rec, cor, e) for e in (1, 2, 4, 8)]
+        h = max(c.height for c in cel)
+        b = Image.new("RGB", (sum(c.width for c in cel) + 12 * len(cel), h), hex_rgb(cor))
+        x = 0
+        for c in cel:
+            b.paste(c, (x, h - c.height))
+            x += c.width + 12
+        linhas.append(b)
+    apr = aprovados(meta or {})
+    if apr:
+        from PIL import ImageDraw
+        cel = [sobre(rec, C.cor_fundo_previa(CFG), 4)]
+        for f in apr:
+            a = np.array(Image.open(f).convert("RGBA"))
+            ys, xs = np.nonzero(a[..., 3] > 0)
+            if len(ys):
+                cel.append(sobre(a[ys.min():ys.max() + 1, xs.min():xs.max() + 1], C.cor_fundo_previa(CFG), 4))
+        h = max(c.height for c in cel)
+        b = Image.new("RGB", (sum(c.width for c in cel) + 16 * len(cel), h + 16), (40, 40, 48))
+        ImageDraw.Draw(b).text((3, 2), "nosso | aprovados pelo Artur: " + ", ".join(os.path.basename(f)[:-4] for f in apr),
+                               fill=(255, 220, 120))
+        x = 0
+        for c in cel:
+            b.paste(c, (x, 16 + h - c.height))
+            x += c.width + 16
+        linhas.append(b)
+    out = Image.new("RGB", (max(b.width for b in linhas), sum(b.height for b in linhas) + 8 * len(linhas)), (20, 20, 26))
+    y = 0
+    for b in linhas:
+        out.paste(b, (0, y))
+        y += b.height + 8
+    out.save(destino)
+
+
+def carregar_guia(meta):
+    """A guia recortada para o quadro, alinhada como a grade (pivô) e deslocada por 'guia <png> dx dy'."""
+    Q = meta["quadro"]
+    g = np.array(Image.open(meta["guia"]).convert("RGBA"))
+    if g.shape[1] > Q and g.shape[1] % g.shape[0] == 0:
+        g = g[:, :g.shape[0]]
+    out = np.zeros((Q, Q, 4), np.uint8)
+    op = g[..., 3] > 0
+    ys, xs = np.nonzero(op)
+    yb = ys.max()
+    cx = int(round(xs[ys >= yb - 2].mean()))
+    px, py = Q // 2, round(Q * 127 / 192)
+    dx, dy = meta.get("guia_d", (0, 0))
+    for y, x in zip(ys, xs):
+        yy, xx = y - yb + py + dy, x - cx + px + dx
+        if 0 <= yy < Q and 0 <= xx < Q:
+            out[yy, xx] = g[y, x]
+    return out
+
+
+def prancha_guia(meta, imgs, destino):
+    """Guia | desenho | desenho sobre a silhueta da guia (magenta = só na guia; ciano = só no desenho), em 8×."""
+    g = carregar_guia(meta)
+    a = imgs[0]
+    ga, da = g[..., 3] > 0, a[..., 3] == 255
+    sob = np.zeros_like(a)
+    sob[ga & da] = (120, 120, 130, 255)
+    sob[ga & ~da] = (255, 0, 200, 255)
+    sob[da & ~ga] = (0, 220, 255, 255)
+    y0, y1, x0, x1 = recorte([g, a])
+    cel = [sobre(x[y0:y1, x0:x1], C.cor_fundo_previa(CFG), 8) for x in (g, a, sob)]
+    out = Image.new("RGB", (sum(c.width for c in cel) + 24, cel[0].height), (20, 20, 26))
+    x = 0
+    for c in cel:
+        out.paste(c, (x, 0))
+        x += c.width + 12
+    out.save(destino)
+    Image.fromarray(g).save(destino.replace("_guia.png", "_guia_alinhada.png"))
+
+
+def prancha_direcoes(metas_imgs, destino):
+    """As direções de um estado lado a lado (1º quadro, 8×), alinhadas no pivô, com linhas no topo da cabeça, no olho
+    (1/4 da altura) e no pé de cada uma: o que não alinha salta à vista."""
     from PIL import ImageDraw
-    tipo = TIPO_MEDIR.get(meta["tipo"], meta["tipo"])
-    cat = comum.categoria_estado(meta["estado"]) if tipo in ("personagem", "inimigo", "boss") else tipo
-    if tipo == "efeito":  # régua do efeito pelo nome do estado (efeitos do Tiny em <regua>/fx)
-        nome = meta["estado"].lower()
-        for chaves, c in ((("poeira", "dust", "fumaca"), "poeira"), (("fogo", "fire", "tocha", "chama"), "fogo"),
-                          (("explos",), "explosao"), (("respingo", "splash", "agua"), "respingo"),
-                          (("cura", "heal", "magia", "brilho"), "cura_fx")):
-            if any(k in nome for k in chaves):
-                cat = c
-                break
-    porcat = CFG["regua_por_categoria"]
+    ordem = ["s", "se", "e", "ne", "n", "nw", "w", "sw"]
+    itens = sorted(metas_imgs, key=lambda mi: ordem.index(mi[0]["direcao"]) if mi[0]["direcao"] in ordem else 9)
+    y0, y1, x0, x1 = recorte([im for _, im in itens])
+    esc = 8
+    cel = [sobre(im[y0:y1, x0:x1], C.cor_fundo_previa(CFG), esc) for _, im in itens]
+    W = sum(c.width for c in cel) + 12 * len(cel)
+    out = Image.new("RGB", (W, cel[0].height + 16), (20, 20, 26))
+    d = ImageDraw.Draw(out)
+    x = 0
+    for (m, im), c in zip(itens, cel):
+        out.paste(c, (x, 16))
+        d.text((x + 3, 2), m["direcao"], fill=(255, 220, 120))
+        op = im[y0:y1, x0:x1, 3] == 255
+        ys = np.nonzero(op.any(1))[0]
+        for yy, cor in ((ys.min(), (255, 80, 80)), (ys.min() + (ys.max() - ys.min()) // 4, (80, 200, 255)),
+                        (ys.max() + 1, (255, 255, 80))):
+            d.line([(x, 16 + yy * esc), (x + c.width, 16 + yy * esc)], fill=cor, width=1)
+        x += c.width + 12
+    out.save(destino)
+
+
+TIPO_MEDIR = {"npc": "personagem", "animal": "criatura"}
+CONTORNO_PX = {"auto": 2, "manual": 2, "suave": 1, "nenhum": 0, "selout": 1}
+
+
+def regua_da_direcao(cp, meta):
+    """(caminho da folha da régua na direção do asset, largura do quadro) ou ('', 0) sem régua.
+    'regua_png' (Eldiran: pNN_<dir>.png; lado w usa o e; quadro 'quadro_regua'); sem ele, 'regua_por_categoria'
+    (pacote de estilo antigo: [arquivo, quadro] por categoria do estado, com 'idle' de reserva)."""
+    if not cp.get("regua") or not os.path.isdir(cp["regua"]):
+        return "", 0
+    if cp.get("regua_png"):
+        d = meta.get("direcao", "s")
+        d = {"w": "e", "sw": "e", "se": "e", "nw": "n", "ne": "n"}.get(d, d)
+        nome = re.sub(r"_(s|n|e)\.png$", f"_{d}.png", cp["regua_png"])
+        caminho = os.path.join(cp["regua"], nome)
+        caminho = caminho if os.path.exists(caminho) else os.path.join(cp["regua"], cp["regua_png"])
+        return caminho, cp.get("quadro_regua", 36)
+    porcat = cp.get("regua_por_categoria") or {}
+    tipo = TIPO_MEDIR.get(meta.get("tipo"), meta.get("tipo"))
+    cat = C.categoria_estado(meta.get("estado_base") or meta.get("estado") or "") \
+        if tipo in ("personagem", "inimigo", "boss") else tipo
     par = porcat.get(cat) or porcat.get("idle")
     if not par:
+        return "", 0
+    caminho = os.path.join(cp["regua"], par[0])
+    return (caminho, par[1]) if os.path.exists(caminho) else ("", 0)
+
+
+def regua_anim(meta, imgs, y0, y1, x0, x1, destino, regua_png, q=36):
+    """Os quadros do asset em cima e a animação da régua (mesma direção) embaixo, na mesma escala (só olhar)."""
+    from PIL import ImageDraw
+    if not regua_png or not os.path.exists(regua_png):
         return None
-    arq, q = par
-    caminho = os.path.join(CFG["regua"], arq)
-    if not os.path.exists(caminho):
-        return None
-    ref = np.array(Image.open(caminho).convert("RGBA"))
+    ref = np.array(Image.open(regua_png).convert("RGBA"))
     q = q or ref.shape[0]
-    rq = [ref[:, i * q:(i + 1) * q] for i in range(max(1, ref.shape[1] // q))]  # q = largura; altura inteira (árvore 192×256)
+    rq = [ref[:, i * q:(i + 1) * q] for i in range(max(1, ref.shape[1] // q))]
     ry0, ry1, rx0, rx1 = recorte(rq)
-    esc = 3
+    esc = 4 if meta.get("perfil") == "64" else 8
     grama = C.cor_fundo_previa(CFG)
+    nome_regua = os.path.basename(regua_png)
     linhas = [("nosso: " + meta["estado"], [sobre(im[y0:y1, x0:x1], grama, esc) for im in imgs]),
-              (f"{CFG.get('regua_nome') or 'régua'} ({cat}): {arq}", [sobre(r[ry0:ry1, rx0:rx1], grama, esc) for r in rq])]
+              (f"régua ({CFG.get('regua_nome') or 'régua'}): {nome_regua}", [sobre(r[ry0:ry1, rx0:rx1], grama, esc) for r in rq])]
     por_linha = 8
     blocos = []
     for titulo, cel in linhas:
@@ -664,7 +868,7 @@ def regua_anim(meta, imgs, y0, y1, x0, x1, destino):
     out.paste(blocos[0], (0, 0))
     out.paste(blocos[1], (0, blocos[0].height + 8))
     out.save(destino)
-    return arq
+    return nome_regua
 
 
 def portao(meta, png, saida):
@@ -674,10 +878,21 @@ def portao(meta, png, saida):
     pasta = os.path.join(saida, "medidas", meta["estado"])
     cmd = [sys.executable, os.path.join(AQUI, "medir.py"), "--tipo", tipo, "--quadro", str(meta["quadro"]),
            "--folha", f"{meta['estado']}={png}", "--saida", pasta, "--asset", meta["nome"],
-           "--contorno-px", str(CONTORNO_PX.get(meta["contorno"], 2)),
-           "--limite-cores", str(meta.get("limite") or LIMITES.get(meta["tipo"], 10))]
+           "--contorno-px", str(1 if meta["contorno"] == "manual" and meta.get("perfil", "64") != "64"
+                                else CONTORNO_PX.get(meta["contorno"], 2)),
+           "--limite-cores", str(limite_cores(meta))]
     if meta["contorno"] in ("auto", "suave"):
         cmd += ["--contorno-cor", cor_contorno(meta)]
+    cmd += ["--perfil", meta.get("perfil", "64")]
+    if meta["contorno"] == "selout":
+        cmd.append("--selout")
+    for m in [meta] + meta.get("_irmaos", []):
+        if m.get("guia"):
+            gp = os.path.join(saida, f"{m['nome']}_{m['estado']}_guia_alinhada.png")
+            if os.path.exists(gp):
+                cmd += ["--guia", f"{m['estado']}={gp}"]
+    for m, png_irmao in meta.get("_folhas_irmas", []):
+        cmd += ["--folha", f"{m['estado']}={png_irmao}"]
     if meta.get("sem_contorno"):
         cmd.append("--com-efeito")
     if meta.get("paleta"):
@@ -690,21 +905,118 @@ def portao(meta, png, saida):
     return r.returncode, r.stdout.strip()
 
 
-def numerar(caminho, quadro):
+def numerar(caminho, quadro, guia=False):
     meta, cores, quadros, erros = ler(caminho)
     if not quadros:
         print("\n".join(erros))
         return 1
     q = quadros[quadro]
     w = len(q["linhas"][0])
-    print("     " + "".join(str(j // 10 % 10) if j % 10 == 0 else " " for j in range(w)))
+    linhas = q["linhas"]
+    if guia and meta.get("guia") and meta.get("pivo"):
+        # a guia aparece como ':' onde a grade está vazia ('.') e a guia tem silhueta
+        Q = meta["quadro"]
+        g = carregar_guia(meta)[..., 3] > 0
+        px, py = Q // 2, round(Q * 127 / 192)
+        ox, oy = px - meta["pivo"][0], py - meta["pivo"][1]
+        linhas = ["".join(":" if c == "." and 0 <= oy + i < Q and 0 <= ox + j < Q and g[oy + i, ox + j] else c
+                          for j, c in enumerate(l)) for i, l in enumerate(linhas)]
+        print("(':' = silhueta da guia onde a grade está vazia)")
+    print("     " + "".join(str(j // 10 % 10) if j % 5 == 0 else " " for j in range(w)))
     print("     " + "".join(str(j % 10) for j in range(w)))
-    for i, l in enumerate(q["linhas"]):
+    for i, l in enumerate(linhas):
         marca = "<pivô" if meta["pivo"] and i == meta["pivo"][1] else ""
         print(f"{i:>3}  {l}  {marca}")
     if erros:
         print("\n".join(erros))
     return 0
+
+
+def _mapa(q):
+    return {(j, i): c for i, l in enumerate(q["linhas"]) for j, c in enumerate(l) if c != "."}
+
+
+def diff(caminho, qa, qb):
+    meta, cores, quadros, erros = ler(caminho)
+    if erros:
+        print("\n".join(erros))
+        return 1
+    Q = {q["nome"]: q for q in quadros}
+    a, b = _mapa(Q[qa]), _mapa(Q[qb])
+    mud = sorted(set(a) | set(b), key=lambda p: (p[1], p[0]))
+    mud = [p for p in mud if a.get(p) != b.get(p)]
+    print(f"{qa} -> {qb}: {len(mud)} px mudam de {len(set(a) | set(b))} ({100 * len(mud) / max(1, len(set(a) | set(b))):.0f}%)")
+    por_linha = {}
+    for (x, y) in mud:
+        por_linha.setdefault(y, []).append(f"{x}:{a.get((x, y), '.')}>{b.get((x, y), '.')}")
+    for y in sorted(por_linha):
+        print(f"  lin {y:>3}: " + " ".join(por_linha[y]))
+    return 0
+
+
+def anim(caminho):
+    """Por quadro: deslocamento do centro de massa e do pé, px mudados, e px por letra (membro mudando de tamanho)."""
+    meta, cores, quadros, erros = ler(caminho)
+    if erros:
+        print("\n".join(erros))
+        return 1
+    info = []
+    for q in quadros:
+        m = _mapa(q)
+        xs = [p[0] for p in m]
+        ys = [p[1] for p in m]
+        cont = {}
+        for c in m.values():
+            cont[c] = cont.get(c, 0) + 1
+        info.append({"cx": sum(xs) / len(xs), "cy": sum(ys) / len(ys), "pe": max(ys), "n": len(m), "cont": cont, "m": m})
+    letras = sorted(set().union(*(i["cont"] for i in info)))
+    print("quadro   desloc(cx,cy)   pé   px   mudam   " + " ".join(f"{c:>4}" for c in letras))
+    for k, (q, i) in enumerate(zip(quadros, info)):
+        ant = info[k - 1]
+        mud = sum(1 for p in set(i["m"]) | set(ant["m"]) if i["m"].get(p) != ant["m"].get(p))
+        print(f"{q['nome']:<8} {i['cx'] - info[0]['cx']:+5.1f},{i['cy'] - info[0]['cy']:+5.1f}   {i['pe']:>4} {i['n']:>4} "
+              f"{100 * mud / max(1, len(set(i['m']) | set(ant['m']))):5.0f}%   " + " ".join(f"{i['cont'].get(c, 0):>4}" for c in letras))
+    for c in letras:
+        v = [i["cont"].get(c, 0) for i in info]
+        if max(v) and (max(v) - min(v)) / max(v) > 0.10 and max(v) >= 6:
+            print(f"  aviso: '{c}' varia {min(v)}–{max(v)} px entre quadros (parte mudando de tamanho? ok se gira ou some)")
+    return 0
+
+
+def gerar_estado(arquivos, saida, pal):
+    """Gera cada direção e depois o portão conjunto (D01–D05) e a prancha _direcoes.png por estado."""
+    lidos = [(c, ler(c)) for c in arquivos]
+    codigos = [gerar(c, saida, pal) for c in arquivos]
+    grupos = {}
+    for c, (meta, cores, quadros, erros) in lidos:
+        if meta.get("direcao") and not erros:
+            grupos.setdefault((meta["nome"], meta["estado_base"]), []).append((c, meta, cores, quadros))
+    for (nome, est), itens in grupos.items():
+        if len(itens) < 2:
+            continue
+        metas_imgs = []
+        for c, meta, cores, quadros in itens:
+            if not meta.get("perfil"):
+                alt = max(len(q["linhas"]) for q in quadros) + 2
+                meta["perfil"] = perfil_por_altura(alt)
+            metas_imgs.append((meta, montar(meta, cores, quadros[0])[0]))
+        prancha_direcoes(metas_imgs, os.path.join(saida, f"{nome}_{est}_direcoes.png"))
+        m0 = dict(itens[0][1])
+        m0["estado"] = f"{est}_{m0['direcao']}"
+        m0["_folhas_irmas"] = [(m, os.path.join(saida, f"{nome}_{m['estado']}.png")) for _, m, _, _ in itens[1:]]
+        m0["_irmaos"] = [m for _, m, _, _ in itens[1:]]
+        for _, m, _, _ in itens:
+            if m.get("espelho"):
+                m0["_folhas_irmas"].append(({"estado": f"{est}_{m['espelho']}"},
+                                            os.path.join(saida, f"{nome}_{est}_{m['espelho']}.png")))
+        m0["estado"] = f"{est}_{itens[0][1]['direcao']}"
+        cod, txt = portao(dict(m0, estado=m0["estado"]), os.path.join(saida, f"{nome}_{m0['estado']}.png"),
+                          os.path.join(saida, "_conjunto"))
+        print(f"\n# PORTÃO CONJUNTO {nome} {est} ({', '.join(m['direcao'] for _, m, _, _ in itens)}): "
+              + ("APROVADO" if cod == 0 else "REPROVADO") + "\n" + txt)
+        open(os.path.join(saida, f"{nome}_{est}_conjunto.txt"), "w", encoding="utf-8").write(txt + "\n")
+        codigos.append(cod)
+    return max(codigos)
 
 
 def main():
@@ -717,11 +1029,22 @@ def main():
     n = sub.add_parser("numerar")
     n.add_argument("arquivo")
     n.add_argument("--quadro", type=int, default=0)
+    n.add_argument("--guia", action="store_true")
+    d = sub.add_parser("diff")
+    d.add_argument("arquivo")
+    d.add_argument("qa")
+    d.add_argument("qb")
+    an = sub.add_parser("anim")
+    an.add_argument("arquivo")
     a = ap.parse_args()
     if a.cmd == "numerar":
-        return numerar(a.arquivo, a.quadro)
+        return numerar(a.arquivo, a.quadro, a.guia)
+    if a.cmd == "diff":
+        return diff(a.arquivo, a.qa, a.qb)
+    if a.cmd == "anim":
+        return anim(a.arquivo)
     pal = paleta()
-    return max(gerar(c, a.saida, pal) for c in a.arquivos)
+    return gerar_estado(a.arquivos, a.saida, pal)
 
 
 if __name__ == "__main__":

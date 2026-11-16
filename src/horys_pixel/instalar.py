@@ -19,7 +19,7 @@ from . import config
 RAIZ = Path(__file__).resolve().parents[2]
 SRC = RAIZ / "src"
 EXT = RAIZ / "extension"
-SKILLS = ["horys-pixel", "horys-pixel-review", "horys-pixel-estilo"]
+SKILLS = ["horys-base-e-pele", "horys-pixel", "horys-pixel-review", "horys-pixel-estilo"]
 NOME_EXT = "horys-pixel"
 ACESSO = 2 | 4 | 8          # gravar | ler | abrir conexão (FileAccessMode do Aseprite)
 
@@ -44,6 +44,17 @@ def aseprite_aberto() -> bool:
         return bool(out.strip())
     except OSError:
         return False
+
+
+def empacotar_extensao(simular: bool = False) -> list[str]:
+    """Reempacota extension/ em dist/ antes de instalar: a extensão instalada nunca fica velha (em 14/11 a do
+    Aseprite era de 05/11 e o painel novo falhava com 'comando desconhecido')."""
+    script = RAIZ / "scripts" / "build_extension.py"
+    if simular or not script.is_file():
+        return [f"empacotar: {script}"]
+    r = subprocess.run([sys.executable, str(script)], capture_output=True, text=True, encoding="utf-8",
+                       errors="replace")
+    return [f"empacotar: {'ok' if r.returncode == 0 else 'FALHOU ' + (r.stdout + r.stderr)[-300:]}"]
 
 
 def instalar_extensao(pasta_usuario: Path | None = None, simular: bool = False) -> list[str]:
@@ -203,6 +214,7 @@ def tudo(simular: bool = False, confiar: bool = False, inicializacao: bool = Fal
     """Instala tudo, SEM o Codex por padrão (ele é opcional: codex=True / `horys instalar --tudo --codex`)."""
     log = []
     config.token()
+    log += empacotar_extensao(simular=simular)
     log += instalar_extensao(simular=simular)
     if confiar:
         log += confiar_scripts(simular=simular)
