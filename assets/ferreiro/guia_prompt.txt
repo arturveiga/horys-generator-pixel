@@ -1,0 +1,10 @@
+Anexe 2 imagens: (1) assets/ferreiro/guia.png  (2) assets/ferreiro/gerada.png (a arte de referência do ferreiro).
+
+A imagem 1 é o render 3D em blocos do personagem, nas três vistas do jogo (FRENTE, LADO olhando para a direita, COSTAS), já na câmera certa (top-down 3/4, 43°) e no tamanho certo. Pinte por cima dela uma pixel art acabada do ferreiro da imagem 2.
+
+Regras obrigatórias:
+1. Mantenha EXATAMENTE a silhueta, a posição, o tamanho e o tamanho de pixel de cada figura da imagem 1: mesmo contorno externo, mesma altura (32 pixels de arte), pés na mesma linha. Não mova, não aumente, não diminua.
+2. Use as manchas de cor da imagem 1 como mapa de onde fica cada material (cabelo branco, rosto, óculos dourados com lente azul, túnica bege, couro marrom, braçadeira azul, botas marrons). Limpe o ruído: áreas lisas de cor, com sombra e luz simples (luz de cima à esquerda).
+3. O personagem, as cores e o estilo são os da imagem 2: anão ferreiro de cabelo branco espetado, barba branca, óculos dourados na testa.
+4. Pixel art de verdade: pixels quadrados e nítidos, todos do mesmo tamanho; sem antisserrilhado, degradê ou desfoque. Contorno escuro de 1 pixel em volta. Até 20 cores.
+5. Fundo inteiro #FF00FF (magenta), imagem 1536×1024, nada além das três figuras.

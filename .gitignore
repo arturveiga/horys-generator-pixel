@@ -5,20 +5,8 @@ build/
 dist/
 .pytest_cache/
 .venv/
-# dados locais de cada estilo (memória de gosto, conjunto e modelos treinados)
-estilos/*/gosto/
-estilos/*/conjunto/
-estilos/*/lora/
 
-# testes locais
-tmp-*/
-
-# SpriteKiln: renders and caches are regenerated; exported files live in the engine folder
-art/specs/**/out/
-art/specs/**/.kilncache/
-art/specs/**/*_ref/
-
-# backups da skill pixel-liso
-skills/horys-pixel-liso/**/*.bak*
-skills/horys-pixel-liso/scripts.bak*/
-skills/**/__pycache__/
+# gerado pelo horys (refaça com horys gabarito / horys animar)
+assets/*/saida/
+assets/*/blender/*.blend1
+assets/*/blender/_*_inspecao.json

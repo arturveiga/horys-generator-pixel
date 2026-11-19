@@ -1,0 +1,22 @@
+{
+ "familias": {
+  "pele": {
+   "rampa": [
+    "#69777f",
+    "#a0b3b6",
+    "#daf3ee",
+    "#ffffff"
+   ],
+   "tipo": "toon"
+  }
+ },
+ "tinta": "#161c2e",
+ "cores": [
+  "#161c2e",
+  "#69777f",
+  "#a0b3b6",
+  "#daf3ee",
+  "#ffffff"
+ ],
+ "avisos": []
+}

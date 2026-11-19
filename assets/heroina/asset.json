@@ -1,0 +1,34 @@
+{
+ "nome": "heroina",
+ "tipo": "humanoide",
+ "altura_px": null,
+ "descricao": "jovem guerreira de cabelo ruivo-alaranjado preso, pele clara; túnica longa azul-marinho escuro até os joelhos com faixa vermelha na cintura e barra vermelha, ombreira vermelho-escura com detalhe preto no ombro direito, braços nus claros, botas escuras. Cores principais: azul-marinho, vermelho, ruivo. Silhueta esguia e reta, túnica em A. NÃO pode ter: capa longa, armadura de metal, capacete, arma na mão",
+ "blend": "blender/modelo.blend",
+ "esconder": [],
+ "materiais": {
+  "padrao": "auto",
+  "regras": []
+ },
+ "rig": {
+  "ancora": "",
+  "segmentos": []
+ },
+ "papeis": {
+  "tronco": "",
+  "cabeca": "",
+  "bracos": [],
+  "pernas": []
+ },
+ "acoes": {
+  "idle": {
+   "tipo": "idle",
+   "quadros": 8,
+   "fps": 8
+  },
+  "andar": {
+   "tipo": "andar",
+   "quadros": 8,
+   "fps": 10
+  }
+ }
+}

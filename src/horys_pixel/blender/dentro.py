@@ -1,16 +1,17 @@
 """Roda DENTRO do Blender (headless): prepara a cena do jogo e renderiza ações × direções em pixel.
 
 Uso (o horys chama): blender -b <arquivo.blend> --python dentro.py -- <trabalho.json>
-trabalho.json = {"config": {...}, "paleta": {...}, "saida": "<pasta>", "cores_partes": {...}, "previa": false}
+trabalho.json = {"config": <asset.json>, "jogo": <jogo.json>, "paleta": <paleta.json>, "saida": "<pasta>",
+                 "acoes": {...}, "direcoes": {...}, "cores_partes": {...}, "previa": false}
 
-Só stdlib + bpy/mathutils (o Python do Blender não vê o horys). Reimplementa, para o horys, o que o Blender Pixel
-Kit (SouthernShotty) e os scripts do robô do Codex (14/11) faziam à mão:
-- câmera do jogo top-down 3/4 com a escala pela altura-alvo em px (B1);
-- material toon por família com a rampa da paleta aprovada + luz facetada, cor exata por emissão (B2);
-- rig de empties por pivôs a partir de coleções/nomes, sem armature (B5);
-- andar e idle procedurais: pé de apoio parado no chão, IK de 2 segmentos, calcanhar/ponta, bob, braço oposto (B5);
-- lote ações × direções girando a âncora (B4) e o passe de partes com uma cor chapada por parte (B6).
-O contorno, a paleta travada e a limpeza ficam no pós (horys_pixel.blender.pos), em Python.
+Só stdlib + bpy/mathutils (o Python do Blender não vê o horys).
+- câmera, luz, quadro e escala vêm SÓ do contrato do jogo (jogo.json): px por metro fixo, nunca ajustado ao asset;
+- material toon por família com a rampa da paleta aprovada + luz facetada, cor exata por emissão;
+- rig de empties por pivôs a partir de coleções/nomes, sem armature; junta fora da malha vira aviso JUNTA_FORA;
+- ações procedurais (parado, idle, andar, correr, flutuar, ataque, soco, dano, morte), 'timeline' (a do .blend) ou
+  'mixamo' (FBX de esqueleto Mixamo amostrado nos empties do rig: ver mixamo());
+- lote ações × direções girando a âncora e o passe de partes com uma cor chapada por parte.
+O contorno, a paleta travada, a anticintilação e a limpeza ficam no pós (horys_pixel.pos), em Python.
 """
 import fnmatch
 import json
@@ -24,6 +25,8 @@ from mathutils import Euler, Matrix, Quaternion, Vector
 
 TRAB = json.load(open(sys.argv[sys.argv.index("--") + 1], encoding="utf-8"))
 CFG = TRAB["config"]
+JOGO = TRAB["jogo"]
+LUZ = JOGO["luz"]
 PAL = TRAB["paleta"]
 SAIDA = TRAB["saida"]
 PREVIA = bool(TRAB.get("previa"))
@@ -75,7 +78,7 @@ def preparar_cena():
     r.engine = "BLENDER_EEVEE"
     r.filter_size = 0.0
     r.film_transparent = True
-    r.resolution_x = r.resolution_y = int(CFG["camera"].get("quadro", 64))
+    r.resolution_x = r.resolution_y = int(JOGO["quadro"])
     r.resolution_percentage = 100
     r.dither_intensity = 0
     r.image_settings.file_format = "PNG"
@@ -96,11 +99,11 @@ def preparar_cena():
     bg = scene.world.node_tree.nodes.get("Background")
     if bg:
         bg.inputs[0].default_value = (0.5, 0.5, 0.5, 1)
-        bg.inputs[1].default_value = float(CFG.get("luz", {}).get("ambiente", 0.25))
+        bg.inputs[1].default_value = float(LUZ.get("ambiente", 0.25))
     # sol na direção da luz facetada: a sombra projetada (Shader to RGB) concorda com a faceta
-    d = Vector(CFG.get("luz", {}).get("direcao", [-0.52, -0.53, 0.67])).normalized()
+    d = Vector(LUZ.get("direcao", [-0.52, -0.53, 0.67])).normalized()
     sol = bpy.data.lights.new("Horys | sol", "SUN")
-    sol.energy = float(CFG.get("luz", {}).get("sol", 3.0))
+    sol.energy = float(LUZ.get("sol", 3.0))
     so = bpy.data.objects.new("Horys | sol", sol)
     scene.collection.objects.link(so)
     so.rotation_euler = (-d).to_track_quat("-Z", "Y").to_euler()
@@ -157,7 +160,40 @@ class Rig:
             AVISOS.append(f"{len(soltos)} peças sem segmento ficam presas à âncora (ex.: {soltos[0].name})")
         self.soltos = soltos
         bpy.context.view_layer.update()
+        self.juntas = self.checar_juntas()
         log("rig:", {k: len(v) for k, v in self.objs.items()})
+
+    def checar_juntas(self, folga=0.12):
+        """A junta (pivô) tem que ficar dentro da caixa das peças do segmento ou do pai (folga de 12% da altura do
+        modelo). Fora disso a peça gira em volta de um ponto no ar: braço solto, perna que descola."""
+        def caixa(objs):
+            pts = [o.matrix_world @ Vector(v) for o in objs if o.type == "MESH" for v in o.bound_box]
+            if not pts:
+                return None
+            return (Vector((min(p.x for p in pts), min(p.y for p in pts), min(p.z for p in pts))),
+                    Vector((max(p.x for p in pts), max(p.y for p in pts), max(p.z for p in pts))))
+        todas = caixa([o for v in self.objs.values() for o in v])
+        if todas is None:
+            return {}
+        f = (todas[1].z - todas[0].z) * folga
+        orig = self.ancora.matrix_world
+        pais = {n: next((k for k, v in self.seg.items() if v is e.parent), "ancora") for n, e in self.seg.items()}
+        out = {}
+        for nome in self.seg:
+            if not self.objs[nome]:
+                continue
+            p = orig @ Vector(self.pivo[nome])
+            dentro = False
+            for objs in (self.objs[nome], self.objs.get(pais[nome], [])):
+                c = caixa(objs)
+                if c and all(c[0][i] - f <= p[i] <= c[1][i] + f for i in range(3)):
+                    dentro = True
+                    break
+            out[nome] = dentro
+            if not dentro:
+                AVISOS.append(f"JUNTA_FORA: o pivô de '{nome}' {tuple(round(v, 3) for v in self.pivo[nome])} está "
+                              "fora das peças dele e do pai: corrija em asset.json (rig.segmentos)")
+        return out
 
     def limpar(self):
         for e in self.seg.values():
@@ -267,12 +303,13 @@ class Corpo:
         chave(pe, f)
 
 
-def andar(corpo, n, amp=1.0, amp_bracos=None, bracos_tras=0.0, inclina=0.0, dobra_cotovelo=None):
+def andar(corpo, n, amp=1.0, amp_bracos=None, bracos_tras=0.0, inclina=0.0, dobra_cotovelo=None, agacha=1.0):
     """Andar de n quadros (o walk.py do robô do Codex, parametrizado pela escala da perna). Bípede: pernas em
     oposição (fase 0 e 0,5). Quadrúpede: cada perna com a sua 'fase' na config (passo: TE 0, DE 0,25, TD 0,5, DD
     0,75). amp_bracos: balanço dos braços (baixo quando ele segura uma arma com as duas mãos).
     bracos_tras: rad somados ao ombro (> 0 leva o braço para trás: ~0,35 no andar "lembra Naruto", ~1,2 na corrida
-    ninja). inclina: rad de tronco para a frente. dobra_cotovelo: dobra fixa (None = a do balanço)."""
+    ninja). inclina: rad de tronco para a frente. dobra_cotovelo: dobra fixa (None = a do balanço).
+    agacha: quanto o quadril desce no passo (1 = robô de referência; menor = mais ereto, joelho menos dobrado)."""
     amp_b = amp if amp_bracos is None else amp_bracos
     s = corpo.escala
     APOIO, PASSO, ALTURA = 0.61, 0.77 * s * amp, 0.46 * s * amp
@@ -294,7 +331,7 @@ def andar(corpo, n, amp=1.0, amp_bracos=None, bracos_tras=0.0, inclina=0.0, dobr
         f = i + 1
         t = (i % n) / n
         ph = math.tau * t
-        desl = Vector((0.058 * s * math.cos(ph + 0.32), -0.058 * s, -0.219 * s - 0.085 * s * math.cos(2 * ph - 0.22)))
+        desl = Vector((0.058 * s * math.cos(ph + 0.32), -0.058 * s, (-0.219 * s - 0.085 * s * math.cos(2 * ph - 0.22)) * agacha))
         corpo.tronco.location = corpo.p_tronco + desl          # o tronco tem pai 'ancora'
         corpo.tronco.rotation_quaternion = q_euler(0.065 + inclina, 0.029 * math.cos(ph), -0.064 * math.cos(ph))
         chave(corpo.tronco, f)
@@ -318,6 +355,7 @@ def andar(corpo, n, amp=1.0, amp_bracos=None, bracos_tras=0.0, inclina=0.0, dobr
             f0 = corpo.fases[k] if corpo.fases[k] is not None else (0 if lado < 0 else 0.5)
             fase = (t + f0) % 1
             viagem, alt, rol = ciclo_pe(fase)
+            rol *= float(CFG.get("pe_rolagem", 1.0))         # pé pequeno (chibi): menos calcanhar/ponta
             giro = Quaternion((0, 0, 1), lado * 0.026) @ Quaternion((1, 0, 0), rol)
             baixo = min((giro @ (p - t0)).z + t0.z for p in sola)
             sola_z0 = min(p.z for p in sola)
@@ -326,27 +364,34 @@ def andar(corpo, n, amp=1.0, amp_bracos=None, bracos_tras=0.0, inclina=0.0, dobr
             corpo.pose_perna(f, quadril_n, perna, tornozelo_n, giro)
 
 
-def idle(corpo, n, amp=1.0):
+def idle(corpo, n, amp=1.0, lado_a_lado=0.0):
     """Idle de respiração (o idle.py do robô do Codex): tronco desce e balança, cabeça e braços em contrafase,
-    pés parados no chão."""
+    pés parados no chão. lado_a_lado: balanço de um lado para o outro (o corpo desliza e inclina, a cabeça compensa,
+    os braços balançam soltos atrasados); 1,0 = balanço bem visível."""
     s = corpo.escala
     for i in range(n + 1):
         f = i + 1
         ph = math.tau * (i % n) / n
         resp = 0.5 - 0.5 * math.cos(ph)
         bal = math.sin(ph)
+        lat = lado_a_lado
         desl = Vector((0.036 * s * bal, -0.027 * s * resp, -0.128 * s * resp)) * amp
-        corpo.tronco.location = corpo.p_tronco + desl
-        corpo.tronco.rotation_quaternion = q_euler(0.014 * resp * amp, 0.010 * bal * amp, 0.012 * bal * amp)
+        # pêndulo: o corpo inteiro (pernas retas, pés juntos) inclina em volta do chão; não desce, o joelho não dobra
+        pend = Quaternion((0, 1, 0), 0.07 * lat * bal)
+        Rp = pend.to_matrix()
+        corpo.tronco.location = Rp @ (corpo.p_tronco + desl)
+        corpo.tronco.rotation_quaternion = pend @ q_euler(0.014 * resp * amp, 0.010 * amp * bal, 0.012 * bal * amp)
         chave(corpo.tronco, f)
         if corpo.cabeca:
-            corpo.cabeca.rotation_quaternion = q_euler(0.034 * math.sin(ph - 0.62) * amp, -0.016 * math.sin(ph - 0.36) * amp,
+            corpo.cabeca.rotation_quaternion = q_euler(0.034 * math.sin(ph - 0.62) * amp,
+                                                      -0.016 * math.sin(ph - 0.36) * amp - 0.08 * lat * math.sin(ph - 0.5),
                                                       -0.021 * math.sin(ph - 0.56) * amp)
             chave(corpo.cabeca, f)
         for lado, ombro, cotovelo in corpo.bracos:
             ombro.rotation_quaternion = q_euler(0.029 * math.sin(ph - 0.43 + lado * 0.47) * amp,
                                                 -lado * (0.024 * resp + 0.012 * math.sin(ph - 0.34)) * amp,
                                                 lado * 0.019 * math.sin(ph - 0.16) * amp)
+            ombro.rotation_quaternion = q_euler(0, -0.2 * lat * math.sin(ph - 0.7), 0) @ ombro.rotation_quaternion
             chave(ombro, f)
             if cotovelo:
                 cotovelo.rotation_quaternion = q_euler(-0.030 * resp * amp, lado * 0.011 * math.sin(ph - 0.62) * amp, 0)
@@ -354,8 +399,8 @@ def idle(corpo, n, amp=1.0):
         R = corpo.tronco.rotation_quaternion.to_matrix()
         for perna in corpo.pernas:
             lado, q, j, t0, coxa, canela, pe, sola = perna
-            quadril_n = corpo.p_tronco + desl + R @ (q - corpo.p_tronco)
-            corpo.pose_perna(f, quadril_n, perna, t0.copy(), Quaternion())
+            quadril_n = corpo.tronco.location + R @ (q - corpo.p_tronco)
+            corpo.pose_perna(f, quadril_n, perna, Rp @ t0, pend)
 
 
 # ------------------------------------------------------------------ materiais toon pela paleta (B2)
@@ -427,8 +472,8 @@ def familia_de(mat, regras, padrao, fams):
 
 
 def aplicar_paleta(alvos):
-    luz = CFG.get("luz", {}).get("direcao", [-0.52, -0.53, 0.67])
-    faceta = float(CFG.get("luz", {}).get("faceta", 0.73))
+    luz = LUZ.get("direcao", [-0.52, -0.53, 0.67])
+    faceta = float(LUZ.get("faceta", 0.73))
     fams = PAL["familias"]
     mats = {}
     for nome, f in fams.items():
@@ -480,9 +525,9 @@ def calibrar_limiares(alvos, fams, mats, direcoes, ancora):
     """Limiares da rampa pela ÁREA: renderiza o valor de luz de cada família na pose de repouso, em todas as
     direções, e põe os limiares nos quantis da meta (3 tons: 22% sombra, 56% base, 22% luz; 2 tons: 35% sombra).
     Assim a cor-base do conceito domina e a luz e a sombra só desenham o volume (regra de rampa do horys)."""
-    luz = CFG.get("luz", {}).get("direcao", [-0.52, -0.53, 0.67])
-    faceta = float(CFG.get("luz", {}).get("faceta", 0.73))
-    meta = CFG.get("luz", {}).get("proporcao") or {"3": [0.22, 0.78], "2": [0.35]}
+    luz = LUZ.get("direcao", [-0.52, -0.53, 0.67])
+    faceta = float(LUZ.get("faceta", 0.73))
+    meta = LUZ.get("proporcao") or {"3": [0.22, 0.78], "2": [0.35]}
     toon = [n for n, f in fams.items() if f.get("tipo") != "emissivo" and len(f["rampa"]) > 1]
     if not toon:
         return {}
@@ -557,6 +602,113 @@ def calibrar_limiares(alvos, fams, mats, direcoes, ancora):
     return limiares
 
 
+def _hex_srgb(hx):
+    hx = hx.lstrip("#")
+    return tuple(int(hx[i:i + 2], 16) / 255 for i in (0, 2, 4))
+
+
+def projetar_arte(alvos, mats, rig, cam):
+    """Projeção da arte aprovada no modelo (decisão em aberto nº 2): cada face recebe a família de material da cor
+    da arte que cai sobre ela, nas vistas aprovadas (frente/lado/costas), com a câmera do jogo. Vota por face
+    (peso = quanto a face encara a câmera); face escondida (raio até a câmera bate em outra peça) não vota; face sem
+    voto fica com a família que já tinha. A arte é encaixada na caixa da figura renderizada em cada vista."""
+    proj = TRAB.get("projecao") or {}
+    vistas = proj.get("vistas") or {}
+    if not vistas:
+        return {}
+    fams = PAL["familias"]
+    tons = [(nome, _hex_srgb(hx)) for nome, f in fams.items() for hx in f["rampa"]]
+    tinta = _hex_srgb(PAL.get("tinta", "#000000"))
+    quadro = int(JOGO["quadro"])
+    escala = cam.data.ortho_scale
+    votos = {}                                       # (objeto, índice da face) -> {família: peso}
+    deps = bpy.context.evaluated_depsgraph_get()
+    for vnome, v in vistas.items():
+        img = bpy.data.images.load(v["png"])
+        img.colorspace_settings.name = "Non-Color"
+        W, H = img.size
+        px = list(img.pixels)
+        bpy.data.images.remove(img)
+
+        def arte(x, y):                              # y de cima para baixo
+            i = ((H - 1 - y) * W + x) * 4
+            return px[i:i + 4]
+
+        opacos = [(x, y) for y in range(H) for x in range(W) if arte(x, y)[3] > 0.5]
+        if not opacos:
+            continue
+        ax0, ax1 = min(p[0] for p in opacos), max(p[0] for p in opacos) + 1
+        ay0, ay1 = min(p[1] for p in opacos), max(p[1] for p in opacos) + 1
+        rig.ancora.rotation_euler.z = math.radians(float(v["angulo"]))
+        bpy.context.view_layer.update()
+        deps.update()
+        inv = cam.matrix_world.inverted()
+        para_cam = (cam.matrix_world.to_3x3() @ Vector((0, 0, 1))).normalized()
+
+        def tela(p):
+            c = inv @ p
+            return (c.x / escala + 0.5) * quadro, (0.5 - c.y / escala) * quadro
+
+        pts = [tela(o.matrix_world @ vv.co) for o in alvos if o.type == "MESH" for vv in o.data.vertices]
+        x0, x1 = min(p[0] for p in pts), max(p[0] for p in pts)
+        y0, y1 = min(p[1] for p in pts), max(p[1] for p in pts)
+        sx, sy = (ax1 - ax0) / max(1e-6, x1 - x0), (ay1 - ay0) / max(1e-6, y1 - y0)
+        for o in alvos:
+            if o.type != "MESH":
+                continue
+            M = o.matrix_world
+            N = M.to_3x3().inverted().transposed()
+            for poly in o.data.polygons:
+                n = (N @ poly.normal).normalized()
+                peso = n.dot(para_cam)
+                if peso <= 0.05:
+                    continue
+                c = M @ poly.center
+                hit, loc, _, _, ob_hit, _ = scene.ray_cast(deps, c + para_cam * 1e-3, para_cam)
+                if hit and (ob_hit is None or ob_hit.name != o.name or (loc - c).length > 0.02):
+                    continue
+                tx, ty = tela(c)
+                ix = int(ax0 + (tx - x0) * sx)
+                iy = int(ay0 + (ty - y0) * sy)
+                if not (0 <= ix < W and 0 <= iy < H):
+                    continue
+                r, g, b, a = arte(ix, iy)
+                if a < 0.5:
+                    continue
+                cor = (r, g, b)
+                fam, dmin = None, 9e9
+                for nome, t in tons:
+                    d = sum((p - q) ** 2 for p, q in zip(cor, t))
+                    if d < dmin:
+                        fam, dmin = nome, d
+                if sum((p - q) ** 2 for p, q in zip(cor, tinta)) < dmin:
+                    continue                         # contorno: não diz material
+                vt = votos.setdefault((o.name, poly.index), {})
+                vt[fam] = vt.get(fam, 0.0) + peso
+    rig.ancora.rotation_euler.z = 0
+    bpy.context.view_layer.update()
+    uso = {}
+    for o in alvos:
+        if o.type != "MESH":
+            continue
+        if o.data.users > 1:
+            o.data = o.data.copy()
+        for poly in o.data.polygons:
+            vt = votos.get((o.name, poly.index))
+            if not vt:
+                continue
+            fam = max(vt, key=vt.get)
+            m = mats[fam]
+            idx = next((i for i, s in enumerate(o.material_slots) if s.material == m), None)
+            if idx is None:
+                o.data.materials.append(m)
+                idx = len(o.material_slots) - 1
+            poly.material_index = idx
+            uso[fam] = uso.get(fam, 0) + 1
+    log("projeção da arte (faces por família):", uso)
+    return uso
+
+
 def limiares_padrao(n):
     return {2: [0.42], 3: [0.30, 0.58], 4: [0.16, 0.33, 0.49]}.get(n, [k / n for k in range(1, n)])
 
@@ -565,10 +717,10 @@ def limiares_padrao(n):
 
 
 def camera_jogo(rig, alvos):
-    c = CFG["camera"]
-    quadro = int(c.get("quadro", 64))
-    ang = math.radians(float(c.get("angulo", 43)))
-    giro = math.radians(float(c.get("giro", 0)))
+    """Câmera ortográfica top-down 3/4 do JOGO: ângulo e px por metro do contrato, iguais para todo asset. A figura
+    só é centralizada (x) e apoiada na linha do pé (y); a escala nunca muda para caber."""
+    quadro = int(JOGO["quadro"])
+    ang = math.radians(float(JOGO["angulo"]))
     cam_d = bpy.data.cameras.new("Horys | câmera do jogo")
     cam_d.type = "ORTHO"
     cam = bpy.data.objects.new("Horys | câmera do jogo", cam_d)
@@ -578,32 +730,31 @@ def camera_jogo(rig, alvos):
     pts = [o.matrix_world @ Vector(v) for o in alvos for v in o.bound_box]
     zc = (min(p.z for p in pts) + max(p.z for p in pts)) / 2
     alvo = rig.ancora.matrix_world.translation + Vector((0, 0, zc))
-    dist = 40.0
-    dirv = Vector((math.sin(giro) * math.cos(ang), -math.cos(giro) * math.cos(ang), math.sin(ang)))
-    cam.location = alvo + dist * dirv
+    dirv = Vector((0.0, -math.cos(ang), math.sin(ang)))
+    cam.location = alvo + 40.0 * dirv
     cam.rotation_euler = (alvo - cam.location).to_track_quat("-Z", "Y").to_euler()
     cam_d.clip_end = 200
+    escala = quadro / float(JOGO["px_por_metro"])
+    cam_d.ortho_scale = escala
     bpy.context.view_layer.update()
     inv = cam.matrix_world.inverted()
     loc = [inv @ p for p in pts]
     xs, ys = [p.x for p in loc], [p.y for p in loc]
-    altura = max(ys) - min(ys)
-    escala = altura * quadro / float(c.get("altura_px", quadro * 0.7))
-    larg = max(xs) - min(xs)
-    margem = int(c.get("margem_px", 2))
-    if larg * quadro / escala > quadro - 2 * margem:
-        escala = larg * quadro / (quadro - 2 * margem)
-        AVISOS.append(f"a figura é larga: a escala foi pela largura; altura final {altura * quadro / escala:.0f} px")
-    cam_d.ortho_scale = escala
-    base = int(c.get("base_px", 4))
+    altura = (max(ys) - min(ys)) * quadro / escala
+    largura = (max(xs) - min(xs)) * quadro / escala
+    margem = int(JOGO.get("margem_px", 2))
+    if largura > quadro - 2 * margem:
+        AVISOS.append(f"NAO_CABE: a figura tem {largura:.0f} px de largura e o quadro {quadro}: aumente 'quadro' no "
+                      "jogo.json (a escala do jogo não muda)")
+    base = int(JOGO.get("base_px", 4))
     y_quer = -escala / 2 + base * escala / quadro
     dy = min(ys) - y_quer
     dx = (min(xs) + max(xs)) / 2
     cam.location = cam.location + cam.matrix_world.to_3x3() @ Vector((dx, dy, 0))
     bpy.context.view_layer.update()
-    info = {"ortho_scale": round(escala, 4), "angulo": c.get("angulo", 43), "quadro": quadro,
-            "altura_px": round(altura * quadro / escala, 1), "local": list(cam.location),
-            "rotacao": list(cam.rotation_euler)}
+    info = {"ortho_scale": round(escala, 4), "angulo": JOGO["angulo"], "quadro": quadro,
+            "px_por_metro": JOGO["px_por_metro"], "altura_px": round(altura, 1), "largura_px": round(largura, 1),
+            "altura_m": round(max(p.z for p in pts) - min(p.z for p in pts), 4)}
     log("câmera:", info)
     return info
 
@@ -614,9 +765,13 @@ def gerar_acao(rig, corpo, a):
     amp = float(a.get("amplitude", 1.0))
     if a["tipo"] in ("andar", "correr"):
         andar(corpo, n, amp, a.get("amplitude_bracos"), float(a.get("bracos_tras", 0.0)),
-              float(a.get("inclina", 0.0)), a.get("dobra_cotovelo"))
+              float(a.get("inclina", 0.0)), a.get("dobra_cotovelo"), float(a.get("agacha", 1.0)))
+    elif a["tipo"] == "parado":
+        n = 1
+    elif a["tipo"] == "flutuar":
+        flutuar(corpo, n, amp)
     elif a["tipo"] == "idle":
-        idle(corpo, n, amp)
+        idle(corpo, n, amp, float(a.get("lado_a_lado", 0.0)))
     elif a["tipo"] == "ataque":
         ataque(corpo, n, amp)
     elif a["tipo"] == "soco":
@@ -625,10 +780,146 @@ def gerar_acao(rig, corpo, a):
         dano(corpo, n, amp)
     elif a["tipo"] == "morte":
         morte(corpo, n)
+    elif a["tipo"] == "mixamo":
+        mixamo(corpo, n, a)
     elif a["tipo"] != "timeline":
-        raise ValueError(f"tipo de ação {a['tipo']} (andar | correr | idle | ataque | soco | dano | morte | timeline)")
+        raise ValueError(f"tipo de ação {a['tipo']} (parado | idle | andar | correr | flutuar | ataque | soco | dano | "
+                         "morte | timeline | mixamo)")
     animar_fogo(n, float(a.get("fogo", 1.0)))
     return n
+
+
+# ------------------------------------------------------------------ ação 'mixamo' (retarget de FBX)
+# Adaptado do retarget.py do blender-skills (EL4CTEO, MIT): mapa de ossos por nome normalizado (mixamorig:, Left/Right)
+# e quatérnios do mundo. Diferença: o alvo é o rig de empties (sem armature) e o repouso do Mixamo é T-pose enquanto o
+# nosso é braço para baixo, então membro gira pela DIREÇÃO do osso (repouso do alvo -> osso agora), não pela "mudança
+# desde o repouso" (que deixaria o braço 90° errado). Tronco, cabeça e pé usam a mudança desde o repouso.
+
+def _osso_nome(nome):
+    n = re.sub(r"^(mixamorig\d*:|def[-_]|org[-_])", "", nome.lower())
+    lado = ""
+    m = re.match(r"^(left|right)(.+)$", n)
+    if m:
+        lado, n = ("L" if m.group(1) == "left" else "R"), m.group(2)
+    else:
+        m = re.match(r"^(.+?)[._](l|r)$", n)
+        if m:
+            lado, n = ("L" if m.group(2) == "l" else "R"), m.group(1)
+    return re.sub(r"[^a-z0-9]", "", n), lado
+
+
+_OSSOS = {"hips": "quadril", "spine": "tronco", "head": "cabeca", "arm": "ombro", "upperarm": "ombro",
+          "forearm": "cotovelo", "lowerarm": "cotovelo", "upleg": "coxa", "thigh": "coxa", "leg": "canela",
+          "shin": "canela", "calf": "canela", "foot": "pe"}
+
+
+def _q(m):
+    return m.to_3x3().normalized().to_quaternion()
+
+
+def mixamo(corpo, n, a):
+    """Amostra n quadros do FBX a['fbx'] (ciclo: o último não repete o primeiro) e grava nos empties do rig.
+    Lado casado pela posição X do osso no repouso com a do pivô (não pelo nome): espelho não troca braço.
+    a['no_lugar'] (padrão true) tira o deslocamento X/Y do quadril; a altura do quadril fica, na escala do alvo."""
+    antes = set(bpy.data.objects)
+    bpy.ops.import_scene.fbx(filepath=a["fbx"], automatic_bone_orientation=False)
+    novos = [o for o in bpy.data.objects if o not in antes]
+    arm = next((o for o in novos if o.type == "ARMATURE"), None)
+    if arm is None:
+        raise ValueError(f"o FBX {a['fbx']} não tem esqueleto")
+    ossos = {}
+    for b in arm.data.bones:
+        core, lado = _osso_nome(b.name)
+        papel = _OSSOS.get(core)
+        if papel and (papel, lado) not in ossos:
+            ossos[(papel, lado)] = b.name
+    faltam = [p for p in ("quadril", "ombro", "cotovelo", "coxa", "canela") if not any(k[0] == p for k in ossos)]
+    if faltam:
+        raise ValueError(f"o FBX não tem os ossos: {', '.join(faltam)} (nomes do Mixamo esperados)")
+    act = arm.animation_data.action if arm.animation_data else None
+    if act is None:
+        raise ValueError("o FBX não tem animação")
+    f0, f1 = (float(v) for v in act.frame_range)
+    mw = arm.matrix_world
+
+    def mundo(nome, pose=True):
+        if pose:
+            pb = arm.pose.bones[nome]
+            return mw @ pb.head, mw @ pb.tail, _q(mw @ pb.matrix)
+        b = arm.data.bones[nome]
+        return mw @ b.head_local, mw @ b.tail_local, _q(mw @ b.matrix_local)
+
+    def lado_x(papel, x_alvo):
+        cands = [v for k, v in ossos.items() if k[0] == papel]
+        return min(cands, key=lambda nm: abs(mundo(nm, False)[0].x - x_alvo)) if cands else None
+
+    R = corpo.rig
+    pv = {k: Vector(v) for k, v in R.pivo.items()}
+    nome_seg = {e: k for k, e in R.seg.items()}
+    hips = next(v for k, v in ossos.items() if k[0] == "quadril")
+    tronco_o = ossos.get(("tronco", "")) or hips
+    cabeca_o = ossos.get(("cabeca", ""))
+    h0 = mundo(hips, False)[0]
+    alt_alvo = (sum(p[1].z for p in corpo.pernas) / len(corpo.pernas)) if corpo.pernas else h0.z
+    escala = alt_alvo / h0.z if h0.z > 1e-6 else 1.0
+    no_lugar = bool(a.get("no_lugar", True))
+    bracos = []
+    for lado, ombro, cotov in corpo.bracos:
+        x = pv[nome_seg[ombro]].x
+        fim = pv[nome_seg[cotov]] if cotov else None
+        bracos.append((ombro, cotov, lado_x("ombro", x), lado_x("cotovelo", x), fim))
+    pernas = [(p, lado_x("coxa", p[1].x), lado_x("canela", p[1].x), lado_x("pe", p[1].x)) for p in corpo.pernas]
+    resto = {nm: mundo(nm, False)[2] for nm in {tronco_o, cabeca_o} | {p[3] for p in pernas} if nm}
+    direcao = {nm for b in bracos for nm in b[2:4] if nm} | {nm for p in pernas for nm in p[1:3] if nm}
+    amostras = []
+    passos = n if a.get("ciclo", True) else max(1, n - 1)
+    for i in range(n):
+        f = f0 + (f1 - f0) * i / passos
+        scene.frame_set(int(f), subframe=f - int(f))
+        d = {}
+        desl = (mundo(hips)[0] - h0) * escala
+        if no_lugar:
+            desl.x = desl.y = 0.0
+        d["desl"] = desl
+        for nm in resto:
+            d[nm] = mundo(nm)[2] @ resto[nm].inverted()
+        for nm in direcao:
+            h, tl, _ = mundo(nm)
+            d["dir:" + nm] = (tl - h).normalized()
+        amostras.append(d)
+    for o in novos:
+        bpy.data.objects.remove(o, do_unlink=True)
+    pt = corpo.p_tronco
+    for i, d in enumerate(amostras):
+        f = i + 1
+        qt = d.get(tronco_o, Quaternion())
+        corpo.tronco.location = pt + d["desl"]
+        corpo.tronco.rotation_quaternion = qt
+        chave(corpo.tronco, f)
+        if corpo.cabeca and cabeca_o:
+            corpo.cabeca.rotation_quaternion = qt.inverted() @ d[cabeca_o]
+            chave(corpo.cabeca, f)
+        for ombro, cotov, bo, bc, fim in bracos:
+            rest_dir = ((fim - pv[nome_seg[ombro]]) if fim is not None else Vector((0, 0, -1))).normalized()
+            qo = rest_dir.rotation_difference(d["dir:" + bo]) if bo else Quaternion()
+            ombro.rotation_quaternion = qt.inverted() @ qo
+            chave(ombro, f)
+            if cotov and bc:
+                cotov.rotation_quaternion = qo.inverted() @ rest_dir.rotation_difference(d["dir:" + bc])
+                chave(cotov, f)
+        for perna, bcx, bcn, bpe in pernas:
+            lado, q, j, t, coxa, canela, pe, sola = perna
+            qx = (j - q).normalized().rotation_difference(d["dir:" + bcx]) if bcx else Quaternion()
+            qn = (t - j).normalized().rotation_difference(d["dir:" + bcn]) if bcn else qx
+            q_n = q + d["desl"]
+            j_n = q_n + qx @ (j - q)
+            t_n = j_n + qn @ (t - j)
+            for obj, loc, rot in ((coxa, q_n, qx), (canela, j_n, qn), (pe, t_n, d.get(bpe, Quaternion()))):
+                obj.location = loc
+                obj.rotation_quaternion = rot
+                chave(obj, f)
+    log("mixamo:", {"fbx": os.path.basename(a["fbx"]), "quadros_fonte": [f0, f1], "escala_quadril": round(escala, 3),
+                    "ossos": len(ossos)})
 
 
 FOGO_PADROES = ("*fogo*", "*chama*", "*flame*", "*fire*")
@@ -668,45 +959,6 @@ def animar_fogo(n, forca=1.0):
     log("fogo vivo:", len(objs), "línguas")
 
 
-def juntar_animacoes(arq, nome):
-    """O exportador glTF do Blender solta uma animação por objeto/empty; o Estúdio (model-viewer) toca uma por
-    vez. Junta todas numa só, com o nome da ação, reescrevendo só o bloco JSON do .glb."""
-    import struct
-    dado = open(arq, "rb").read()
-    tam = struct.unpack_from("<I", dado, 12)[0]
-    j = json.loads(dado[20:20 + tam])
-    resto = dado[20 + tam:]
-    anims = j.get("animations") or []
-    if len(anims) <= 1:
-        if anims:
-            anims[0]["name"] = nome
-    else:
-        uma = {"name": nome, "channels": [], "samplers": []}
-        vistos = set()
-        for an in anims:
-            base = len(uma["samplers"])
-            uma["samplers"] += an["samplers"]
-            for ch in an["channels"]:
-                alvo = (ch["target"].get("node"), ch["target"]["path"])
-                if alvo in vistos:
-                    continue
-                vistos.add(alvo)
-                ch = dict(ch, sampler=ch["sampler"] + base)
-                uma["channels"].append(ch)
-        j["animations"] = [uma]
-    js = json.dumps(j, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
-    js += b" " * (-len(js) % 4)
-    total = 12 + 8 + len(js) + len(resto)
-    with open(arq, "wb") as fh:
-        fh.write(dado[:8] + struct.pack("<I", total) + struct.pack("<I", len(js)) + b"JSON" + js + resto)
-
-
-# ataque de arma de duas mãos por cima (picareta, machado, martelo): (tempo 0..1, ombro, cotovelo, busto, corpo_z)
-# ombro > 0 leva o que está acima do ombro para a frente e para baixo (o golpe); < 0 leva para trás (antecipação)
-ATAQUE_CHAVES = [(0.0, 0.0, 0.0, 0.0, 0.0), (0.30, -0.95, -0.35, -0.16, 0.02), (0.45, -1.05, -0.4, -0.2, 0.03),
-                 (0.58, 1.05, 0.25, 0.24, -0.05), (0.72, 1.18, 0.3, 0.28, -0.07), (1.0, 0.0, 0.0, 0.0, 0.0)]
-
-
 def _interp(u, chaves, k):
     for a, b in zip(chaves, chaves[1:]):
         if a[0] <= u <= b[0]:
@@ -714,6 +966,25 @@ def _interp(u, chaves, k):
             w = w * w * (3 - 2 * w)
             return a[k] + (b[k] - a[k]) * w
     return chaves[-1][k]
+
+
+def flutuar(corpo, n, amp=1.0):
+    """Corpo sem pernas (bolha, fantasma, voador): sobe e desce em seno e balança de leve; cabeça e braços com
+    atraso. Laço fechado em n quadros."""
+    s = corpo.escala
+    for i in range(n + 1):
+        f = i + 1
+        u = (i % n) / n
+        sobe = Vector((0, 0, 0.06 * s * amp * math.sin(2 * math.pi * u)))
+        corpo.tronco.location = corpo.p_tronco + sobe
+        corpo.tronco.rotation_quaternion = q_euler(0, 0.05 * amp * math.sin(2 * math.pi * u), 0)
+        chave(corpo.tronco, f)
+        if corpo.cabeca:
+            corpo.cabeca.rotation_quaternion = q_euler(0.04 * amp * math.sin(2 * math.pi * (u - 0.15)), 0, 0)
+            chave(corpo.cabeca, f)
+        for lado, ombro, cotovelo in corpo.bracos:
+            ombro.rotation_quaternion = q_euler(0.15 * amp * math.sin(2 * math.pi * (u - 0.25)), 0, 0)
+            chave(ombro, f)
 
 
 def ataque(corpo, n, amp=1.0):
@@ -742,11 +1013,15 @@ def ataque(corpo, n, amp=1.0):
             corpo.pose_perna(f, corpo.p_tronco + desl + (q - corpo.p_tronco), perna, t0.copy(), Quaternion())
 
 
-# soco com o braço de lado +1: (tempo, ombro_soco, cotovelo_soco, ombro_outro, giro_tronco_z, avanço_y)
-# ombro < 0 levanta o braço para a frente; giro < 0 leva o ombro +X para a frente
-SOCO_CHAVES = [(0.0, 0.0, 0.0, 0.0, 0.0, 0.0), (0.25, 0.45, -1.3, -0.25, 0.3, 0.02),
-               (0.40, -1.5, -0.05, 0.35, -0.4, -0.06), (0.62, -1.5, -0.05, 0.35, -0.4, -0.06),
-               (1.0, 0.0, 0.0, 0.0, 0.0, 0.0)]
+# soco com o braço de lado +1:
+# (tempo, ombro_soco, cotovelo_soco, ombro_outro, cotovelo_outro, giro_tronco_z, avanço, inclina, agacha)
+# ombro < 0 levanta o braço para a frente; cotovelo < 0 dobra o antebraço para a frente;
+# giro < 0 leva o ombro +X para a frente; avanço < 0 leva o corpo para a frente; inclina > 0 = tronco para a frente
+SOCO_CHAVES = [(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+               (0.22, 0.55, -2.0, -0.5, -1.7, 0.5, 0.03, -0.06, 0.02),      # punho recolhido no peito, gira para trás
+               (0.36, -1.55, -0.02, 0.45, -1.3, -0.65, -0.12, 0.22, 0.04),  # golpe: corpo avança, braço estica
+               (0.58, -1.55, -0.02, 0.45, -1.3, -0.65, -0.12, 0.22, 0.04),  # segura o impacto
+               (1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)]
 # dano: (tempo, inclina_tronco (< 0 = para trás), cabeça, ombros, cotovelos)
 DANO_CHAVES = [(0.0, 0.0, 0.0, 0.0, 0.0), (0.15, -0.4, -0.35, -0.7, -0.6), (0.4, -0.3, -0.2, -0.5, -0.4),
                (1.0, 0.0, 0.0, 0.0, 0.0)]
@@ -759,14 +1034,15 @@ def _pernas_paradas(corpo, f, desl, R):
 
 
 def soco(corpo, n, amp=1.0):
-    """Soco reto com o braço de lado +1: puxa para trás girando o tronco, estica rápido, segura e volta."""
+    """Soco reto com o braço de lado +1: recolhe o punho no peito girando o tronco para trás (antecipação), avança o
+    corpo e estica o braço rápido enquanto o outro recua (guarda), segura o impacto e volta."""
     s = corpo.escala
     for i in range(n + 1):
         f = i + 1
         u = (i % n) / n
-        om, co, oo, gz, av = (_interp(u, SOCO_CHAVES, k) * amp for k in (1, 2, 3, 4, 5))
-        desl = Vector((0, av * s * 4, 0))
-        q = q_euler(0, 0, gz)
+        om, co, oo, coo, gz, av, inc, ag = (_interp(u, SOCO_CHAVES, k) * amp for k in range(1, 9))
+        desl = Vector((0, av, -ag))
+        q = q_euler(inc, 0, gz)
         corpo.tronco.location = corpo.p_tronco + desl
         corpo.tronco.rotation_quaternion = q
         chave(corpo.tronco, f)
@@ -774,7 +1050,7 @@ def soco(corpo, n, amp=1.0):
             ombro.rotation_quaternion = q_euler(om if lado > 0 else oo, 0, 0)
             chave(ombro, f)
             if cotovelo:
-                cotovelo.rotation_quaternion = q_euler(co if lado > 0 else -0.6 * abs(oo), 0, 0)
+                cotovelo.rotation_quaternion = q_euler(co if lado > 0 else coo, 0, 0)
                 chave(cotovelo, f)
         _pernas_paradas(corpo, f, desl, q.to_matrix())
 
@@ -837,10 +1113,9 @@ def enquadrar(cam, alvos, rig, corpo, acoes, direcoes):
     """Ajusta a câmera na VERTICAL pela união de todas as poses × direções (o pé que vem para a câmera desce na
     tela): a figura inteira cabe no quadro, com o ponto mais baixo em base_px. A escala continua a da pose parada
     (altura_px é a altura do personagem em pé)."""
-    c = CFG["camera"]
-    quadro = int(c.get("quadro", 64))
-    base = int(c.get("base_px", 4))
-    margem = int(c.get("margem_px", 2))
+    quadro = int(JOGO["quadro"])
+    base = int(JOGO.get("base_px", 4))
+    margem = int(JOGO.get("margem_px", 2))
     escala = cam.data.ortho_scale
     inv = cam.matrix_world.inverted()
     ys = []
@@ -864,8 +1139,8 @@ def enquadrar(cam, alvos, rig, corpo, acoes, direcoes):
     bpy.context.view_layer.update()
     alto = (max(ys) - min(ys)) * quadro / escala
     if alto > quadro - base - margem:
-        AVISOS.append(f"as poses ocupam {alto:.0f} px de altura e o quadro tem {quadro}: aumente 'quadro' ou "
-                      "diminua 'altura_px'")
+        AVISOS.append(f"NAO_CABE: as poses ocupam {alto:.0f} px de altura e o quadro tem {quadro}: aumente "
+                      "'quadro' no jogo.json")
     log("enquadrar: poses de", round(alto, 1), "px")
 
 
@@ -884,6 +1159,26 @@ def mats_partes(rig):
                 yield ob, feitos[parte]
 
 
+def cor_da_direcao(ang):
+    """Cor por direção (casco.py, decisão do Artur 2026-11-17): cada face usa a família lida na vista da arte mais
+    próxima da direção do render (atributo horys_fam_<vista>). A geometria é a mesma em todas as direções."""
+    vistas = (TRAB.get("cor_por_direcao") or {})
+    if not vistas:
+        return
+    dif = lambda a, b: abs((float(a) - float(b) + 180) % 360 - 180)
+    v = min(vistas, key=lambda k: dif(vistas[k], ang))
+    for o in scene.objects:
+        if o.type != "MESH":
+            continue
+        at = o.data.attributes.get("horys_fam_" + v)
+        if at is None:
+            continue
+        val = [0] * len(o.data.polygons)
+        at.data.foreach_get("value", val)
+        o.data.polygons.foreach_set("material_index", val)
+        o.data.update()
+
+
 def render_quadros(pasta, n, direcoes, ancora, sufixo=""):
     os.makedirs(pasta, exist_ok=True)
     quadros = range(1, n + 1)
@@ -891,6 +1186,7 @@ def render_quadros(pasta, n, direcoes, ancora, sufixo=""):
         quadros = sorted({1, 1 + n // 4, 1 + n // 2, 1 + 3 * n // 4})
     for dnome, ang in direcoes.items():
         ancora.rotation_euler.z = math.radians(float(ang))
+        cor_da_direcao(ang)
         for f in quadros:
             scene.frame_set(f)
             scene.render.filepath = os.path.join(pasta, f"{dnome}{sufixo}_{f:04d}.png")
@@ -898,58 +1194,22 @@ def render_quadros(pasta, n, direcoes, ancora, sufixo=""):
     ancora.rotation_euler.z = 0
 
 
-def main_3d():
-    """Modo '3d' (etapa de aprovação, antes do pixel): o modelo com as cores dele, o rig e cada ação exportados
-    como <stem>_<acao>.glb animado (uma animação por arquivo, a linha do tempo da cena), para o Artur girar,
-    ver de todos os ângulos e apontar defeitos no Estúdio."""
-    esconder = CFG.get("esconder") or []
-    for c in colecoes(esconder):
-        for o in list(c.all_objects):
-            if o is not None:
-                bpy.data.objects.remove(o, do_unlink=True)
-    for o in list(scene.objects):
-        if o.type in ("LIGHT", "CAMERA"):
-            bpy.data.objects.remove(o, do_unlink=True)
-    rig = Rig(CFG["rig"])
-    corpo = Corpo(rig, CFG["papeis"])
-    for e in rig.seg.values():
-        e.hide_viewport = False
-    acoes = CFG.get("acoes") or {"idle": {"tipo": "idle", "quadros": 8}, "andar": {"tipo": "andar", "quadros": 8}}
-    stem = TRAB.get("stem") or "modelo"
-    feitos = {}
-    for nome_a, a in acoes.items():
-        n = gerar_acao(rig, corpo, a)
-        scene.frame_start, scene.frame_end = 1, n + 1          # n+1 = n de novo no 1: o laço fecha
-        scene.render.fps = int(a.get("fps", 12))
-        arq = os.path.join(SAIDA, f"{stem}_{nome_a}.glb")
-        bpy.ops.export_scene.gltf(filepath=arq, export_format="GLB", export_animations=True,
-                                  export_animation_mode="SCENE", export_cameras=False, export_lights=False,
-                                  export_force_sampling=True, export_frame_step=1)
-        juntar_animacoes(arq, nome_a)
-        feitos[nome_a] = {"arquivo": arq, "quadros": n, "fps": int(a.get("fps", 12))}
-        log("3d:", arq)
-    json.dump({"acoes": feitos, "avisos": AVISOS}, open(os.path.join(SAIDA, f"{stem}_3d.json"), "w",
-                                                          encoding="utf-8"), ensure_ascii=False, indent=1)
-    log("ok")
-
-
 def main():
-    if TRAB.get("modo") == "3d":
-        return main_3d()
     preparar_cena()
     rig = Rig(CFG["rig"])
     alvos = [o for o in scene.objects if o.type in ("MESH", "CURVE", "SURFACE", "META", "FONT") and not o.hide_render]
     troca, mats = aplicar_paleta(alvos)
     cam = camera_jogo(rig, alvos)
+    projecao = projetar_arte(alvos, mats, rig, bpy.data.objects["Horys | câmera do jogo"])
     corpo = Corpo(rig, CFG["papeis"])
-    direcoes = CFG.get("direcoes") or {"sul": 0, "leste": 90, "norte": 180, "oeste": -90}
-    acoes = CFG.get("acoes") or {"idle": {"tipo": "idle", "quadros": 8}, "andar": {"tipo": "andar", "quadros": 8}}
+    direcoes = TRAB["direcoes"]
+    acoes = TRAB["acoes"]
     enquadrar(bpy.data.objects["Horys | câmera do jogo"], alvos, rig, corpo, acoes, direcoes)
     limiares = {}
-    if CFG.get("luz", {}).get("calibrar", True):
+    if LUZ.get("calibrar", True):
         limiares = calibrar_limiares(alvos, PAL["familias"], mats, direcoes, rig.ancora)
     mani = {"camera": cam, "acoes": {}, "direcoes": list(direcoes), "materiais": troca, "limiares": limiares,
-            "avisos": AVISOS,
+            "avisos": AVISOS, "juntas": rig.juntas, "projecao": projecao,
             "previa": PREVIA}
     originais = {}
     for nome_a, a in acoes.items():
@@ -973,7 +1233,8 @@ def main():
     scene.frame_set(1)
     json.dump(mani, open(os.path.join(SAIDA, "_render", "manifesto.json"), "w", encoding="utf-8"),
               ensure_ascii=False, indent=1)
-    bpy.ops.wm.save_as_mainfile(filepath=os.path.join(SAIDA, "cena_horys.blend"), copy=True)
+    if not PREVIA:
+        bpy.ops.wm.save_as_mainfile(filepath=os.path.join(SAIDA, "_render", "cena_horys.blend"), copy=True)
     log("ok")
 
 

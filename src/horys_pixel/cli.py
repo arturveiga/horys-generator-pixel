@@ -1,165 +1,173 @@
-"""horys: linha de comando do horys-pixel.
+"""horys: linha de comando do fluxo. A ordem é a do comousar.md.
 
-  horys daemon                    sobe o horysd (normalmente a ponte MCP já sobe sozinha)
-  horys status                    horysd, Aseprite e sprite ativo
-  horys teste-vivo                teste rápido com o Aseprite aberto: conectar, criar, desenhar, ler, salvar
-  horys token [--novo]            mostra (ou troca) o token de pareamento — não cole em chat
-  horys instalar [--tudo] [--simular] [--extensao] [--confiar] [--claude] [--codex] [--skills] [--inicializacao]
-  horys estilos [nome]            pacotes de estilo
-  horys estilo-novo NOME IMG...   cria um pacote analisando imagens (o assistente completo roda pelo Aseprite)
-  horys colagem MESTRE GUIA --saida PASTA --peca nome:x,y,w,h[:faixa]   colagem guiada, local
-  horys ferramenta NOME [JSON]    chama qualquer ferramenta MCP (para testar)
-  horys pedido "DESCRIÇÃO" [--motor claude|codex] [--estilo E] [--tipo T] [--estados idle,andar]
-  horys extensao                  gera dist/horys-pixel.aseprite-extension
-  horys treino ...                repassa para python -m horys_pixel.treino
+  horys novo <asset> [--tipo humanoide] [--altura 40] [--descricao "..."]
+  horys prompt <asset>                  texto para o gerador de imagem (salva em assets/<asset>/prompt.txt)
+  horys ler <asset> [--imagem x.png]    imagem do gerador -> arte parada 1x
+  horys paleta <asset> [--materiais 5]  propõe a paleta a partir da arte
+  horys aprovar <asset> arte|paleta [--comentario "..."]
+  horys inspecionar <asset>             peças, caixas e pivôs sugeridos do .blend
+  horys modelar <asset>                 modelo 3D esculpido das vistas aprovadas (casco visual)
+horys gabarito <asset>                render parado do 3D x arte aprovada
+  horys animar <asset> [--previa]       ações × direções -> pós -> portões
+  horys exportar <asset> <pasta>        folhas para o jogo (só com portões ok)
+  horys visor [--porta 8770]            página local só para ver
+  horys estado [<asset>]                o que falta em cada asset
 """
 from __future__ import annotations
 
 import argparse
-import asyncio
 import json
-import subprocess
 import sys
-from pathlib import Path
 
-from . import config
+from . import aprovacao as AP
+from . import asset as AS
+from . import blender as B
+from . import fluxo as F
+from . import jogo as J
+from . import leitura as L
+from . import prompt as PR
 
 
-def _chamar(nome: str, args: dict) -> int:
-    from .mcp_ponte import Daemon
+def _imprimir_lista(titulo: str, itens: list[str]) -> None:
+    if itens:
+        print(titulo)
+        for i in itens:
+            print("  -", i)
 
-    async def ir():
-        d = Daemon()
+
+def cmd_novo(a):
+    x = AS.novo(a.asset, tipo=a.tipo, altura_px=a.altura, descricao=a.descricao or "")
+    print(f"criado {x.pasta}. Próximo: horys prompt {x.nome}")
+
+
+def cmd_prompt(a):
+    x = AS.abrir(a.asset)
+    txt = PR.gerar(x, J.carregar(x.pasta))
+    (x.pasta / "prompt.txt").write_text(txt, encoding="utf-8")
+    print(txt)
+    print(f"\n(salvo em {x.pasta / 'prompt.txt'}; a imagem gerada vai para {x.pasta / 'gerada.png'})")
+
+
+def cmd_ler(a):
+    x = AS.abrir(a.asset)
+    rel = F.ler_arte(x, a.imagem, vista=a.vista)
+    print(f"arte lida: {rel['altura']} px de altura ({rel['modo']}, bloco {rel['bloco']}), vistas {rel['vistas']}, "
+          f"{len(rel['cores'])} cores. Veja no visor e, se o Artur aprovar: horys aprovar {x.nome} arte")
+    _imprimir_lista("avisos:", rel.get("avisos", []))
+
+
+def cmd_paleta(a):
+    x = AS.abrir(a.asset)
+    pal = F.propor_paleta(x, a.materiais)
+    print(f"paleta: {len(pal['cores'])} cores, tinta {pal['tinta']}, famílias {list(pal['familias'])} -> "
+          f"{x.paleta}. Renomeie as famílias se quiser e aprove: horys aprovar {x.nome} paleta")
+    _imprimir_lista("avisos:", pal.get("avisos", []))
+
+
+def cmd_aprovar(a):
+    x = AS.abrir(a.asset)
+    arquivos = {"arte": "arte/folha.png", "paleta": "paleta.json"}
+    if a.etapa not in arquivos:
+        raise SystemExit("etapa: arte | paleta")
+    d = AP.aprovar(x.pasta, a.etapa, arquivos[a.etapa], comentario=a.comentario or "")
+    print(f"{a.etapa} aprovada ({d['arquivo']}, {d['quando']})")
+
+
+def cmd_inspecionar(a):
+    x = AS.abrir(a.asset)
+    print(json.dumps(B.inspecionar(x.blend), ensure_ascii=False, indent=1))
+
+
+def cmd_modelar(a):
+    x = AS.abrir(a.asset)
+    r = F.modelar(x)
+    print(f"modelo do casco: {r['voxels']} voxels, {r['pecas']} peças -> {r['blend']}")
+    print("silhueta do casco x arte:", ", ".join(f"{k} {v:.0%}" for k, v in r["iou"].items()))
+    print(f"Próximo: horys gabarito {a.asset}")
+
+
+def cmd_gabarito(a):
+    x = AS.abrir(a.asset)
+    g = F.gabarito(x)
+    for v, r in g["vistas"].items():
+        print(f"  {v}: silhueta {r['iou']:.0%}, materiais {r['familia']:.0%}, altura render/arte "
+              f"{r['altura_render']}/{r['altura_arte']}{' (espelhado)' if r['espelhado'] else ''}")
+    print("GABARITO:", "PASSOU" if g["ok"] else "NÃO PASSOU", "->", x.saida / "gabarito" / "gabarito.png")
+    _imprimir_lista("falhas:", g["falhas"])
+    return 0 if g["ok"] else 2
+
+
+def cmd_animar(a):
+    x = AS.abrir(a.asset)
+    p = F.animar(x, previa=a.previa)
+    print("PORTÕES:", "OK" if p["ok"] else "BLOQUEADO", "->", x.saida / ("previa" if a.previa else "animacao"))
+    _imprimir_lista("falhas:", p["falhas"])
+    _imprimir_lista("avisos:", p["avisos"])
+    return 0 if p["ok"] else 2
+
+
+def cmd_exportar(a):
+    x = AS.abrir(a.asset)
+    feitos = F.exportar(x, a.pasta)
+    print(f"{len(feitos)} arquivos em {a.pasta}")
+
+
+def cmd_visor(a):
+    from .visor import servidor
+    servidor.servir(J.raiz(), a.porta, abrir=not a.sem_navegador)
+
+
+def cmd_estado(a):
+    nomes = [a.asset] if a.asset else AS.listar()
+    if not nomes:
+        print("nenhum asset (horys novo <nome>)")
+    for n in nomes:
+        x = AS.abrir(n)
+        ap = AP.estado(x.pasta)
+        passos = [
+            ("gerada.png", (x.pasta / "gerada.png").exists()),
+            ("arte lida", (x.arte / "folha.png").exists()),
+            ("arte aprovada", bool(ap.get("arte", {}).get("ok"))),
+            ("paleta aprovada", bool(ap.get("paleta", {}).get("ok"))),
+            ("modelo .blend", x.blend.exists()),
+            ("gabarito ok", F.gabarito_valido(x)[0] if x.blend.exists() else False),
+            ("portões ok", bool((F._ler_json(x.saida / "animacao" / "portoes.json") or {}).get("ok"))),
+        ]
+        print(f"{n}: " + " · ".join(f"{'✓' if ok else '✗'} {p}" for p, ok in passos))
+
+
+def main(argv=None) -> int:
+    for fluxo_saida in (sys.stdout, sys.stderr):          # console do Windows (cp1252) não quebra com acento ou ✓
         try:
-            r = await d.enviar({"t": "chamar", "ferramenta": nome, "args": args})
-        finally:
-            await d.fechar()
-        for c in r.get("conteudo") or []:
-            if c.get("type") == "text":
-                print(c["text"])
-            elif c.get("type") == "image":
-                print(f"[imagem PNG, {len(c['data']) * 3 // 4} bytes]")
-        return 1 if r.get("erro") else 0
-    return asyncio.run(ir())
-
-
-def main(argv=None):
-    for s in (sys.stdout, sys.stderr):
-        try:
-            s.reconfigure(encoding="utf-8", errors="replace")
+            fluxo_saida.reconfigure(encoding="utf-8", errors="replace")
         except (AttributeError, ValueError):
             pass
-    argv = list(sys.argv[1:] if argv is None else argv)
-    if argv[:1] == ["colagem"]:
-        from .sequencia.colagem import main as colagem_main
-        return colagem_main(argv[1:])
-    if argv[:1] == ["estudio"]:
-        from .estudio import servidor
-        return servidor.main(argv[1:])
-    if argv[:1] == ["treino"]:
-        return subprocess.call([sys.executable, "-m", "horys_pixel.treino", *argv[1:]])
     ap = argparse.ArgumentParser(prog="horys", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
-    p = sub.add_parser("daemon")
-    p.add_argument("--porta", type=int, default=0)
-    sub.add_parser("status")
-    sub.add_parser("teste-vivo")
-    sub.add_parser("reiniciar", help="para o horysd no ar e sobe um novo (depois de mudar o código)")
-    p = sub.add_parser("token")
-    p.add_argument("--novo", action="store_true")
-    p = sub.add_parser("instalar")
-    for f in ("tudo", "simular", "extensao", "confiar", "claude", "codex", "skills", "inicializacao"):
-        p.add_argument(f"--{f}", action="store_true")
-    p.add_argument("--pasta-aseprite", default="", help="pasta de usuário do Aseprite (padrão: a do sistema)")
-    p = sub.add_parser("estilos")
-    p.add_argument("nome", nargs="?")
-    p = sub.add_parser("estilo-novo")
-    p.add_argument("nome")
-    p.add_argument("imagens", nargs="+")
-    p.add_argument("--autor", default="")
-    p.add_argument("--licenca", default="", help="licença/origem das imagens (obrigatório para treinar depois)")
-    p = sub.add_parser("ferramenta")
-    p.add_argument("nome")
-    p.add_argument("json", nargs="?", default="{}")
-    p = sub.add_parser("pedido")
-    p.add_argument("descricao")
-    p.add_argument("--motor", default="")
-    p.add_argument("--estilo", default="")
-    p.add_argument("--tipo", default="")
-    p.add_argument("--estados", default="")
-    p.add_argument("--referencia", default="")
-    sub.add_parser("extensao")
+    p = sub.add_parser("novo"); p.add_argument("asset"); p.add_argument("--tipo", default="humanoide")
+    p.add_argument("--altura", type=int); p.add_argument("--descricao"); p.set_defaults(f=cmd_novo)
+    p = sub.add_parser("prompt"); p.add_argument("asset"); p.set_defaults(f=cmd_prompt)
+    p = sub.add_parser("ler"); p.add_argument("asset"); p.add_argument("--imagem")
+    p.add_argument("--vista", choices=["frente", "lado", "costas"], help="troca só essa vista pela da --imagem"); p.set_defaults(f=cmd_ler)
+    p = sub.add_parser("paleta"); p.add_argument("asset"); p.add_argument("--materiais", type=int, default=5)
+    p.set_defaults(f=cmd_paleta)
+    p = sub.add_parser("aprovar"); p.add_argument("asset"); p.add_argument("etapa"); p.add_argument("--comentario")
+    p.set_defaults(f=cmd_aprovar)
+    p = sub.add_parser("inspecionar"); p.add_argument("asset"); p.set_defaults(f=cmd_inspecionar)
+    p = sub.add_parser("modelar"); p.add_argument("asset"); p.set_defaults(f=cmd_modelar)
+    p = sub.add_parser("gabarito"); p.add_argument("asset"); p.set_defaults(f=cmd_gabarito)
+    p = sub.add_parser("animar"); p.add_argument("asset"); p.add_argument("--previa", action="store_true")
+    p.set_defaults(f=cmd_animar)
+    p = sub.add_parser("exportar"); p.add_argument("asset"); p.add_argument("pasta"); p.set_defaults(f=cmd_exportar)
+    p = sub.add_parser("visor"); p.add_argument("--porta", type=int, default=8770)
+    p.add_argument("--sem-navegador", action="store_true"); p.set_defaults(f=cmd_visor)
+    p = sub.add_parser("estado"); p.add_argument("asset", nargs="?"); p.set_defaults(f=cmd_estado)
     a = ap.parse_args(argv)
-
-    if a.cmd == "daemon":
-        from .daemon import servidor
-        return servidor.main(["--porta", str(a.porta)] if a.porta else [])
-    if a.cmd == "token":
-        print(config.token(novo=a.novo))
-        print(f"(arquivo: {config.arquivo_token()}; a extensão lê esse arquivo sozinha)", file=sys.stderr)
-        return 0
-    if a.cmd == "status":
-        try:
-            return _chamar("horys_status", {})
-        except Exception as e:
-            print(f"horysd fora do ar ou recusou: {e}")
-            return 2
-    if a.cmd == "reiniciar":
-        from . import reiniciar
-        return reiniciar.main()
-    if a.cmd == "teste-vivo":
-        from . import teste_vivo
-        return teste_vivo.main()
-    if a.cmd == "instalar":
-        from . import instalar as I
-        base = Path(a.pasta_aseprite) if a.pasta_aseprite else None
-        if a.tudo:
-            log = I.tudo(a.simular, a.confiar, a.inicializacao, a.codex)
-        else:
-            log = []
-            if a.extensao:
-                log += I.instalar_extensao(base, a.simular)
-            if a.confiar:
-                log += I.confiar_scripts(base, a.simular)
-            if a.claude:
-                log += I.registrar_claude(a.simular)
-            if a.codex:
-                log += I.registrar_codex(a.simular)
-            if a.skills:
-                log += I.instalar_skills_codex(a.simular)
-            if a.inicializacao:
-                log += I.inicio_windows(a.simular)
-            if not log:
-                log = ["nada escolhido: use --tudo ou as opções (veja horys instalar -h)"]
-        print("\n".join(log))
-        return 0
-    if a.cmd == "estilos":
-        from . import estilos
-        if not a.nome:
-            print("\n".join(estilos.listar()))
-            return 0
-        e = estilos.carregar(a.nome)
-        print(json.dumps(e.dados, ensure_ascii=False, indent=1))
-        return 0
-    if a.cmd == "estilo-novo":
-        from . import analise_estilo
-        p = analise_estilo.criar_pacote(a.nome, a.imagens, autor=a.autor, licenca_imagens=a.licenca)
-        print(f"pacote criado em {p}\nrevise o estilo.md (itens 'a confirmar') e a paleta.")
-        return 0
-    if a.cmd == "ferramenta":
-        return _chamar(a.nome, json.loads(a.json))
-    if a.cmd == "pedido":
-        args = {"descricao": a.descricao}
-        for k in ("motor", "estilo", "tipo", "referencia"):
-            if getattr(a, k):
-                args[k] = getattr(a, k)
-        if a.estados:
-            args["estados"] = [x.strip() for x in a.estados.split(",") if x.strip()]
-        return _chamar("horys_pedido_novo", args)
-    if a.cmd == "extensao":
-        raiz = Path(__file__).resolve().parents[2]
-        return subprocess.call([sys.executable, str(raiz / "scripts" / "build_extension.py")])
-    return 0
+    try:
+        return int(a.f(a) or 0)
+    except (F.ErroFluxo, L.ErroLeitura, AP.Travado, B.ErroBlender, FileNotFoundError, FileExistsError, ValueError) as e:
+        print(f"ERRO: {e}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

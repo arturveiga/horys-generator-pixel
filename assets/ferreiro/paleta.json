@@ -1,0 +1,73 @@
+{
+ "familias": {
+  "material1": {
+   "rampa": [
+    "#682512",
+    "#9f4418"
+   ],
+   "tipo": "toon"
+  },
+  "material2": {
+   "rampa": [
+    "#e9b4a8",
+    "#f9ebe5",
+    "#ffffff"
+   ],
+   "tipo": "toon"
+  },
+  "material3": {
+   "rampa": [
+    "#a57a7f",
+    "#c6a6a6",
+    "#dfccca"
+   ],
+   "tipo": "toon"
+  },
+  "material4": {
+   "rampa": [
+    "#db7f29",
+    "#e8b668",
+    "#f2d99b"
+   ],
+   "tipo": "toon"
+  },
+  "material5": {
+   "rampa": [
+    "#4e1a0e",
+    "#913d17",
+    "#c9631c"
+   ],
+   "tipo": "toon"
+  },
+  "material6": {
+   "rampa": [
+    "#29398b",
+    "#3962c8",
+    "#6692d8"
+   ],
+   "tipo": "toon"
+  }
+ },
+ "tinta": "#220c0c",
+ "cores": [
+  "#220c0c",
+  "#29398b",
+  "#3962c8",
+  "#4e1a0e",
+  "#6692d8",
+  "#682512",
+  "#913d17",
+  "#9f4418",
+  "#a57a7f",
+  "#c6a6a6",
+  "#c9631c",
+  "#db7f29",
+  "#dfccca",
+  "#e8b668",
+  "#e9b4a8",
+  "#f2d99b",
+  "#f9ebe5",
+  "#ffffff"
+ ],
+ "avisos": []
+}

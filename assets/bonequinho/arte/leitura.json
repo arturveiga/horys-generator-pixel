@@ -1,0 +1,31 @@
+{
+ "alvo": 44,
+ "modo": "exata",
+ "escala": 1,
+ "bloco": 1.0,
+ "coerencia": 1.0,
+ "altura": 44,
+ "vistas": {
+  "frente": [
+   21,
+   44
+  ],
+  "lado": [
+   18,
+   44
+  ],
+  "costas": [
+   21,
+   44
+  ]
+ },
+ "cores": [
+  "#161c2e",
+  "#69777f",
+  "#a0b3b6"
+ ],
+ "avisos": [],
+ "imagem": "C:\\Users\\artur\\workspace\\repos\\horys\\horys-generator-pixel\\assets\\bonequinho\\gerada.png",
+ "paleta_travada": true,
+ "quando": "2026-11-16 22:09:09"
+}

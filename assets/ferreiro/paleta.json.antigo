@@ -1,0 +1,86 @@
+{
+ "familias": {
+  "material1": {
+   "rampa": [
+    "#49190f",
+    "#8a3b1a",
+    "#c16020"
+   ],
+   "tipo": "toon"
+  },
+  "material2": {
+   "rampa": [
+    "#e9b6aa",
+    "#f9ece6",
+    "#ffffff"
+   ],
+   "tipo": "toon"
+  },
+  "material3": {
+   "rampa": [
+    "#e27c41",
+    "#eeb782",
+    "#f6dcb7"
+   ],
+   "tipo": "toon"
+  },
+  "material4": {
+   "rampa": [
+    "#937d90",
+    "#b8a5b3",
+    "#d4c6cf"
+   ],
+   "tipo": "toon"
+  },
+  "material5": {
+   "rampa": [
+    "#7e3317",
+    "#c16020",
+    "#e28f3c"
+   ],
+   "tipo": "toon"
+  },
+  "material6": {
+   "rampa": [
+    "#685b68",
+    "#937d90",
+    "#b19cac"
+   ],
+   "tipo": "toon"
+  },
+  "material7": {
+   "rampa": [
+    "#294385",
+    "#3870c3",
+    "#629cd6"
+   ],
+   "tipo": "toon"
+  }
+ },
+ "tinta": "#230c08",
+ "cores": [
+  "#230c08",
+  "#294385",
+  "#3870c3",
+  "#49190f",
+  "#629cd6",
+  "#685b68",
+  "#7e3317",
+  "#8a3b1a",
+  "#937d90",
+  "#b19cac",
+  "#b8a5b3",
+  "#c16020",
+  "#d4c6cf",
+  "#e27c41",
+  "#e28f3c",
+  "#e9b6aa",
+  "#eeb782",
+  "#f6dcb7",
+  "#f9ece6",
+  "#ffffff"
+ ],
+ "avisos": [
+  "#b19cac e #b8a5b3 quase iguais"
+ ]
+}

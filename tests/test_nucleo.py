@@ -1,266 +1,266 @@
-"""Núcleo: horysd + Aseprite falso + ponte MCP, de ponta a ponta (sem interface)."""
-import asyncio
 import json
 
 import numpy as np
+import pytest
 
-from horys_pixel import auth, config, pixels
-from horys_pixel.daemon import servidor
-from horys_pixel.daemon.contexto import Contexto
-from horys_pixel.mcp_ponte import Daemon
-
-from aseprite_falso import AsepriteFalso
-
-
-def rodar(coro, limite=240):
-    return asyncio.run(asyncio.wait_for(coro, limite))
-
-
-def test_hmac_rfc4231_caso2():
-    import hashlib, hmac
-    esperado = "5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843"
-    assert hmac.new(b"Jefe", b"what do ya want for nothing?", hashlib.sha256).hexdigest() == esperado
-    t, n = "ab" * 24, auth.nonce()
-    assert auth.confere(t, n, auth.prova(t, n)) and not auth.confere(t, n, "00")
+from horys_pixel import anticintilacao as A
+from horys_pixel import aprovacao as AP
+from horys_pixel import asset as AS
+from horys_pixel import cor as C
+from horys_pixel import gabarito as G
+from horys_pixel import jogo as J
+from horys_pixel import paleta as P
+from horys_pixel import portoes as PT
+from horys_pixel import pos
+from horys_pixel import prompt as PR
 
 
-def test_mapa_ida_e_volta():
-    pal = {"k": "#18122c", "r": "#b13e53", "x": "#00000000"}
-    rgba, m = pixels.compor_mapa(pal, ["..kk", ".krk", "x.k."])
-    assert rgba.shape == (3, 4, 4) and m.sum() == 7
-    assert tuple(rgba[1, 2]) == (0xb1, 0x3e, 0x53, 255)
-    assert m[2, 0] == 1 and rgba[2, 0, 3] == 0          # apagar
-    pal2, linhas, _ = pixels.para_linhas(rgba, {"k": "#18122c"})
-    assert linhas[0] == "..kk" and pal2["k"] == "#18122c"
+# ------------------------------------------------------------------ cor e paleta
+
+def test_hex_ida_e_volta():
+    assert C.rgb_hex(C.hex_rgb("#1A2b3C")) == "#1a2b3c"
+    with pytest.raises(ValueError):
+        C.hex_rgb("#123")
 
 
-def test_carimbos_espelhados():
-    rgba, m = pixels.compor_mapa({"a": "#ffffff"}, [], {"o": {"rows": ["a.", "aa"]}}, [["o", 0, 0], ["o", 3, 0, "h"]])
-    assert m[0].tolist() == [1, 0, 0, 0, 1] and m[1].tolist() == [1, 1, 0, 1, 1]
+def test_rampa_vai_do_escuro_ao_claro_e_mantem_a_base():
+    r = P.rampa_material("#4a7bd1", 3)
+    assert r[1] == "#4a7bd1"
+    lum = [C.luminancia(h) for h in r]
+    assert lum == sorted(lum)
 
 
-async def _ambiente(porta):
-    ctx = Contexto()
-    pronto = asyncio.Event()
-    srv = asyncio.ensure_future(servidor.principal(porta, pronto, ctx))
-    await pronto.wait()
-    ase = AsepriteFalso(porta, config.token())
-    await ase.conectar()
-    for _ in range(50):
-        if ctx.ponte.conectado:
-            break
-        await asyncio.sleep(0.02)
-    cli = Daemon()
-    await cli.garantir()
-
-    async def chamar(_ferramenta, **args):
-        r = await cli.enviar({"t": "chamar", "ferramenta": _ferramenta, "args": args})
-        return r
-
-    async def fim():
-        await cli.fechar()
-        await ase.fechar()
-        srv.cancel()
-        try:
-            await srv
-        except BaseException:
-            pass
-
-    return ctx, ase, chamar, fim
+def test_montar_paleta_com_tinta_e_avisos():
+    pal = P.montar([{"nome": "pele", "base": "#d9a066"}, {"nome": "roupa", "base": "#3b6ea8", "tons": 2}])
+    assert len(pal["familias"]["pele"]["rampa"]) == 3 and len(pal["familias"]["roupa"]["rampa"]) == 2
+    assert pal["tinta"] in pal["cores"]
+    assert P.familia_mais_proxima(pal, pal["familias"]["roupa"]["rampa"][0]) == "roupa"
 
 
-def _txt(r):
-    return "\n".join(c.get("text", "") for c in r["conteudo"] if c["type"] == "text")
+def test_propor_paleta_ignora_fundo():
+    im = np.zeros((40, 40, 4), np.uint8)
+    im[10:30, 10:30] = (200, 50, 50, 255)
+    im[10:30, 10:12] = (20, 20, 20, 255)
+    fams = P.propor(im, 3)
+    assert any(f["base"] == "#c83232" for f in fams)
 
 
-def test_ponta_a_ponta_desenho(ambiente):
-    async def corpo():
-        ctx, ase, chamar, fim = await _ambiente(ambiente)
-        try:
-            assert ase.config["tipos"] and "motores" in ase.config
-            cli = Daemon()
-            lst = await cli.enviar({"t": "listar"})
-            await cli.fechar()
-            nomes = {f["name"] for f in lst["ferramentas"]}
-            assert {"horys_pixel_map", "horys_perguntar", "horys_aguardar", "horys_ver"} <= nomes
-            r = await chamar("horys_sprite_novo", largura=16, altura=16)
-            assert not r["erro"], r
-            r = await chamar("horys_pixel_map", paleta={"k": "#18122c", "r": "#b13e53"},
-                             linhas=["kkk", "krk", "kkk"], x=2, y=3, camada="corpo")
-            assert not r["erro"] and "9 pixels" in _txt(r)
-            r = await chamar("horys_ler_pixels", camada="corpo", paleta={"k": "#18122c"})
-            t = _txt(r)
-            assert "..kkk" in t and "..k" in t
-            r = await chamar("horys_ver", critica=True)
-            assert any(c["type"] == "image" for c in r["conteudo"])
-            # mudanças: 1ª marca, depois o "usuário" pinta
-            await chamar("horys_mudancas")
-            s = ase.atual
-            s.img("corpo", 0)[0, 0] = (255, 255, 255, 255)
-            r = await chamar("horys_mudancas")
-            assert "'corpo' quadro 0: 1 px" in _txt(r)
-            # desfazer
-            await chamar("horys_desfazer")
-            # erro vira isError com mensagem
-            r = await chamar("horys_pixel_map", paleta={}, linhas=["z"])
-            assert r["erro"] and "sem cor" in _txt(r)
-        finally:
-            await fim()
-    rodar(corpo())
+# ------------------------------------------------------------------ contrato e asset
+
+def test_jogo_padrao_e_mescla(tmp_path):
+    (tmp_path / "jogo.json").write_text(json.dumps({"angulo": 35, "portoes": {"pisca_max": 0.05}}), encoding="utf-8")
+    j = J.carregar(tmp_path)
+    assert j["angulo"] == 35 and j["portoes"]["pisca_max"] == 0.05 and "gabarito" in j["portoes"]
+    assert J.checar_asset({"camera": {}, "rig": {}}) == ["camera"]
 
 
-def test_perguntar_aguardar_e_gosto(ambiente):
-    async def corpo():
-        ctx, ase, chamar, fim = await _ambiente(ambiente)
-        try:
-            r = await chamar("horys_perguntar", perguntas=[{"pergunta": "Como ataca?", "cabecalho": "Ataque",
-                                                            "opcoes": [{"rotulo": "Machado (recomendado)"},
-                                                                       {"rotulo": "Lança"}]}])
-            i = _txt(r).split("id: ")[1].split()[0]
-            assert ase.ui and ase.ui[-1][0] == "ui_perguntar" and ase.ui[-1][1]["id"] == i
-            r = await chamar("horys_aguardar", id=i, segundos=1)
-            assert "pendente" in _txt(r)
-            await ase.evento(tipo="resposta", id=i, respostas={"Como ataca?": "Lança"})
-            r = await chamar("horys_aguardar", id=i, segundos=5)
-            assert json.loads(_txt(r))["resposta"] == {"Como ataca?": "Lança"}
-            # aprovação com estilo vira memória de gosto
-            await chamar("horys_sprite_novo", largura=8, altura=8)
-            r = await chamar("horys_aprovar", titulo="Silhueta", estilo="teste", etapa="silhueta", sprite=True)
-            i = _txt(r).split("id: ")[1].split()[0]
-            assert ase.ui[-1][0] == "ui_aprovar" and "imagem_rgba" in ase.ui[-1][1]
-            await ase.evento(tipo="aprovacao", id=i, aprovado=False, comentario="olho de 1 px")
-            await chamar("horys_aguardar", id=i, segundos=5)
-            r = await chamar("horys_gosto_consultar", estilo="teste")
-            assert "1 recusas" in _txt(r) and "olho de 1 px" in _txt(r)
-        finally:
-            await fim()
-    rodar(corpo())
+def test_jogo_recusa_vista_sem_direcao(tmp_path):
+    (tmp_path / "jogo.json").write_text(json.dumps({"direcoes": {"sul": 0}}), encoding="utf-8")
+    with pytest.raises(ValueError, match="vista"):
+        J.carregar(tmp_path)
 
 
-def test_pedido_atualizar_vai_ao_painel(ambiente):
-    async def corpo():
-        ctx, ase, chamar, fim = await _ambiente(ambiente)
-        try:
-            r = await chamar("horys_pedido_novo", descricao="viking", motor="claude", iniciar=False)
-            pid = _txt(r).split("pedido ")[1].split()[0]
-            r = await chamar("horys_pedido_atualizar", id=pid, etapa="briefing", texto="perguntando", nota=10)
-            await asyncio.sleep(0.2)
-            assert any(c == "ui_progresso" and a["pedido"] == pid for c, a in ase.ui)
-            r = await chamar("horys_pedido", id=pid)
-            assert json.loads(_txt(r))["etapa"] == "briefing"
-        finally:
-            await fim()
-    rodar(corpo())
+def test_asset_novo_abrir_e_prompt(tmp_path):
+    (tmp_path / "assets").mkdir()
+    a = AS.novo("goblin", tmp_path, descricao="goblin verde com lança", altura_px=36)
+    assert AS.listar(tmp_path) == ["goblin"]
+    b = AS.abrir("goblin", tmp_path)
+    assert b.alvo_px(J.carregar(tmp_path)) == 36
+    txt = PR.gerar(b, J.carregar(tmp_path))
+    assert "exatamente 36 pixels" in txt and "#FF00FF" in txt and "goblin verde" in txt
+    with pytest.raises(FileExistsError):
+        AS.novo("goblin", tmp_path)
 
 
-def test_token_errado_recusado(ambiente):
-    async def corpo():
-        ctx = Contexto()
-        pronto = asyncio.Event()
-        srv = asyncio.ensure_future(servidor.principal(ambiente, pronto, ctx))
-        await pronto.wait()
-        ase = AsepriteFalso(ambiente, "errado" * 8)
-        try:
-            await ase.conectar()
-            assert False, "devia recusar"
-        except AssertionError as e:
-            assert "recusado" in str(e)
-        finally:
-            srv.cancel()
-    rodar(corpo())
+# ------------------------------------------------------------------ aprovação
+
+def test_aprovacao_presa_ao_conteudo(tmp_path):
+    (tmp_path / "paleta.json").write_text("{}", encoding="utf-8")
+    with pytest.raises(AP.Travado, match="falta aprovar"):
+        AP.exigir(tmp_path, "paleta")
+    AP.aprovar(tmp_path, "paleta", "paleta.json", comentario="sim")
+    AP.exigir(tmp_path, "paleta")
+    (tmp_path / "paleta.json").write_text('{"x": 1}', encoding="utf-8")
+    with pytest.raises(AP.Travado, match="mudou"):
+        AP.exigir(tmp_path, "paleta")
 
 
-def test_pedido_sem_motor_usa_o_padrao(casa_temp):
-    from horys_pixel.daemon.contexto import Contexto
-    ctx = Contexto()
-    p = ctx.pedidos.novo({"descricao": "revisar", "motor": None, "estilo": ""}, "revisao")
-    assert p["motor"] == config.preferencias()["motor_padrao"]
-    assert p["estilo"] == config.preferencias()["estilo_padrao"]
+# ------------------------------------------------------------------ gabarito
+
+PAL = P.montar([{"nome": "pele", "base": "#d9a066"}, {"nome": "roupa", "base": "#3b6ea8"}], tinta="#1a1420")
 
 
-def _png(caminho, cor=(200, 40, 40, 255)):
+def _boneco(larg=8, alt=16, cor=(217, 160, 102)):
+    im = np.zeros((alt, larg, 4), np.uint8)
+    im[...] = cor + (255,)
+    return im
+
+
+def test_gabarito_identico_passa():
+    a = _boneco()
+    r = G.avaliar({"frente": a}, {"frente": a.copy()}, PAL, J.PADRAO["portoes"]["gabarito"])
+    assert r["ok"] and r["vistas"]["frente"]["iou"] == 1.0 and r["vistas"]["frente"]["familia"] == 1.0
+
+
+def test_gabarito_pega_altura_e_forma_erradas():
+    r = G.avaliar({"frente": _boneco(alt=16)}, {"frente": _boneco(larg=14, alt=12)}, PAL,
+                  J.PADRAO["portoes"]["gabarito"])
+    assert not r["ok"]
+    assert any("silhueta" in f for f in r["falhas"]) and any("render tem 12 px" in f for f in r["falhas"])
+
+
+def test_gabarito_lado_espelhado():
+    a = _boneco(larg=10)
+    a[:, :3] = (59, 110, 168, 255)
+    r = G.comparar_vista(a, a[:, ::-1].copy(), PAL, testar_espelho=True)
+    assert r["espelhado"] and r["familia"] == 1.0
+
+
+# ------------------------------------------------------------------ pós e portões
+
+def test_contorno_fora_e_soltos():
+    idx = np.full((7, 7), -1)
+    idx[1:6, 1:6] = 0
+    idx[3, 3] = 1
+    out, n = pos.limpar_soltos(idx, ["a", "a"], set(), tinta=2)
+    assert n == 1 and out[3, 3] == 0
+    c = pos.contorno(out, 2, "fora")
+    assert c[0, 3] == 2 and c[3, 3] == 0
+
+
+def test_anticintilacao_corta_pisca():
+    base = np.zeros((6, 6), int)
+    q = [base.copy(), base.copy(), base.copy(), base.copy()]
+    q[1][2, 2] = 1
+    q[3][4, 4] = 1
+    assert A.pisca(q) > 0
+    assert A.pisca(A.aplicar(q)) == 0
+
+
+def test_detalhe_fino_acha_peca_de_1px():
+    m = np.zeros((10, 10, 4), np.uint8)
+    m[2:8, 2:8] = (255, 140, 0, 255)       # tronco grosso
+    m[1:9, 9] = (0, 200, 0, 255)           # braço de 1 px
+    assert pos.detalhe_fino(m, {"tronco": "#ff8c00", "braco-esq": "#00c800"}) == ["braco-esq"]
+
+
+def _estado(tipo, **kw):
+    e = {"acao": tipo, "tipo": tipo, "direcao": "sul", "quadros": 8, "pisca": 0.0, "mudanca_media": 0.2,
+         "pe_linha": [50, 50], "altura_px": [40, 40]}
+    e.update(kw)
+    return e
+
+
+def test_portoes():
+    j = J.PADRAO
+    ok = PT.avaliar({"estados": {"andar_sul": _estado("andar", pe_linha=[50, 53])}}, j)
+    assert ok["ok"], ok                       # top-down: o pé da frente desce na tela andando
+    r = PT.avaliar({"estados": {"idle_sul": _estado("idle", pe_linha=[50, 53], pisca=0.05)},
+                    "avisos": ["NAO_CABE: x"]}, j)
+    assert not r["ok"] and len(r["falhas"]) == 3
+    r = PT.avaliar({"estados": {"andar_sul": _estado("andar", mudanca_media=0.01)}}, j)
+    assert any("muda" in f for f in r["falhas"])
+    r = PT.avaliar({"estados": {"idle_sul": _estado("idle", pisca=0.5)}}, j, previa=True)
+    assert r["ok"]
+    r = PT.avaliar({"estados": {"morte_sul": _estado("morte", pisca=0.025)}}, j)
+    assert r["ok"]
+
+
+def test_duracoes_somam_o_tempo():
+    d = pos.duracoes(12, 12)
+    assert sum(d) == 1000 and all(x % 10 == 0 for x in d)
+
+
+# ------------------------------------------------------------------ projeção da arte no modelo
+
+def test_projecao_so_com_projetar_e_com_angulo_da_vista(tmp_path):
+    from horys_pixel import fluxo as F
+    (tmp_path / "jogo.json").write_text("{}", encoding="utf-8")   # raiz do projeto = tmp_path
+    a = AS.novo("proj", raiz=tmp_path)
+    jogo = J.carregar(a.pasta)
+    a.arte.mkdir(parents=True, exist_ok=True)
+    for nome in ("frente", "lado"):
+        (a.arte / f"{nome}.png").write_bytes(b"x")
+    assert F.projecao(a, jogo) is None                     # desligada por padrão
+    a.cfg["projetar"] = True
+    pr = F.projecao(a, jogo)
+    assert set(pr["vistas"]) == {"frente", "lado"}         # costas não existe: fica de fora
+    assert pr["vistas"]["lado"]["angulo"] == jogo["direcoes"][jogo["vistas"]["lado"]]
+
+
+# ------------------------------------------------------------------ casco visual
+
+def test_casco_esculpe_um_cubo_e_bate_a_silhueta_nas_tres_vistas():
+    from horys_pixel import casco as K
+    jogo = {"angulo": 43, "px_por_metro": 26.6, "contorno": "nenhum"}
+    # silhuetas de um cubo de 0,6 m projetado pela câmera do jogo: retângulo 16 x 23 px nas três vistas
+    rgba = np.zeros((27, 20, 4), np.uint8)
+    rgba[2:25, 2:18] = (200, 120, 60, 255)
+    c = K.Casco({"frente": (rgba, 0), "lado": (rgba, 90), "costas": (rgba, 180)}, jogo)
+    o = c.esculpir()
+    assert o.any()
+    iou = c.iou()
+    assert min(iou.values()) > 0.85, iou
+    rot = c.partes()
+    pecas = c.malhas(rot, {"m": {"rampa": ["#7a3a10", "#c87840", "#f0b080"]}})
+    assert pecas and all(len(p["faces"]) == len(p["familias"]) for p in pecas)
+    assert {f for p in pecas for f in p["familias"]} == {"m"}
+
+
+def test_gabarito_nao_conta_tinta_da_arte_nos_materiais():
+    arte = _boneco()
+    arte[:, 3:5] = (0x1a, 0x14, 0x20, 255)                 # linha interna da arte, na cor da tinta
+    render = _boneco()                                      # o render pinta o material ali
+    r = G.avaliar({"frente": arte}, {"frente": render}, PAL, J.PADRAO["portoes"]["gabarito"])
+    assert r["vistas"]["frente"]["familia"] == 1.0 and r["vistas"]["frente"]["iou"] == 1.0
+    render[:, 0:2] = (59, 110, 168, 255)                    # material errado fora da linha ainda conta
+    r = G.avaliar({"frente": arte}, {"frente": render}, PAL, J.PADRAO["portoes"]["gabarito"])
+    assert r["vistas"]["frente"]["familia"] < 1.0
+
+
+def test_ler_troca_so_uma_vista(tmp_path, monkeypatch):
+    from types import SimpleNamespace
     from PIL import Image
-    caminho.parent.mkdir(parents=True, exist_ok=True)
-    Image.new("RGBA", (8, 8), cor).save(caminho)
+    from horys_pixel import fluxo as F
+    from horys_pixel import leitura as L
+    (tmp_path / "jogo.json").write_text("{}", encoding="utf-8")
+    a = AS.novo("troca", raiz=tmp_path)
+    cor = {"frente": (200, 0, 0), "lado": (0, 200, 0), "costas": (0, 0, 200)}
+
+    def fake(cores):
+        return SimpleNamespace(vistas={n: np.full((10, 6, 4), c + (255,), np.uint8) for n, c in cores.items()},
+                               folha=np.zeros((10, 30, 4), np.uint8), relatorio={"altura": 10, "vistas": {}})
+
+    (a.pasta / "gerada.png").write_bytes(b"x")
+    (a.pasta / "outra.png").write_bytes(b"x")
+    monkeypatch.setattr(L, "carregar", lambda p: p)
+    monkeypatch.setattr(L, "ler", lambda img, *k, **kw: fake(cor) if img.name == "gerada.png"
+                        else fake({n: (9, 9, 9) for n in cor}))
+    F.ler_arte(a)
+    rel = F.ler_arte(a, a.pasta / "outra.png", vista="costas")
+    px = lambda n: tuple(np.asarray(Image.open(a.arte / f"{n}.png"))[0, 0, :3])
+    assert px("frente") == (200, 0, 0) and px("lado") == (0, 200, 0) and px("costas") == (9, 9, 9)
+    assert rel["fontes"]["costas"].endswith("outra.png") and rel["fontes"]["frente"].endswith("gerada.png")
 
 
-def test_esperar_imagem_pela_pasta_e_pelo_painel(ambiente):
-    async def corpo():
-        ctx, ase, chamar, fim = await _ambiente(ambiente)
-        try:
-            pasta = config.casa() / "pedidos" / "macaco"
-            trad = pasta / "traducao" / "prompt.md"
-            trad.parent.mkdir(parents=True, exist_ok=True)
-            trad.write_text("1. gorila de pedra\n2. fundo verde liso", encoding="utf-8")
-            _png(pasta / "entrada" / "velha.png")          # já estava lá: não conta
-            r = await chamar("horys_esperar_imagem", arquivo_prompt=str(trad))
-            assert not r["erro"], r
-            i = _txt(r).split("id: ")[1].split()[0]
-            cmd, a = ase.ui[-1]
-            assert cmd == "ui_imagem" and a["id"] == i and "gorila de pedra" in a["prompt"]
-            assert a["pasta"] == str(pasta / "entrada")
-            r = await chamar("horys_aguardar", id=i, segundos=1)
-            assert "pendente" in _txt(r)
-            _png(pasta / "entrada" / "gerada.png")
-            r = await chamar("horys_aguardar", id=i, segundos=10)
-            resp = json.loads(_txt(r))["resposta"]
-            assert resp["imagem"] == str(pasta / "entrada" / "gerada.png") and resp["origem"] == "pasta"
-            await asyncio.sleep(0.2)
-            assert ("ui_fechar", {"id": i}) in ase.ui
-            # pelo painel: o arquivo escolhido fora é copiado para entrada/
-            r = await chamar("horys_esperar_imagem", prompt="outro", pasta=str(pasta))
-            i = _txt(r).split("id: ")[1].split()[0]
-            fora = config.casa() / "downloads" / "chatgpt.png"
-            _png(fora)
-            await ase.evento(tipo="imagem", id=i, caminho=str(fora))
-            resp = json.loads(_txt(await chamar("horys_aguardar", id=i, segundos=5)))["resposta"]
-            assert resp["origem"] == "painel" and resp["imagem"] == str(pasta / "entrada" / "chatgpt.png")
-            assert (pasta / "entrada" / "chatgpt.png").exists()
-            r = await chamar("horys_esperar_imagem", pasta=str(pasta))
-            assert r["erro"] and "prompt" in _txt(r)
-        finally:
-            await fim()
-    rodar(corpo())
+def test_folha_confere_recortes(tmp_path):
+    from horys_pixel import folha
+    qs = [np.zeros((4, 3, 4), np.uint8) for _ in range(3)]
+    for i, q in enumerate(qs):
+        q[i, 1] = (10 * i, 20, 30, 255)
+    out = folha.salvar(qs, tmp_path, "t", gif=False)
+    folha.conferir(out["png"], qs)
+    with pytest.raises(ValueError):
+        folha.conferir(out["png"], qs[::-1])
 
 
-def test_novas_imagens_ignora_as_antigas(tmp_path):
-    from horys_pixel.daemon.conversa import novas_imagens, retrato_pasta
-    _png(tmp_path / "a.png")
-    (tmp_path / "nota.txt").write_text("x")
-    antes = retrato_pasta(tmp_path)
-    assert novas_imagens(tmp_path, antes) == []
-    _png(tmp_path / "b.webp")
-    assert [p.name for p in novas_imagens(tmp_path, antes)] == ["b.webp"]
-
-
-def test_entrega_mostra_acabamento_no_painel(ambiente, tmp_path):
-    async def corpo():
-        ctx, ase, chamar, fim = await _ambiente(ambiente)
-        try:
-            await chamar("horys_sprite_novo", largura=16, altura=16)
-            res = {"aceitacao": 85, "criterios": [
-                {"id": "L5", "resultado": "falha", "severidade": "leve", "classe": "acabamento", "onde": "3,4",
-                 "correcao": "pelo do ombro em degraus"},
-                {"id": "L2", "resultado": "passa", "severidade": "grave"}]}
-            r = await chamar("horys_entrega", resultado=res, pasta=str(tmp_path))
-            assert r["erro"] and "TRAVADO" in _txt(r)          # sem A/B do revisor, recusa
-            from horys_pixel import travas
-            travas.registrar_ab(tmp_path, "v01.png", "v02.png", "B", "contorno mais limpo")
-            r = await chamar("horys_entrega", resultado=res, pasta=str(tmp_path))
-            assert not r["erro"], r
-            t = _txt(r)
-            assert "PRONTO PARA ENTREGA" in t
-            i = t.split("id: ")[1].split()[0]
-            cmd, a = next(x for x in reversed(ase.ui) if x[0] == "ui_acabamento")
-            assert a["id"] == i and a["itens"] == [{"id": "L5", "onde": "3,4", "correcao": "pelo do ombro em degraus"}]
-            await ase.evento(tipo="acabamento", id=i, feitos=["L5"], total=1, comentario="feito")
-            resp = json.loads(_txt(await chamar("horys_aguardar", id=i, segundos=5)))["resposta"]
-            assert resp == {"feitos": ["L5"], "total": 1, "comentario": "feito"}
-            # não pronto: sem lista no painel
-            n = sum(1 for c, _ in ase.ui if c == "ui_acabamento")
-            res["aceitacao"] = 60
-            await chamar("horys_entrega", resultado=res, pasta=str(tmp_path))
-            assert sum(1 for c, _ in ase.ui if c == "ui_acabamento") == n
-        finally:
-            await fim()
-    rodar(corpo())
+def test_emenda_do_loop_avisa_pop_e_trava():
+    assert pos.emenda([0.1, 0.1, 0.1]) is None
+    em = pos.emenda([0.1, 0.1, 0.1, 0.5])
+    assert em["razao"] == 5.0
+    r = PT.avaliar({"estados": {"andar_sul": _estado("andar", emenda=em)}}, J.PADRAO)
+    assert r["ok"] and any("pop" in a for a in r["avisos"])
+    r = PT.avaliar({"estados": {"andar_sul": _estado("andar", emenda=pos.emenda([0.1, 0.1, 0.1, 0.0]))}}, J.PADRAO)
+    assert any("repetido" in a for a in r["avisos"])
+    r = PT.avaliar({"estados": {"andar_sul": _estado("andar", emenda=pos.emenda([0.1, 0.12, 0.1, 0.11]))}}, J.PADRAO)
+    assert not r["avisos"]

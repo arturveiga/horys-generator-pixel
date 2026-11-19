@@ -1,0 +1,276 @@
+{
+ "nome": "bonequinho",
+ "tipo": "humanoide",
+ "altura_px": null,
+ "descricao": "corpo-base chibi liso, cinza-branco, cabeça grande meio quadrada, braços e pernas curtos e grossos",
+ "blend": "blender/bonequinho.blend",
+ "esconder": [
+  "02*"
+ ],
+ "partes": true,
+ "pe_rolagem": 0.35,
+ "materiais": {
+  "padrao": "auto",
+  "regras": [
+   [
+    "Pele*",
+    "pele"
+   ]
+  ]
+ },
+ "rig": {
+  "ancora": "Boneco | âncora",
+  "segmentos": [
+   {
+    "nome": "tronco",
+    "pai": "ancora",
+    "pivo": [
+     0,
+     0,
+     0.42
+    ],
+    "colecoes": [
+     "Tronco"
+    ],
+    "parte": "tronco"
+   },
+   {
+    "nome": "cabeca",
+    "pai": "tronco",
+    "pivo": [
+     0,
+     0,
+     0.88
+    ],
+    "colecoes": [
+     "Cabeça",
+     "Capacete"
+    ],
+    "parte": "cabeca"
+   },
+   {
+    "nome": "ombro_e",
+    "pai": "tronco",
+    "pivo": [
+     -0.24,
+     0,
+     0.74
+    ],
+    "colecoes": [
+     "Braço Esquerdo"
+    ],
+    "parte": "braco-esq",
+    "objetos": [
+     "Braço superior*"
+    ]
+   },
+   {
+    "nome": "cotovelo_e",
+    "pai": "ombro_e",
+    "pivo": [
+     -0.29,
+     0,
+     0.61
+    ],
+    "colecoes": [
+     "Braço Esquerdo"
+    ],
+    "parte": "braco-esq"
+   },
+   {
+    "nome": "ombro_d",
+    "pai": "tronco",
+    "pivo": [
+     0.24,
+     0,
+     0.74
+    ],
+    "colecoes": [
+     "Braço Direito"
+    ],
+    "parte": "braco-dir",
+    "objetos": [
+     "Braço superior*"
+    ]
+   },
+   {
+    "nome": "cotovelo_d",
+    "pai": "ombro_d",
+    "pivo": [
+     0.29,
+     0,
+     0.61
+    ],
+    "colecoes": [
+     "Braço Direito"
+    ],
+    "parte": "braco-dir"
+   },
+   {
+    "nome": "coxa_e",
+    "pai": "ancora",
+    "pivo": [
+     -0.13,
+     0,
+     0.4
+    ],
+    "colecoes": [
+     "Perna Esquerda"
+    ],
+    "objetos": [
+     "Coxa*"
+    ],
+    "parte": "perna-esq"
+   },
+   {
+    "nome": "pe_e",
+    "pai": "ancora",
+    "pivo": [
+     -0.14,
+     0,
+     0.1
+    ],
+    "colecoes": [
+     "Perna Esquerda"
+    ],
+    "objetos": [
+     "Pé*"
+    ],
+    "parte": "perna-esq"
+   },
+   {
+    "nome": "canela_e",
+    "pai": "ancora",
+    "pivo": [
+     -0.14,
+     -0.015,
+     0.25
+    ],
+    "colecoes": [
+     "Perna Esquerda"
+    ],
+    "parte": "perna-esq"
+   },
+   {
+    "nome": "coxa_d",
+    "pai": "ancora",
+    "pivo": [
+     0.13,
+     0,
+     0.4
+    ],
+    "colecoes": [
+     "Perna Direita"
+    ],
+    "objetos": [
+     "Coxa*"
+    ],
+    "parte": "perna-dir"
+   },
+   {
+    "nome": "pe_d",
+    "pai": "ancora",
+    "pivo": [
+     0.14,
+     0,
+     0.1
+    ],
+    "colecoes": [
+     "Perna Direita"
+    ],
+    "objetos": [
+     "Pé*"
+    ],
+    "parte": "perna-dir"
+   },
+   {
+    "nome": "canela_d",
+    "pai": "ancora",
+    "pivo": [
+     0.14,
+     -0.015,
+     0.25
+    ],
+    "colecoes": [
+     "Perna Direita"
+    ],
+    "parte": "perna-dir"
+   }
+  ]
+ },
+ "papeis": {
+  "tronco": "tronco",
+  "cabeca": "cabeca",
+  "bracos": [
+   {
+    "lado": -1,
+    "ombro": "ombro_e",
+    "cotovelo": "cotovelo_e"
+   },
+   {
+    "lado": 1,
+    "ombro": "ombro_d",
+    "cotovelo": "cotovelo_d"
+   }
+  ],
+  "pernas": [
+   {
+    "lado": -1,
+    "coxa": "coxa_e",
+    "canela": "canela_e",
+    "pe": "pe_e"
+   },
+   {
+    "lado": 1,
+    "coxa": "coxa_d",
+    "canela": "canela_d",
+    "pe": "pe_d"
+   }
+  ]
+ },
+ "acoes": {
+  "idle": {
+   "tipo": "idle",
+   "quadros": 12,
+   "fps": 8,
+   "amplitude": 0.0,
+   "lado_a_lado": 0.6
+  },
+  "andar": {
+   "tipo": "andar",
+   "quadros": 8,
+   "fps": 8,
+   "amplitude_bracos": 0.4,
+   "bracos_tras": 0.4,
+   "amplitude": 0.8,
+   "agacha": 0.3,
+   "inclina": -0.06
+  },
+  "correr": {
+   "tipo": "correr",
+   "quadros": 8,
+   "fps": 12,
+   "amplitude": 1.1,
+   "amplitude_bracos": 0.08,
+   "bracos_tras": 1.25,
+   "inclina": 0.2,
+   "dobra_cotovelo": 0.0,
+   "agacha": 0.4
+  },
+  "soco": {
+   "tipo": "soco",
+   "quadros": 8,
+   "fps": 12
+  },
+  "dano": {
+   "tipo": "dano",
+   "quadros": 6,
+   "fps": 10
+  },
+  "morte": {
+   "tipo": "morte",
+   "quadros": 8,
+   "fps": 10
+  }
+ }
+}

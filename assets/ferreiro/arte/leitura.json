@@ -1,0 +1,51 @@
+{
+ "alvo": 32,
+ "altura_estimada": 31.8,
+ "modo": "grade",
+ "bloco": 10.72,
+ "bloco_fft": 10.8,
+ "coerencia": 0.653,
+ "detalhes_preservados": 12,
+ "ruido_limpo": 11,
+ "contorno_afinado": 30,
+ "contorno_fechado": 14,
+ "altura": 32,
+ "vistas": {
+  "frente": [
+   29,
+   32
+  ],
+  "lado": [
+   24,
+   32
+  ],
+  "costas": [
+   29,
+   31
+  ]
+ },
+ "cores": [
+  "#220c0c",
+  "#29398b",
+  "#3962c8",
+  "#4e1a0e",
+  "#6692d8",
+  "#682512",
+  "#913d17",
+  "#9f4418",
+  "#a57a7f",
+  "#c6a6a6",
+  "#c9631c",
+  "#db7f29",
+  "#dfccca",
+  "#e8b668",
+  "#e9b4a8",
+  "#f2d99b",
+  "#f9ebe5",
+  "#ffffff"
+ ],
+ "avisos": [],
+ "imagem": "assets\\ferreiro\\gerada_guia1.png",
+ "paleta_travada": true,
+ "quando": "2026-11-17 10:41:27"
+}

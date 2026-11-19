@@ -1,0 +1,21 @@
+Gere UMA imagem de pixel art de um personagem para um jogo 2D top-down.
+
+Personagem: anão ferreiro velho e baixinho: cabelo branco espetado para trás, bigode e barba brancos grandes, nariz grande, óculos de proteção dourados com lentes azuis na testa; túnica de couro bege com alça marrom no peito, cinto marrom com fivela dourada, braçadeiras azuis, luvas e botas marrons; martelo de madeira curto na mão direita, encostado ao corpo. Cores principais: bege, marrom, branco (detalhes azul e dourado). Silhueta: baixinho e largo, cabeça grande com cabelo espetado. NÃO pode ter: capacete, armadura de metal, capa, avental de couro preto
+
+Formato obrigatório:
+1. Três vistas do MESMO personagem lado a lado, da esquerda para a direita: FRENTE, LADO (olhando para a DIREITA) e
+   COSTAS. Nada além disso: sem texto, sem rótulo, sem moldura, sem chão e sem sombra no chão.
+2. Câmera: top-down 3/4, inclinada 43° acima do horizonte (vê o topo da cabeça e a frente do corpo), igual nas
+   três vistas, sem perspectiva.
+3. Escala: cada figura com exatamente 36 pixels de altura, do topo da cabeça à sola do pé. As três com a mesma
+   altura e os pés na mesma linha horizontal.
+4. Pixel art de verdade: pixels quadrados, grandes e nítidos, todos do mesmo tamanho (a imagem é a pixel art
+   ampliada sem suavização). Sem antisserrilhado, degradê, desfoque, ruído ou meio pixel.
+5. Contorno escuro de 1 pixel em volta de toda a figura.
+6. Cores: no máximo 20 no total, 2 a 3 tons por material (sombra, base, luz), luz vindo de cima à
+   esquerda.
+7. Formas simples e grandes: nenhum detalhe menor que 2×2 pixels; olhos com 1 a 2 pixels.
+8. Fundo inteiro de uma cor só, #FF00FF (magenta), sem degradê. O magenta não pode aparecer no personagem.
+9. Figura inteira com margem em volta (nada encostando na borda), em pé, postura neutra, braços um pouco afastados
+   do corpo, sem objetos soltos no ar.
+Imagem de 1536×1024 (paisagem).

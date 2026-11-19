@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>horys · visor</title>
+<style>
+  :root { --fundo:#16181d; --painel:#1f232b; --linha:#2e3440; --texto:#e6e8ec; --fraco:#9aa3b2;
+          --ok:#5fbf6a; --ruim:#e5605a; --aviso:#e0b04a; --tela:#3a3a44; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--fundo); color:var(--texto); font:14px/1.45 system-ui, sans-serif; display:flex;
+         min-height:100vh; }
+  nav { width:210px; flex:none; background:var(--painel); border-right:1px solid var(--linha); padding:12px; }
+  nav h1 { font-size:15px; margin:0 0 12px; letter-spacing:.5px; }
+  nav button { display:block; width:100%; text-align:left; background:none; border:0; color:var(--texto);
+               padding:7px 9px; border-radius:6px; cursor:pointer; font:inherit; }
+  nav button.ativo, nav button:hover { background:var(--linha); }
+  nav .jogo { color:var(--fraco); font-size:12px; margin-top:16px; }
+  main { flex:1; padding:18px 24px 60px; overflow:auto; }
+  section { background:var(--painel); border:1px solid var(--linha); border-radius:10px; padding:14px 16px; margin:0 0 16px; }
+  h2 { font-size:14px; margin:0 0 10px; display:flex; gap:10px; align-items:center; }
+  .selo { font-size:12px; padding:2px 8px; border-radius:99px; background:var(--linha); color:var(--fraco); }
+  .selo.ok { background:#203a24; color:var(--ok); } .selo.ruim { background:#3d2020; color:var(--ruim); }
+  .linha { display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end; }
+  .item { text-align:center; color:var(--fraco); font-size:12px; }
+  img.ref { max-width:100%; max-height:320px; background:var(--tela); border-radius:6px; }
+  canvas { background:var(--tela); image-rendering:pixelated; border-radius:4px; display:block; }
+  .px { image-rendering:pixelated; background:var(--tela); border-radius:4px; }
+  ul { margin:6px 0 0; padding-left:18px; } li.falha { color:var(--ruim); } li.aviso { color:var(--aviso); }
+  .info { color:var(--fraco); font-size:12px; margin-top:6px; }
+  table.grade { border-collapse:collapse; } table.grade td, table.grade th { padding:6px; text-align:center; }
+  table.grade th { color:var(--fraco); font-weight:500; font-size:12px; }
+  .ctrl { display:flex; gap:10px; align-items:center; margin-bottom:10px; color:var(--fraco); font-size:12px; }
+  .ctrl select, .ctrl button { background:var(--linha); color:var(--texto); border:0; border-radius:6px; padding:4px 8px; font:inherit; }
+  .vazio { color:var(--fraco); font-style:italic; }
+</style>
+</head>
+<body>
+<nav><h1>horys · visor</h1><div id="lista"></div><div class="jogo" id="jogo"></div></nav>
+<main id="main"><p class="vazio">carregando…</p></main>
+<script>
+const estado = { dados: null, atual: localStorage.getItem("horys.asset"), zoom: +(localStorage.getItem("horys.zoom") || 3),
+                 fonte: "animacao", tocando: true, versao: 0, players: [] };
+const arq = (a, rel) => `/arq/${encodeURIComponent(a)}/${rel.split("/").map(encodeURIComponent).join("/")}?t=${estado.versao}`;
+const el = (tag, attrs = {}, ...filhos) => { const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) { if (k === "class") e.className = v; else if (k.startsWith("on")) e[k] = v; else e.setAttribute(k, v); }
+  for (const f of filhos.flat()) if (f != null) e.append(f.nodeType ? f : document.createTextNode(f)); return e; };
+const selo = (ok, sim, nao) => el("span", { class: "selo " + (ok ? "ok" : "ruim") }, ok ? sim : nao);
+
+function imgPx(src, k) {
+  const im = el("img", { class: "px", src });
+  im.onload = () => { im.width = im.naturalWidth * k; im.height = im.naturalHeight * k; };
+  return im;
+}
+
+function player(a, est, k) {
+  const c = el("canvas"); const ctx = c.getContext("2d"); const im = new Image(); let i = 0, t = null;
+  im.onload = () => {
+    const w = im.width / est.quadros, h = im.height; c.width = w * k; c.height = h * k; ctx.imageSmoothingEnabled = false;
+    const passo = () => { ctx.clearRect(0, 0, c.width, c.height); ctx.drawImage(im, i * w, 0, w, h, 0, 0, w * k, h * k);
+      const ms = est.ms[i] || 100; if (estado.tocando) i = (i + 1) % est.quadros; t = setTimeout(passo, ms); };
+    passo();
+  };
+  im.src = arq(a, est.png);
+  estado.players.push(() => clearTimeout(t));
+  return c;
+}
+
+function listaFalhas(falhas = [], avisos = []) {
+  if (!falhas.length && !avisos.length) return document.createTextNode("");
+  return el("ul", {}, falhas.map(f => el("li", { class: "falha" }, f)), avisos.map(f => el("li", { class: "aviso" }, f)));
+}
+
+function render() {
+  estado.players.forEach(p => p()); estado.players = [];
+  const d = estado.dados; const lista = document.getElementById("lista"); lista.innerHTML = "";
+  if (!d.assets.length) { document.getElementById("main").innerHTML = '<p class="vazio">nenhum asset em assets/ (horys novo &lt;nome&gt;)</p>'; return; }
+  if (!d.assets.find(x => x.nome === estado.atual)) estado.atual = d.assets[0].nome;
+  for (const x of d.assets) lista.append(el("button", { class: x.nome === estado.atual ? "ativo" : "",
+    onclick: () => { estado.atual = x.nome; localStorage.setItem("horys.asset", x.nome); render(); } }, x.nome));
+  const j = d.jogo; document.getElementById("jogo").textContent =
+    `jogo: quadro ${j.quadro} px · ${j.px_por_metro} px/m · humano ${j.altura_humano_px} px · câmera ${j.angulo}° · ${Object.keys(j.direcoes).length} direções`;
+  const a = d.assets.find(x => x.nome === estado.atual); const n = a.nome; const k = estado.zoom;
+  const main = document.getElementById("main"); main.innerHTML = "";
+  const ap = a.aprovacoes || {};
+  const ctrl = el("div", { class: "ctrl" }, "zoom ",
+    el("select", { onchange: e => { estado.zoom = +e.target.value; localStorage.setItem("horys.zoom", estado.zoom); render(); } },
+      [2, 3, 4, 6, 8].map(z => { const o = el("option", { value: z }, z + "×"); if (z === k) o.selected = true; return o; })),
+    el("button", { onclick: () => { estado.tocando = !estado.tocando; } }, "tocar / pausar"));
+  main.append(el("h2", {}, n, el("span", { class: "selo" }, `${a.tipo || ""} · alvo ${a.alvo_px} px`)), ctrl);
+  if (a.descricao) main.append(el("p", { class: "info" }, a.descricao));
+
+  // 1. imagem de entrada
+  const s1 = el("section", {}, el("h2", {}, "1 · imagem do gerador"));
+  const ims = [a.gerada && el("div", { class: "item" }, el("img", { class: "ref", src: arq(n, a.gerada) }), "gerada.png"),
+               a.referencia && el("div", { class: "item" }, el("img", { class: "ref", src: arq(n, a.referencia) }), "referencia.png")].filter(Boolean);
+  s1.append(ims.length ? el("div", { class: "linha" }, ims) : el("p", { class: "vazio" }, "falta gerada.png (ver prompt.md)"));
+  main.append(s1);
+
+  // 2. arte parada
+  const s2 = el("section", {}, el("h2", {}, "2 · arte parada", ap.arte ? selo(ap.arte.ok, "aprovada", "mudou após aprovar") : el("span", { class: "selo" }, "não aprovada")));
+  const vistas = Object.entries(a.arte || {});
+  if (vistas.length) {
+    s2.append(el("div", { class: "linha" }, vistas.map(([v, rel]) => el("div", { class: "item" }, imgPx(arq(n, rel), k), v))));
+    const l = a.leitura; if (l) s2.append(el("p", { class: "info" }, `${l.modo === "exata" ? "pixel art exata" : "lida na grade"} · bloco ${l.bloco} px · altura ${l.altura}/${l.alvo} px · ${(l.cores || []).length} cores` +
+      (l.detalhes_preservados ? ` · ${l.detalhes_preservados} detalhes preservados` : "")), listaFalhas([], l.avisos || []));
+  } else s2.append(el("p", { class: "vazio" }, "ainda não lida (horys ler " + n + ")"));
+  main.append(s2);
+
+  // 3. paleta
+  const s3 = el("section", {}, el("h2", {}, "3 · paleta", ap.paleta ? selo(ap.paleta.ok, "aprovada", "mudou após aprovar") : el("span", { class: "selo" }, "não aprovada")));
+  s3.append(a.paleta_png ? el("img", { src: arq(n, a.paleta_png) }) : el("p", { class: "vazio" }, "sem paleta (horys paleta " + n + ")"));
+  if (a.paleta) s3.append(listaFalhas([], a.paleta.avisos || []));
+  main.append(s3);
+
+  // 4. gabarito
+  const g = a.gabarito;
+  const s4 = el("section", {}, el("h2", {}, "4 · gabarito 3D × arte", g ? selo(g.ok, "passou", "não passou") : el("span", { class: "selo" }, "não rodado")));
+  if (g) {
+    if (a.gabarito_png) s4.append(el("img", { class: "ref", src: arq(n, a.gabarito_png) }));
+    s4.append(el("p", { class: "info" }, "por vista: arte | render | diferença (verde = os dois, vermelho = só a arte, azul = só o render)"));
+    s4.append(el("table", { class: "grade" }, el("tr", {}, ["vista", "silhueta", "materiais", "altura render/arte", "espelhado"].map(t => el("th", {}, t))),
+      Object.entries(g.vistas || {}).map(([v, r]) => el("tr", {}, el("td", {}, v), el("td", {}, Math.round(r.iou * 100) + "%"),
+        el("td", {}, Math.round(r.familia * 100) + "%"), el("td", {}, `${r.altura_render}/${r.altura_arte}`), el("td", {}, r.espelhado ? "sim" : "não")))));
+    s4.append(listaFalhas(g.falhas || [], g.avisos || []));
+  } else s4.append(el("p", { class: "vazio" }, "horys gabarito " + n));
+  main.append(s4);
+
+  // 5. animação
+  const temPrevia = !!a.previa, temFinal = !!a.animacao;
+  if (estado.fonte === "animacao" && !temFinal && temPrevia) estado.fonte = "previa";
+  if (estado.fonte === "previa" && !temPrevia && temFinal) estado.fonte = "animacao";
+  const an = estado.fonte === "previa" ? a.previa : a.animacao; const pt = an && an.portoes;
+  const s5 = el("section", {}, el("h2", {}, "5 · animação", pt ? selo(pt.ok, "portões ok", "portões bloqueados") : el("span", { class: "selo" }, "não renderizada"),
+    (temPrevia && temFinal) ? el("button", { class: "selo", onclick: () => { estado.fonte = estado.fonte === "previa" ? "animacao" : "previa"; render(); } },
+      "ver " + (estado.fonte === "previa" ? "final" : "prévia")) : null, an ? el("span", { class: "selo" }, estado.fonte) : null));
+  if (an) {
+    const acoes = [...new Set(an.estados.map(e => e.acao))]; const dirs = [...new Set(an.estados.map(e => e.direcao))];
+    const tab = el("table", { class: "grade" }, el("tr", {}, el("th", {}, ""), dirs.map(dd => el("th", {}, dd))));
+    for (const ac of acoes) tab.append(el("tr", {}, el("th", {}, ac), dirs.map(dd => {
+      const e = an.estados.find(x => x.acao === ac && x.direcao === dd); return el("td", {}, e ? player(n, e, k) : ""); })));
+    s5.append(el("div", { style: "overflow-x:auto" }, tab));
+    if (pt) s5.append(listaFalhas(pt.falhas || [], pt.avisos || []));
+  } else s5.append(el("p", { class: "vazio" }, "horys animar " + n + " --previa"));
+  main.append(s5);
+}
+
+async function carregar() {
+  const r = await fetch("/api/assets"); estado.dados = await r.json(); render();
+}
+async function vigiar() {
+  try { const r = await fetch("/api/versao"); const { v } = await r.json();
+    if (v !== estado.versao) { estado.versao = v; await carregar(); } } catch (e) {}
+  setTimeout(vigiar, 2000);
+}
+vigiar();
+</script>
+</body>
+</html>

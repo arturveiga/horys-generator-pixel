@@ -1,0 +1,262 @@
+{
+ "nome": "ferreiro",
+ "tipo": "humanoide",
+ "altura_px": 32,
+ "descricao": "anão ferreiro velho e baixinho: cabelo branco espetado para trás, bigode e barba brancos grandes, nariz grande, óculos de proteção dourados com lentes azuis na testa; túnica de couro bege com alça marrom no peito, cinto marrom com fivela dourada, braçadeiras azuis, luvas e botas marrons; martelo de madeira curto na mão direita, encostado ao corpo. Cores principais: bege, marrom, branco (detalhes azul e dourado). Silhueta: baixinho e largo, cabeça grande com cabelo espetado. NÃO pode ter: capacete, armadura de metal, capa, avental de couro preto",
+ "blend": "blender/modelo.blend",
+ "esconder": [
+  "02*"
+ ],
+ "materiais": {
+  "padrao": "auto",
+  "regras": [
+   [
+    "Fam | material1",
+    "material1"
+   ],
+   [
+    "Fam | material2",
+    "material2"
+   ],
+   [
+    "Fam | material3",
+    "material3"
+   ],
+   [
+    "Fam | material4",
+    "material4"
+   ],
+   [
+    "Fam | material5",
+    "material5"
+   ],
+   [
+    "Fam | material6",
+    "material6"
+   ]
+  ]
+ },
+ "rig": {
+  "ancora": "Casco | âncora",
+  "segmentos": [
+   {
+    "nome": "tronco",
+    "pai": "ancora",
+    "pivo": [
+     0.0,
+     0.0,
+     0.3477
+    ],
+    "colecoes": [
+     "Tronco"
+    ],
+    "parte": "tronco"
+   },
+   {
+    "nome": "cabeca",
+    "pai": "tronco",
+    "pivo": [
+     0.0,
+     0.0,
+     0.6485
+    ],
+    "colecoes": [
+     "Cabeça"
+    ],
+    "parte": "cabeca"
+   },
+   {
+    "nome": "ombro_e",
+    "pai": "tronco",
+    "pivo": [
+     -0.2914,
+     0.0,
+     0.6109
+    ],
+    "colecoes": [
+     "Braço Esquerda"
+    ],
+    "parte": "braco-esq",
+    "objetos": [
+     "Braço superior*"
+    ]
+   },
+   {
+    "nome": "cotovelo_e",
+    "pai": "ombro_e",
+    "pivo": [
+     -0.3571,
+     0.0,
+     0.4793
+    ],
+    "colecoes": [
+     "Braço Esquerda"
+    ],
+    "parte": "braco-esq"
+   },
+   {
+    "nome": "coxa_e",
+    "pai": "ancora",
+    "pivo": [
+     -0.2538,
+     0.0,
+     0.3289
+    ],
+    "colecoes": [
+     "Perna Esquerda"
+    ],
+    "parte": "perna-esq",
+    "objetos": [
+     "Coxa*"
+    ]
+   },
+   {
+    "nome": "pe_e",
+    "pai": "ancora",
+    "pivo": [
+     -0.2538,
+     0.0,
+     0.1222
+    ],
+    "colecoes": [
+     "Perna Esquerda"
+    ],
+    "parte": "perna-esq",
+    "objetos": [
+     "Bota*"
+    ]
+   },
+   {
+    "nome": "canela_e",
+    "pai": "ancora",
+    "pivo": [
+     -0.2538,
+     0.0,
+     0.235
+    ],
+    "colecoes": [
+     "Perna Esquerda"
+    ],
+    "parte": "perna-esq"
+   },
+   {
+    "nome": "ombro_d",
+    "pai": "tronco",
+    "pivo": [
+     0.2914,
+     0.0,
+     0.6109
+    ],
+    "colecoes": [
+     "Braço Direita"
+    ],
+    "parte": "braco-dir",
+    "objetos": [
+     "Braço superior*"
+    ]
+   },
+   {
+    "nome": "cotovelo_d",
+    "pai": "ombro_d",
+    "pivo": [
+     0.3759,
+     0.0,
+     0.4793
+    ],
+    "colecoes": [
+     "Braço Direita"
+    ],
+    "parte": "braco-dir"
+   },
+   {
+    "nome": "coxa_d",
+    "pai": "ancora",
+    "pivo": [
+     0.2538,
+     0.0,
+     0.3289
+    ],
+    "colecoes": [
+     "Perna Direita"
+    ],
+    "parte": "perna-dir",
+    "objetos": [
+     "Coxa*"
+    ]
+   },
+   {
+    "nome": "pe_d",
+    "pai": "ancora",
+    "pivo": [
+     0.2538,
+     0.0,
+     0.1222
+    ],
+    "colecoes": [
+     "Perna Direita"
+    ],
+    "parte": "perna-dir",
+    "objetos": [
+     "Bota*"
+    ]
+   },
+   {
+    "nome": "canela_d",
+    "pai": "ancora",
+    "pivo": [
+     0.2538,
+     0.0,
+     0.235
+    ],
+    "colecoes": [
+     "Perna Direita"
+    ],
+    "parte": "perna-dir"
+   }
+  ]
+ },
+ "papeis": {
+  "tronco": "tronco",
+  "cabeca": "cabeca",
+  "bracos": [
+   {
+    "lado": -1,
+    "ombro": "ombro_e",
+    "cotovelo": "cotovelo_e"
+   },
+   {
+    "lado": 1,
+    "ombro": "ombro_d",
+    "cotovelo": "cotovelo_d"
+   }
+  ],
+  "pernas": [
+   {
+    "lado": -1,
+    "coxa": "coxa_e",
+    "pe": "pe_e",
+    "canela": "canela_e"
+   },
+   {
+    "lado": 1,
+    "coxa": "coxa_d",
+    "pe": "pe_d",
+    "canela": "canela_d"
+   }
+  ]
+ },
+ "acoes": {
+  "idle": {
+   "tipo": "idle",
+   "quadros": 8,
+   "fps": 8
+  },
+  "andar": {
+   "tipo": "andar",
+   "quadros": 8,
+   "fps": 10
+  }
+ },
+ "partes": true,
+ "projetar": false
+}

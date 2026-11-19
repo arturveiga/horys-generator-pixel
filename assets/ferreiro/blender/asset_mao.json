@@ -1,0 +1,237 @@
+{
+ "nome": "ferreiro",
+ "tipo": "humanoide",
+ "altura_px": 32,
+ "descricao": "anão ferreiro velho e baixinho: cabelo branco espetado para trás, bigode e barba brancos grandes, nariz grande, óculos de proteção dourados com lentes azuis na testa; túnica de couro bege com alça marrom no peito, cinto marrom com fivela dourada, braçadeiras azuis, luvas e botas marrons; martelo de madeira curto na mão direita, encostado ao corpo. Cores principais: bege, marrom, branco (detalhes azul e dourado). Silhueta: baixinho e largo, cabeça grande com cabelo espetado. NÃO pode ter: capacete, armadura de metal, capa, avental de couro preto",
+ "blend": "blender/modelo.blend",
+ "esconder": [
+  "02*"
+ ],
+ "materiais": {
+  "padrao": "auto",
+  "regras": []
+ },
+ "rig": {
+  "ancora": "Ferreiro | âncora",
+  "segmentos": [
+   {
+    "nome": "tronco",
+    "pai": "ancora",
+    "pivo": [
+     0.0,
+     0.0,
+     0.2489
+    ],
+    "colecoes": [
+     "Tronco"
+    ],
+    "parte": "tronco"
+   },
+   {
+    "nome": "cabeca",
+    "pai": "tronco",
+    "pivo": [
+     0.0,
+     0.0,
+     0.6637
+    ],
+    "colecoes": [
+     "Cabeça"
+    ],
+    "parte": "cabeca"
+   },
+   {
+    "nome": "ombro_e",
+    "pai": "tronco",
+    "pivo": [
+     -0.237,
+     0.0,
+     0.5689
+    ],
+    "colecoes": [
+     "Braço Esquerdo"
+    ],
+    "parte": "braco-esq",
+    "objetos": [
+     "Braço superior*"
+    ]
+   },
+   {
+    "nome": "cotovelo_e",
+    "pai": "ombro_e",
+    "pivo": [
+     -0.3911,
+     0.0,
+     0.4741
+    ],
+    "colecoes": [
+     "Braço Esquerdo"
+    ],
+    "parte": "braco-esq"
+   },
+   {
+    "nome": "coxa_e",
+    "pai": "ancora",
+    "pivo": [
+     -0.1304,
+     0.0,
+     0.237
+    ],
+    "colecoes": [
+     "Perna Esquerda"
+    ],
+    "parte": "perna-esq",
+    "objetos": [
+     "Coxa*"
+    ]
+   },
+   {
+    "nome": "pe_e",
+    "pai": "ancora",
+    "pivo": [
+     -0.1422,
+     0.0,
+     0.083
+    ],
+    "colecoes": [
+     "Perna Esquerda"
+    ],
+    "parte": "perna-esq",
+    "objetos": [
+     "Bota*"
+    ]
+   },
+   {
+    "nome": "canela_e",
+    "pai": "ancora",
+    "pivo": [
+     -0.1422,
+     -0.0059,
+     0.1541
+    ],
+    "colecoes": [
+     "Perna Esquerda"
+    ],
+    "parte": "perna-esq"
+   },
+   {
+    "nome": "ombro_d",
+    "pai": "tronco",
+    "pivo": [
+     0.237,
+     0.0,
+     0.5689
+    ],
+    "colecoes": [
+     "Braço Direito"
+    ],
+    "parte": "braco-dir",
+    "objetos": [
+     "Braço superior*"
+    ]
+   },
+   {
+    "nome": "cotovelo_d",
+    "pai": "ombro_d",
+    "pivo": [
+     0.3911,
+     0.0,
+     0.4741
+    ],
+    "colecoes": [
+     "Braço Direito"
+    ],
+    "parte": "braco-dir"
+   },
+   {
+    "nome": "coxa_d",
+    "pai": "ancora",
+    "pivo": [
+     0.1304,
+     0.0,
+     0.237
+    ],
+    "colecoes": [
+     "Perna Direita"
+    ],
+    "parte": "perna-dir",
+    "objetos": [
+     "Coxa*"
+    ]
+   },
+   {
+    "nome": "pe_d",
+    "pai": "ancora",
+    "pivo": [
+     0.1422,
+     0.0,
+     0.083
+    ],
+    "colecoes": [
+     "Perna Direita"
+    ],
+    "parte": "perna-dir",
+    "objetos": [
+     "Bota*"
+    ]
+   },
+   {
+    "nome": "canela_d",
+    "pai": "ancora",
+    "pivo": [
+     0.1422,
+     -0.0059,
+     0.1541
+    ],
+    "colecoes": [
+     "Perna Direita"
+    ],
+    "parte": "perna-dir"
+   }
+  ]
+ },
+ "papeis": {
+  "tronco": "tronco",
+  "cabeca": "cabeca",
+  "bracos": [
+   {
+    "lado": -1,
+    "ombro": "ombro_e",
+    "cotovelo": "cotovelo_e"
+   },
+   {
+    "lado": 1,
+    "ombro": "ombro_d",
+    "cotovelo": "cotovelo_d"
+   }
+  ],
+  "pernas": [
+   {
+    "lado": -1,
+    "coxa": "coxa_e",
+    "canela": "canela_e",
+    "pe": "pe_e"
+   },
+   {
+    "lado": 1,
+    "coxa": "coxa_d",
+    "canela": "canela_d",
+    "pe": "pe_d"
+   }
+  ]
+ },
+ "acoes": {
+  "idle": {
+   "tipo": "idle",
+   "quadros": 8,
+   "fps": 8
+  },
+  "andar": {
+   "tipo": "andar",
+   "quadros": 8,
+   "fps": 10
+  }
+ },
+ "partes": true,
+ "projetar": true
+}

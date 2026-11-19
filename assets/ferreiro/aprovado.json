@@ -1,0 +1,16 @@
+{
+ "arte": {
+  "arquivo": "arte/folha.png",
+  "sha256": "d62ee91702c2bf8dd5772c111e34beff6bd2e90691c75493f1e3648c2ab89799",
+  "quem": "artur",
+  "comentario": "",
+  "quando": "2026-11-17 09:30:05"
+ },
+ "paleta": {
+  "arquivo": "paleta.json",
+  "sha256": "734922d94970a8acbf0ccddabdb99d36eb7f25a551258568e8672f25c23a2bac",
+  "quem": "artur",
+  "comentario": "",
+  "quando": "2026-11-17 09:30:07"
+ }
+}
